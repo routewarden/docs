@@ -3,7 +3,7 @@
   "versions": [
     {
       "text": "v0.2.x (Latest)",
-      "link": "/guide/getting-started",
+      "link": "/traefik/getting-started",
       "tag": "v0.2.x"
     },
     {

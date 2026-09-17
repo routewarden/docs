@@ -24,15 +24,17 @@ This repository (`routewarden/docs`) houses the official documentation, deployme
 
 ---
 
-## 🔗 RouteWarden Plugin References
+## 🔗 RouteWarden Ecosystem References
 
 | Resource | Link | Description |
 |---|---|---|
-| **Core Plugin Repository** | [github.com/routewarden/traefik-warden](https://github.com/routewarden/traefik-warden) | Source code, Go tests, benchmarks, and Yaegi compatibility suite |
+| **Traefik Plugin (Core)** | [github.com/routewarden/traefik-warden](https://github.com/routewarden/traefik-warden) | Source code, Go tests, benchmarks, and Yaegi compatibility suite |
+| **Caddy Plugin (caddy-warden)** | [github.com/routewarden/caddy-warden](https://github.com/routewarden/caddy-warden) | Official Caddy v2 security module and Caddyfile directive |
 | **Traefik Plugin Catalog** | [plugins.traefik.io](https://plugins.traefik.io) | Official Traefik Plugin directory registration |
 | **Documentation Portal** | [routewarden.github.io/docs](https://routewarden.github.io/docs/) | Full guides, API references, and architecture blueprints |
+| **Caddy Integration Guide** | [routewarden.github.io/docs/guide/caddy](https://routewarden.github.io/docs/guide/caddy) | xcaddy compilation, Dockerfile setup, and Caddyfile syntax |
 | **Interactive Examples** | [Documentation Examples Cookbook](https://routewarden.github.io/docs/examples/overview) | Ready-to-run Docker Compose and Kubernetes configurations |
-| **Issue Tracker** | [RouteWarden Issues](https://github.com/routewarden/traefik-warden/issues) | Bug reports and feature requests for the Traefik plugin |
+| **Issue Tracker** | [RouteWarden Issues](https://github.com/routewarden/traefik-warden/issues) | Bug reports and feature requests for RouteWarden |
 
 ---
 

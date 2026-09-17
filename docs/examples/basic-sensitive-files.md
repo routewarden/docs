@@ -8,7 +8,7 @@ This scenario protects a web application against reconnaissance and exposure of 
 
 ::: code-group
 
-```yaml [File (YAML)]
+```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:
   middlewares:
@@ -38,7 +38,40 @@ http:
           - url: "http://webapp:80"
 ```
 
-```toml [File (TOML)]
+```nginx [Caddy (Caddyfile)]
+# Caddyfile
+{
+    order route_warden before reverse_proxy
+}
+
+localhost {
+    route_warden {
+        enable_default_patterns true
+        response {
+            mode json
+            status_code 403
+            body '{"error":"Forbidden","message":"Sensitive path blocked by RouteWarden"}'
+        }
+    }
+
+    reverse_proxy webapp:80
+}
+```
+
+```bash [Traefik (Docker Compose)]
+# Traefik Docker Compose Labels / CLI equivalent
+- "traefik.enable=true"
+- "traefik.http.routers.webapp.rule=Host(`localhost`)"
+- "traefik.http.routers.webapp.entrypoints=web"
+- "traefik.http.routers.webapp.middlewares=warden-shield"
+- "traefik.http.middlewares.warden-shield.plugin.routewarden.enabled=true"
+- "traefik.http.middlewares.warden-shield.plugin.routewarden.enableDefaultPatterns=true"
+- "traefik.http.middlewares.warden-shield.plugin.routewarden.response.mode=json"
+- "traefik.http.middlewares.warden-shield.plugin.routewarden.response.statusCode=403"
+- 'traefik.http.middlewares.warden-shield.plugin.routewarden.response.body={"error":"Forbidden","message":"Sensitive path blocked by RouteWarden"}'
+```
+
+```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.webapp-router]
   rule = "Host(`localhost`)"
@@ -60,26 +93,15 @@ http:
   body = '{"error":"Forbidden","message":"Sensitive path blocked by RouteWarden"}'
 ```
 
-```bash [CLI]
-# Traefik Docker Compose Labels / CLI equivalent
-- "traefik.enable=true"
-- "traefik.http.routers.webapp.rule=Host(`localhost`)"
-- "traefik.http.routers.webapp.entrypoints=web"
-- "traefik.http.routers.webapp.middlewares=warden-shield"
-- "traefik.http.middlewares.warden-shield.plugin.routewarden.enabled=true"
-- "traefik.http.middlewares.warden-shield.plugin.routewarden.enableDefaultPatterns=true"
-- "traefik.http.middlewares.warden-shield.plugin.routewarden.response.mode=json"
-- "traefik.http.middlewares.warden-shield.plugin.routewarden.response.statusCode=403"
-- 'traefik.http.middlewares.warden-shield.plugin.routewarden.response.body={"error":"Forbidden","message":"Sensitive path blocked by RouteWarden"}'
-```
-
 :::
 
 ---
 
 ## Docker Compose Example
 
-```yaml
+::: code-group
+
+```yaml [Traefik (Docker Compose)]
 services:
   traefik:
     image: traefik:v3.1
@@ -111,6 +133,31 @@ services:
       - "traefik.http.middlewares.warden-shield.plugin.routewarden.response.statusCode=403"
       - "traefik.http.middlewares.warden-shield.plugin.routewarden.response.body={\"error\":\"Forbidden\",\"message\":\"Sensitive path blocked by RouteWarden\"}"
 ```
+
+```yaml [Caddy (Docker Compose)]
+services:
+  caddy:
+    image: caddy:2-alpine
+    # Build with xcaddy or use a custom image with caddy-warden installed
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM caddy:2-builder AS builder
+        RUN xcaddy build --with github.com/routewarden/caddy-warden@{{version}}
+        FROM caddy:2-alpine
+        COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - webapp
+
+  webapp:
+    image: nginx:alpine
+```
+
+:::
 
 ---
 

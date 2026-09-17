@@ -1,81 +1,68 @@
-/* Desktop Navbar layout */
-@media (min-width: 768px) {
-  .VPNavBarTitle {
-    flex-shrink: 0 !important;
-    margin-right: 1.25rem !important;
-  }
+/* Refined Brand & Typography */
+:root {
+  --vp-c-brand-1: #2563eb;
+  --vp-c-brand-2: #1d4ed8;
+  --vp-c-brand-3: #1e40af;
+  --vp-c-brand-soft: rgba(37, 99, 235, 0.08);
 
-  .VPNavBarTitle .title {
-    display: flex !important;
-    align-items: center !important;
-    font-weight: 600 !important;
-    font-size: 16px !important;
-  }
+  --vp-c-divider: #e2e8f0;
+  --vp-c-bg-soft: #f8fafc;
+  --vp-c-bg-alt: #f1f5f9;
+}
 
-  .VPNavBarSearch {
-    display: flex !important;
-    align-items: center !important;
-    margin-right: 1.5rem !important;
-    flex-shrink: 0 !important;
-  }
+.dark {
+  --vp-c-bg: #090d16;
+  --vp-c-bg-soft: #0f172a;
+  --vp-c-bg-alt: #131d33;
+  --vp-c-divider: #1e293b;
+  --vp-c-text-1: #f8fafc;
+  --vp-c-text-2: #94a3b8;
 
-  .VPNavBarSearch .DocSearch-Button,
-  .VPNavBarSearch .search-btn {
-    display: flex !important;
-    align-items: center !important;
-    min-width: 160px !important;
-    height: 36px !important;
-    padding: 0 12px !important;
-    border-radius: 8px !important;
-    border: 1px solid var(--vp-c-divider) !important;
-    background-color: var(--vp-c-bg-alt) !important;
-    cursor: pointer !important;
-    transition: border-color 0.25s, background-color 0.25s !important;
-  }
+  --vp-c-brand-1: #38bdf8;
+  --vp-c-brand-2: #0ea5e9;
+  --vp-c-brand-3: #0284c7;
+  --vp-c-brand-soft: rgba(56, 189, 248, 0.12);
+}
 
-  .VPNavBarSearch .DocSearch-Button:hover,
-  .VPNavBarSearch .search-btn:hover {
-    border-color: var(--vp-c-brand-1) !important;
-    background-color: var(--vp-c-bg-mute) !important;
-  }
+/* Minimalist Gateway Badges */
+.badge-traefik {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--vp-font-family-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+}
 
-  .VPNavBarSearch .DocSearch-Button-Placeholder,
-  .VPNavBarSearch .DocSearch-Button-Keys,
-  .VPNavBarSearch .DocSearch-Search-Icon {
-    display: inline-flex !important;
-    align-items: center !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
+.dark .badge-traefik {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
 
-  .VPNavBarSearch .DocSearch-Button-Placeholder {
-    font-size: 13px !important;
-    color: var(--vp-c-text-2) !important;
-    padding: 0 8px !important;
-  }
+.badge-caddy {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--vp-font-family-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.08);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
 
-  .VPNavBarSearch .DocSearch-Button-Key {
-    font-size: 11px !important;
-    padding: 2px 6px !important;
-    border-radius: 4px !important;
-    background: var(--vp-c-bg) !important;
-    border: 1px solid var(--vp-c-divider) !important;
-  }
-
-  .VPNavBar .content {
-    display: flex !important;
-    justify-content: flex-end !important;
-    align-items: center !important;
-    flex-grow: 1 !important;
-    padding-left: 1rem !important;
-  }
-
-  .VPNavBarMenuLink,
-  .VPNavBarMenuGroup {
-    padding: 0 10px !important;
-    font-size: 13.5px !important;
-    white-space: nowrap !important;
-  }
+.dark .badge-caddy {
+  background: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.3);
 }
 
 /* Mobile optimizations (< 768px) */
