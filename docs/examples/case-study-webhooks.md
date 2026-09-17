@@ -23,11 +23,11 @@ With RouteWarden, you enforce a two-tier gatekeeper at the Traefik edge:
 
 ---
 
-## Traefik Configuration
+## Configuration (Traefik & Caddy)
 
 ::: code-group
 
-```yaml [File (YAML)]
+```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:
   middlewares:
@@ -59,16 +59,37 @@ http:
         - websecure
       middlewares:
         - webhook-shield
-      service: payment-service
+      service: webhook-service
 ```
 
-```toml [File (TOML)]
+```nginx [Caddy (Caddyfile)]
+# Caddyfile
+{
+    order route_warden before reverse_proxy
+}
+
+api.example.com {
+    route_warden {
+        enable_default_patterns true
+        path_patterns "(?i)^/webhooks(/.*)?$"
+        allow_patterns "(?i)^/webhooks/stripe/v1$"
+        allowed_ips "3.18.12.63/32" "3.130.192.231/32" "13.235.14.237/32" "13.235.122.149/32" "35.154.171.200/32"
+        response {
+            mode silent_drop
+        }
+    }
+
+    reverse_proxy webhook-service:8080
+}
+```
+
+```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.webhook-router]
   rule = "Host(`api.example.com`) && PathPrefix(`/webhooks`)"
   entryPoints = ["websecure"]
   middlewares = ["webhook-shield"]
-  service = "payment-service"
+  service = "webhook-service"
 
 [http.middlewares.webhook-shield.plugin.routewarden]
   enabled = true

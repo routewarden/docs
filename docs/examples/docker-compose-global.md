@@ -8,7 +8,7 @@ Attaching RouteWarden directly to Traefik's entrypoint provides unified, cluster
 
 ::: code-group
 
-```yaml [File (YAML)]
+```yaml [Traefik (File YAML)]
 # traefik.yml (Static EntryPoint Attachment)
 entryPoints:
   web:
@@ -34,7 +34,45 @@ http:
             body: '{"error":"Forbidden","scope":"global-shield"}'
 ```
 
-```toml [File (TOML)]
+```nginx [Caddy (Caddyfile Snippet)]
+# Caddyfile: Global RouteWarden Snippet applied across all sites
+(global_warden_shield) {
+    route_warden {
+        enable_default_patterns true
+        allowed_ips "127.0.0.1" "10.0.0.0/8"
+        response {
+            mode json
+            status_code 403
+            body '{"error":"Forbidden","scope":"global-shield"}'
+        }
+    }
+}
+
+{
+    order route_warden before reverse_proxy
+}
+
+frontend.localhost {
+    import global_warden_shield
+    reverse_proxy frontend:80
+}
+
+api.localhost {
+    import global_warden_shield
+    reverse_proxy backend:80
+}
+```
+
+```bash [Traefik (Docker CLI)]
+# CLI / Traefik Arguments
+traefik \
+  --entrypoints.web.address=:80 \
+  --entrypoints.web.http.middlewares=global-warden@docker \
+  --experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden \
+  --experimental.plugins.routewarden.version={{version}}
+```
+
+```toml [Traefik (TOML)]
 # traefik.toml (Static EntryPoint Attachment)
 [entryPoints.web]
   address = ":80"
@@ -54,22 +92,15 @@ http:
   body = '{"error":"Forbidden","scope":"global-shield"}'
 ```
 
-```bash [CLI]
-# CLI / Traefik Arguments
-traefik \
-  --entrypoints.web.address=:80 \
-  --entrypoints.web.http.middlewares=global-warden@docker \
-  --experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden \
-  --experimental.plugins.routewarden.version={{version}}
-```
-
 :::
 
 ---
 
 ## Docker Compose Example
 
-```yaml
+::: code-group
+
+```yaml [Traefik (Docker Compose)]
 services:
   traefik:
     image: traefik:v3.1
@@ -111,4 +142,32 @@ services:
       - "traefik.http.routers.backend.entrypoints=web"
 ```
 
-Both `frontend.localhost` and `api.localhost` are guarded immediately.
+```yaml [Caddy (Docker Compose)]
+services:
+  caddy:
+    image: caddy:2-alpine
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM caddy:2-builder AS builder
+        RUN xcaddy build --with github.com/routewarden/caddy-warden@{{version}}
+        FROM caddy:2-alpine
+        COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - service-frontend
+      - service-backend
+
+  service-frontend:
+    image: nginx:alpine
+
+  service-backend:
+    image: nginx:alpine
+```
+
+:::
+
+Both `frontend.localhost` and `api.localhost` are guarded immediately across all incoming entrypoints.

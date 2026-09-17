@@ -33,7 +33,7 @@ This example protects `/admin` and `/login` with **hCaptcha** (using the officia
 
 ::: code-group
 
-```yaml [File (YAML)]
+```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:
   middlewares:
@@ -61,7 +61,30 @@ http:
       service: app-service
 ```
 
-```toml [File (TOML)]
+```nginx [Caddy (Caddyfile)]
+# Caddyfile
+{
+    order route_warden before reverse_proxy
+}
+
+app.example.com {
+    route_warden {
+        path_patterns "(?i)^/(admin|login)(/.*)?$"
+        response {
+            mode captcha
+            status_code 403
+            captcha {
+                provider hcaptcha
+                site_key "10000000-ffff-ffff-ffff-000000000001"
+            }
+        }
+    }
+
+    reverse_proxy app-service:80
+}
+```
+
+```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.app-router]
   rule = "Host(`app.example.com`)"
@@ -134,7 +157,30 @@ http:
       service: login-service
 ```
 
-```toml [File (TOML)]
+```nginx [Caddy (Caddyfile)]
+# Caddyfile
+{
+    order route_warden before reverse_proxy
+}
+
+login.example.com {
+    route_warden {
+        path_patterns "(?i)^/login(/.*)?$" "(?i)^/reset-password(/.*)?$"
+        response {
+            mode captcha
+            status_code 403
+            captcha {
+                provider turnstile
+                site_key "1x00000000000000000000AA"
+            }
+        }
+    }
+
+    reverse_proxy login-service:80
+}
+```
+
+```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.login-router]
   rule = "Host(`login.example.com`)"
@@ -156,7 +202,7 @@ http:
   title = "Security Verification Required"
 ```
 
-```bash [CLI]
+```bash [Traefik (Docker Compose Labels)]
 # Docker Compose Labels / CLI equivalent
 - "traefik.enable=true"
 - "traefik.http.routers.login.rule=Host(`login.example.com`)"
@@ -174,25 +220,64 @@ http:
 
 ---
 
-## 3. Dynamic YAML Example (`dynamic_conf.yml`)
+## 3. Docker Compose Example
 
-For file-based Traefik setups using hCaptcha:
+::: code-group
 
-```yaml
-http:
-  middlewares:
-    hcaptcha-shield:
-      plugin:
-        routewarden:
-          enabled: true
-          pathPatterns:
-            - '(?i)^/portal/.*'
-          response:
-            mode: captcha
-            statusCode: 403
-            captcha:
-              provider: "hcaptcha"
-              siteKey: "10000000-ffff-ffff-ffff-000000000001"
-              title: "Verification Challenge"
+```yaml [Traefik (Docker Compose)]
+services:
+  traefik:
+    image: traefik:v3.1
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden"
+      - "--experimental.plugins.routewarden.version={{version}}"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  app:
+    image: nginx:alpine
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`app.localhost`)"
+      - "traefik.http.routers.app.entrypoints=web"
+      - "traefik.http.routers.app.middlewares=hcaptcha-barrier"
+
+      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.enabled=true"
+      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.pathPatterns=(?i)^/(admin|login)(/.*)?$"
+      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.mode=captcha"
+      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.statusCode=403"
+      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha.provider=hcaptcha"
+      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha.siteKey=10000000-ffff-ffff-ffff-000000000001"
+      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha.title=Human Verification (hCaptcha)"
 ```
+
+```yaml [Caddy (Docker Compose)]
+services:
+  caddy:
+    image: caddy:2-alpine
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM caddy:2-builder AS builder
+        RUN xcaddy build --with github.com/routewarden/caddy-warden@{{version}}
+        FROM caddy:2-alpine
+        COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - app
+
+  app:
+    image: nginx:alpine
+```
+
+:::
 

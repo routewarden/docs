@@ -2,7 +2,7 @@
 
 ::: warning Legacy Version Notice
 You are currently viewing the documentation for the **v0.1.x series**.  
-To read the documentation for the latest release, please switch to [Latest (v0.2.x)](/guide/getting-started).
+To read the documentation for the latest release, please switch to [Latest (v0.2.x)](/traefik/getting-started).
 :::
 
 **RouteWarden v0.1.x** provides core sensitive file and path regex blocking for Traefik with support for custom JSON, HTML, Captcha, Redirect, and Text responses.
