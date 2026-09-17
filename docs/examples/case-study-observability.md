@@ -23,11 +23,11 @@ RouteWarden intercepts all requests directed at diagnostic and metrics paths:
 
 ---
 
-## Traefik Configuration
+## Configuration (Traefik & Caddy)
 
 ::: code-group
 
-```yaml [File (YAML)]
+```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:
   middlewares:
@@ -61,7 +61,29 @@ http:
       service: app-service
 ```
 
-```toml [File (TOML)]
+```nginx [Caddy (Caddyfile)]
+# Caddyfile
+{
+    order route_warden before reverse_proxy
+}
+
+app.example.com {
+    route_warden {
+        enable_default_patterns true
+        path_patterns "(?i)^/(metrics|server-metrics|telemetry)(/.*)?$" "(?i)^/actuator(/.*)?$" "(?i)^/debug/(pprof|vars)(/.*)?$"
+        allowed_ips "10.0.0.50/32" "10.244.0.0/16" "127.0.0.1"
+        response {
+            mode json
+            status_code 404
+            body '{"error":"Not Found","message":"The requested URL was not found on this server"}'
+        }
+    }
+
+    reverse_proxy app-service:8080
+}
+```
+
+```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.app-router]
   rule = "Host(`app.example.com`)"

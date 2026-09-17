@@ -66,34 +66,29 @@ export default defineConfig({
     siteTitle: 'RouteWarden',
     nav: [
       {
-        text: 'Guide',
-        activeMatch: '^/guide/',
+        text: 'Gateways',
+        activeMatch: '^/(traefik|caddy)/',
         items: [
-          { text: 'Getting Started', link: '/guide/getting-started' },
-          { text: 'System Architecture', link: '/guide/architecture' },
-          { text: 'Local Development', link: '/guide/local-deployment' },
-          { text: 'Testing & CI', link: '/guide/testing' }
+          { text: 'Traefik Plugin', link: '/traefik/' },
+          { text: 'Caddy Module', link: '/caddy/' }
         ]
       },
       {
-        text: 'Reference',
-        activeMatch: '^/reference/',
-        items: [
-          { text: 'Configuration Options', link: '/reference/configuration' },
-          { text: 'Response Modes Engine', link: '/reference/response-modes' },
-          { text: 'Custom Path Patterns', link: '/reference/custom-paths' },
-          { text: 'Anti-Evasion Security', link: '/reference/anti-evasion' },
-          { text: 'Changelog & Migrations', link: '/reference/changelog' }
-        ]
+        text: 'Core Engine',
+        link: '/core/architecture',
+        activeMatch: '^/core/'
       },
-      { text: 'Examples', link: '/examples/overview', activeMatch: '^/examples/(basic|docker|ip|captcha|kubernetes|overview)' },
-      { text: 'Case Studies', link: '/examples/case-study-immich', activeMatch: '^/examples/case-study' },
+      {
+        text: 'Case Studies',
+        link: '/examples/case-study-immich',
+        activeMatch: '^/examples/'
+      },
       {
         text: 'v0.2.x',
         activeMatch: '^/v0\\.',
         items: [
           ...versionsRegistry.versions.map(v => ({ text: v.text, link: v.link })),
-          { text: 'Changelog & Breaking Changes', link: '/reference/changelog' },
+          { text: 'Changelog', link: '/core/changelog' },
           { text: 'Traefik Plugin Catalog', link: 'https://plugins.traefik.io' }
         ]
       }
@@ -106,55 +101,180 @@ export default defineConfig({
           items: [
             { text: 'Overview & Setup (v0.1.x)', link: '/v0.1/guide/getting-started' },
             { text: 'Configuration (v0.1.x)', link: '/v0.1/reference/configuration' },
-            { text: 'Switch to Latest (v0.2.x) ➔', link: '/guide/getting-started' }
+            { text: 'Switch to Latest (v0.2.x) ➔', link: '/traefik/getting-started' }
           ]
         }
       ],
-      '/': [
+      '/traefik/': [
         {
-          text: 'Getting Started',
+          text: 'Traefik Gateway',
           collapsed: false,
           items: [
-            { text: 'Overview & Features', link: '/guide/getting-started' },
-            { text: 'System Architecture', link: '/guide/architecture' },
-            { text: 'Local Development & Deployment', link: '/guide/local-deployment' },
-            { text: 'Testing & Verification', link: '/guide/testing' }
+            { text: 'Overview', link: '/traefik/' },
+            { text: 'Getting Started', link: '/traefik/getting-started' },
+            { text: 'Configuration Reference', link: '/traefik/configuration' },
+            { text: 'Local Deployment', link: '/traefik/local-deployment' },
+            { text: 'Testing & Verification', link: '/traefik/testing' },
+            { text: 'Recipes & Blueprints', link: '/traefik/examples' }
           ]
         },
         {
-          text: 'Configuration & Security',
+          text: 'Production Case Studies',
           collapsed: false,
           items: [
-            { text: 'Configuration Reference', link: '/reference/configuration' },
-            { text: 'Response Modes Engine', link: '/reference/response-modes' },
-            { text: 'Custom Path Patterns', link: '/reference/custom-paths' },
-            { text: 'Anti-Evasion Security', link: '/reference/anti-evasion' },
-            { text: 'Changelog & Migration', link: '/reference/changelog' }
+            { text: '1. Immich Dual-Router', link: '/examples/case-study-immich' },
+            { text: '2. Zero-Trust Webhooks', link: '/examples/case-study-webhooks' },
+            { text: '3. Observability Cloaking', link: '/examples/case-study-observability' },
+            { text: '4. CMS & WordPress Shield', link: '/examples/case-study-cms-shield' },
+            { text: '5. Password Vaults (Vaultwarden)', link: '/examples/case-study-vaultwarden' },
+            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' }
           ]
         },
         {
-          text: 'Examples Cookbook',
+          text: 'Core Engine',
           collapsed: false,
           items: [
-            { text: 'Examples Overview', link: '/examples/overview' },
+            { text: 'System Architecture', link: '/core/architecture' },
+            { text: 'Anti-Evasion Engine', link: '/core/anti-evasion' },
+            { text: 'Response Modes (13 Actions)', link: '/core/response-modes' },
+            { text: 'Custom Regex Patterns', link: '/core/custom-patterns' }
+          ]
+        }
+      ],
+      '/caddy/': [
+        {
+          text: 'Caddy Gateway',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/caddy/' },
+            { text: 'Getting Started (xcaddy/Docker)', link: '/caddy/getting-started' },
+            { text: 'Caddyfile Reference', link: '/caddy/caddyfile' },
+            { text: 'JSON API Reference', link: '/caddy/json-api' },
+            { text: 'Recipes & Blueprints', link: '/caddy/examples' }
+          ]
+        },
+        {
+          text: 'Production Case Studies',
+          collapsed: false,
+          items: [
+            { text: '1. Immich Dual-Site', link: '/examples/case-study-immich' },
+            { text: '2. Zero-Trust Webhooks', link: '/examples/case-study-webhooks' },
+            { text: '3. Observability Cloaking', link: '/examples/case-study-observability' },
+            { text: '4. CMS & WordPress Shield', link: '/examples/case-study-cms-shield' },
+            { text: '5. Password Vaults (Vaultwarden)', link: '/examples/case-study-vaultwarden' },
+            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' }
+          ]
+        },
+        {
+          text: 'Core Engine',
+          collapsed: false,
+          items: [
+            { text: 'System Architecture', link: '/core/architecture' },
+            { text: 'Anti-Evasion Engine', link: '/core/anti-evasion' },
+            { text: 'Response Modes (13 Actions)', link: '/core/response-modes' },
+            { text: 'Custom Regex Patterns', link: '/core/custom-patterns' }
+          ]
+        }
+      ],
+      '/core/': [
+        {
+          text: 'Core Defense Engine',
+          collapsed: false,
+          items: [
+            { text: 'System Architecture', link: '/core/architecture' },
+            { text: 'Anti-Evasion Normalization', link: '/core/anti-evasion' },
+            { text: 'Response Modes (13 Actions)', link: '/core/response-modes' },
+            { text: 'Custom Regex Patterns', link: '/core/custom-patterns' },
+            { text: 'Changelog & Migrations', link: '/core/changelog' }
+          ]
+        },
+        {
+          text: 'Production Case Studies',
+          collapsed: false,
+          items: [
+            { text: '1. Immich Dual-Router', link: '/examples/case-study-immich' },
+            { text: '2. Zero-Trust Webhooks', link: '/examples/case-study-webhooks' },
+            { text: '3. Observability Cloaking', link: '/examples/case-study-observability' },
+            { text: '4. CMS & WordPress Shield', link: '/examples/case-study-cms-shield' },
+            { text: '5. Password Vaults (Vaultwarden)', link: '/examples/case-study-vaultwarden' },
+            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' }
+          ]
+        },
+        {
+          text: 'Gateways',
+          collapsed: false,
+          items: [
+            { text: 'Traefik Plugin Docs ➔', link: '/traefik/' },
+            { text: 'Caddy Module Docs ➔', link: '/caddy/' }
+          ]
+        }
+      ],
+      '/examples/': [
+        {
+          text: 'Production Case Studies',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/examples/overview' },
+            { text: '1. Immich Dual-Router Shield', link: '/examples/case-study-immich' },
+            { text: '2. Zero-Trust Webhooks', link: '/examples/case-study-webhooks' },
+            { text: '3. Observability Cloaking', link: '/examples/case-study-observability' },
+            { text: '4. CMS & WordPress Shield', link: '/examples/case-study-cms-shield' },
+            { text: '5. Password Vaults (Vaultwarden)', link: '/examples/case-study-vaultwarden' },
+            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' }
+          ]
+        },
+        {
+          text: 'General Recipes',
+          collapsed: false,
+          items: [
             { text: '1. Basic Sensitive Files', link: '/examples/basic-sensitive-files' },
             { text: '2. Global EntryPoint Shield', link: '/examples/docker-compose-global' },
-            { text: '3. Service-Level Docker Compose', link: '/examples/docker-compose-service' },
-            { text: '4. IP / Subnet Whitelisting', link: '/examples/ip-whitelisting' },
+            { text: '3. Service-Level Compose', link: '/examples/docker-compose-service' },
+            { text: '4. IP Whitelisting', link: '/examples/ip-whitelisting' },
             { text: '5. Captcha Challenge', link: '/examples/captcha' },
             { text: '6. Kubernetes IngressRoute', link: '/examples/kubernetes' }
           ]
         },
         {
-          text: 'Case Studies',
+          text: 'Gateways & Core',
           collapsed: false,
           items: [
-            { text: '1. Immich: Dual-Router Security', link: '/examples/case-study-immich' },
-            { text: '2. Zero-Trust Webhook Ingress', link: '/examples/case-study-webhooks' },
-            { text: '3. Observability & Metrics Cloaking', link: '/examples/case-study-observability' },
-            { text: '4. CMS & WordPress Shielding', link: '/examples/case-study-cms-shield' },
+            { text: 'Traefik Plugin ➔', link: '/traefik/' },
+            { text: 'Caddy Module ➔', link: '/caddy/' },
+            { text: 'Core Architecture ➔', link: '/core/architecture' }
+          ]
+        }
+      ],
+      '/': [
+        {
+          text: 'Gateways',
+          collapsed: false,
+          items: [
+            { text: 'RouteWarden for Traefik', link: '/traefik/' },
+            { text: 'Caddy-Warden for Caddy', link: '/caddy/' }
+          ]
+        },
+        {
+          text: 'Core Defense Engine',
+          collapsed: false,
+          items: [
+            { text: 'System Architecture', link: '/core/architecture' },
+            { text: 'Anti-Evasion Engine', link: '/core/anti-evasion' },
+            { text: 'Response Modes Engine', link: '/core/response-modes' },
+            { text: 'Custom Path Patterns', link: '/core/custom-patterns' },
+            { text: 'Changelog & Migrations', link: '/core/changelog' }
+          ]
+        },
+        {
+          text: 'Production Case Studies',
+          collapsed: false,
+          items: [
+            { text: '1. Immich Dual-Router', link: '/examples/case-study-immich' },
+            { text: '2. Zero-Trust Webhooks', link: '/examples/case-study-webhooks' },
+            { text: '3. Observability Cloaking', link: '/examples/case-study-observability' },
+            { text: '4. CMS & WordPress Shield', link: '/examples/case-study-cms-shield' },
             { text: '5. Password Vaults (Vaultwarden)', link: '/examples/case-study-vaultwarden' },
-            { text: '6. Honeypots & Staging Cloaking', link: '/examples/case-study-honeypot-staging' }
+            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' }
           ]
         }
       ]
@@ -163,7 +283,7 @@ export default defineConfig({
       provider: 'local'
     },
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/routewarden/traefik-warden' }
+      { icon: 'github', link: 'https://github.com/routewarden' }
     ],
     footer: {
       message: 'Released under the MIT License.',

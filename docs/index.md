@@ -3,21 +3,24 @@ layout: home
 
 hero:
   name: "RouteWarden"
-  text: "High-Performance Traefik Middleware"
-  tagline: "Stop sensitive file leaks (.env, .git, backups), neutralize path-evasion attacks, whitelist IPs, and serve custom error/captcha responses before requests reach your backend."
+  text: "High-Performance Edge Defense for Traefik & Caddy"
+  tagline: "Stop sensitive file leaks (.env, .git, backups), neutralize path-evasion attacks, whitelist IPs, and challenge threats before requests reach your upstream services."
   image:
     src: /icon.svg
     alt: RouteWarden Logo
   actions:
     - theme: brand
-      text: Get Started
-      link: /guide/getting-started
+      text: Traefik Plugin ➔
+      link: /traefik/
+    - theme: brand
+      text: Caddy Module ➔
+      link: /caddy/
     - theme: alt
-      text: Examples & Wiki
-      link: /examples/overview
+      text: Core Security Engine
+      link: /core/architecture
     - theme: alt
       text: View on GitHub
-      link: https://github.com/routewarden/traefik-warden
+      link: https://github.com/routewarden
 
 features:
   - icon: 🛡️
@@ -159,7 +162,7 @@ Get RouteWarden running on your Traefik instance in under a minute:
 
 ::: code-group
 
-```yaml [File (YAML)]
+```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:
   middlewares:
@@ -168,15 +171,15 @@ http:
         routewarden:
           enabled: true
           enableDefaultPatterns: true
-          # Optional custom regex patterns to guard
+          # (Optional) Custom regex patterns to guard
           pathPatterns:
             - '(?i)^/admin(/.*)?$'
             - '(?i)^/api/internal(/.*)?$'
-          # Safe exceptions (always allowed)
+          # (Optional) Safe exceptions (always allowed)
           allowPatterns:
             - '(?i)^/api/internal/health$'
             - '(?i)^/robots\.txt$'
-          # Whitelisted VPN or office IPs
+          # (Optional) Whitelisted VPN or office IPs
           allowedIps:
             - "10.0.0.0/8"
             - "192.168.1.100"
@@ -196,37 +199,69 @@ http:
       service: app-service
 ```
 
-```toml [File (TOML)]
-# dynamic_conf.toml
-[http.routers.app-router]
-  rule = "Host(`example.com`)"
-  entryPoints = ["web"]
-  middlewares = ["global-warden"]
-  service = "app-service"
+```nginx [Caddy (Caddyfile)]
+# Caddyfile
+{
+    order route_warden before reverse_proxy
+}
 
-[http.middlewares.global-warden.plugin.routewarden]
-  enabled = true
-  enableDefaultPatterns = true
-  pathPatterns = ["(?i)^/admin(/.*)?$", "(?i)^/api/internal(/.*)?$"]
-  allowPatterns = ["(?i)^/api/internal/health$", "(?i)^/robots\\.txt$"]
-  allowedIps = ["10.0.0.0/8", "192.168.1.100"]
+example.com {
+    route_warden {
+        enabled true
+        enable_default_patterns true
+        # (Optional) Custom regex patterns to guard
+        path_patterns "(?i)^/admin(/.*)?$" "(?i)^/api/internal(/.*)?$"
+        # (Optional) Safe exceptions (always allowed)
+        allow_patterns "(?i)^/api/internal/health$" "(?i)^/robots\.txt$"
+        # (Optional) Whitelisted VPN or office IPs
+        allowed_ips "10.0.0.0/8" "192.168.1.100"
 
-[http.middlewares.global-warden.plugin.routewarden.response]
-  mode = "json"
-  statusCode = 404
-  body = '{"error":"Not Found","message":"The requested resource does not exist"}'
+        # Response configuration
+        response {
+            mode json
+            status_code 404
+            body '{"error":"Not Found","message":"The requested resource does not exist"}'
+        }
+    }
+
+    reverse_proxy localhost:8080
+}
 ```
 
-```bash [CLI]
-# Docker Compose Labels / CLI equivalent
+```bash [Traefik (Docker Compose)]
+# Docker Compose Labels
 - "traefik.http.middlewares.global-warden.plugin.routewarden.enabled=true"
 - "traefik.http.middlewares.global-warden.plugin.routewarden.enableDefaultPatterns=true"
+# (Optional) Custom regex patterns to guard
 - "traefik.http.middlewares.global-warden.plugin.routewarden.pathPatterns=(?i)^/admin(/.*)?$,(?i)^/api/internal(/.*)?$"
+# (Optional) Safe exceptions (always allowed)
 - "traefik.http.middlewares.global-warden.plugin.routewarden.allowPatterns=(?i)^/api/internal/health$,(?i)^/robots\\.txt$"
+# (Optional) Whitelisted VPN or office IPs
 - "traefik.http.middlewares.global-warden.plugin.routewarden.allowedIps=10.0.0.0/8,192.168.1.100"
+# Response configuration
 - "traefik.http.middlewares.global-warden.plugin.routewarden.response.mode=json"
 - "traefik.http.middlewares.global-warden.plugin.routewarden.response.statusCode=404"
 - 'traefik.http.middlewares.global-warden.plugin.routewarden.response.body={"error":"Not Found","message":"The requested resource does not exist"}'
+```
+
+```json [Caddy (JSON API)]
+{
+  "handler": "route_warden",
+  "enabled": true,
+  "enable_default_patterns": true,
+  // (Optional) Custom regex patterns to guard
+  "path_patterns": ["(?i)^/admin(/.*)?$", "(?i)^/api/internal(/.*)?$"],
+  // (Optional) Safe exceptions (always allowed)
+  "allow_patterns": ["(?i)^/api/internal/health$", "(?i)^/robots\\.txt$"],
+  // (Optional) Whitelisted VPN or office IPs
+  "allowed_ips": ["10.0.0.0/8", "192.168.1.100"],
+  // Response configuration
+  "response": {
+    "mode": "json",
+    "status_code": 404,
+    "body": "{\"error\":\"Not Found\",\"message\":\"The requested resource does not exist\"}"
+  }
+}
 ```
 
 :::
@@ -239,27 +274,27 @@ Real-world deployment patterns demonstrating how engineering teams and self-host
 
 <div class="attack-grid">
   <div class="attack-card">
-    <h4>📸 <a href="/examples/case-study-immich">Immich Photo Sharing</a></h4>
+    <h4>📸 <a href="/docs/examples/case-study-immich">Immich Photo Sharing</a></h4>
     <p>Public photo/album sharing while strictly cloaking administrative, login, and user management APIs under a 404.</p>
   </div>
   <div class="attack-card">
-    <h4>💳 <a href="/examples/case-study-webhooks">Zero-Trust Webhooks</a></h4>
+    <h4>💳 <a href="/docs/examples/case-study-webhooks">Zero-Trust Webhooks</a></h4>
     <p>Lock down Stripe/GitHub payment webhook ingress using official provider IP CIDRs and silent TCP drops.</p>
   </div>
   <div class="attack-card">
-    <h4>📊 <a href="/examples/case-study-observability">Metrics & Actuator Cloaking</a></h4>
+    <h4>📊 <a href="/docs/examples/case-study-observability">Metrics & Actuator Cloaking</a></h4>
     <p>Shield Prometheus <code>/metrics</code> and Spring Boot <code>/actuator</code> from public scanners while keeping internal scrapers active.</p>
   </div>
   <div class="attack-card">
-    <h4>📝 <a href="/examples/case-study-cms-shield">WordPress & CMS Shield</a></h4>
+    <h4>📝 <a href="/docs/examples/case-study-cms-shield">WordPress & CMS Shield</a></h4>
     <p>Defeat brute-force and XML-RPC attacks on <code>wp-login.php</code> using interactive Cloudflare Turnstile / hCaptcha challenges.</p>
   </div>
   <div class="attack-card">
-    <h4>🔐 <a href="/examples/case-study-vaultwarden">Password Vaults (Bitwarden)</a></h4>
+    <h4>🔐 <a href="/docs/examples/case-study-vaultwarden">Password Vaults (Bitwarden)</a></h4>
     <p>Allow public mobile password sync while restricting <code>/admin</code> strictly to WireGuard or Tailscale subnets.</p>
   </div>
   <div class="attack-card">
-    <h4>💣 <a href="/examples/case-study-honeypot-staging">Honeypots & Active Gzip Bomb</a></h4>
+    <h4>💣 <a href="/docs/examples/case-study-honeypot-staging">Honeypots & Active Gzip Bomb</a></h4>
     <p>Crash scanning bots with <code>gzipBomb</code> decompression traps, reset TCP connections with <code>silentDrop</code>, and cloak staging preview clusters.</p>
   </div>
 </div>
@@ -268,8 +303,7 @@ Real-world deployment patterns demonstrating how engineering teams and self-host
 
 ## Ready to Explore?
 
-- Check out the [Getting Started Guide](/guide/getting-started) for step-by-step installation instructions.
-- Learn about the [System Architecture](/guide/architecture) and how RouteWarden processes requests.
-- Explore the [Examples Cookbook](/examples/overview) for Docker Compose and Kubernetes manifests.
-- Browse all [Production Case Studies](/examples/case-study-immich) for practical production blueprints.
-- Read the [Anti-Evasion Security Deep Dive](/reference/anti-evasion) for security test results.
+- Deploy on [Traefik Proxy](/traefik/) with our step-by-step setup guides and Docker Compose templates.
+- Deploy on [Caddy Web Server](/caddy/) with native Caddyfile directives and xcaddy builds.
+- Learn about the [Core System Architecture](/core/architecture) and [Anti-Evasion Engine](/core/anti-evasion).
+- Browse real-world recipes in the [Cookbook & Case Studies](/examples/overview).

@@ -23,11 +23,11 @@ If content creators always connect via a corporate VPN or office IP, RouteWarden
 
 ---
 
-## Traefik Configuration (Captcha Challenge Mode)
+## Middleware Configuration (Captcha Challenge Mode)
 
 ::: code-group
 
-```yaml [File (YAML)]
+```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:
   middlewares:
@@ -62,7 +62,32 @@ http:
       service: wordpress-service
 ```
 
-```toml [File (TOML)]
+```nginx [Caddy (Caddyfile)]
+# Caddyfile
+{
+    order route_warden before reverse_proxy
+}
+
+blog.example.com {
+    route_warden {
+        enable_default_patterns true
+        path_patterns "(?i)^/(wp-login\.php|xmlrpc\.php)$" "(?i)^/wp-admin(/.*)?$"
+        allowed_ips "192.168.1.0/24" "10.0.0.0/8"
+        response {
+            mode captcha
+            status_code 403
+            captcha {
+                provider turnstile
+                site_key "0x4AAAAAAtestkey123"
+            }
+        }
+    }
+
+    reverse_proxy wordpress-service:80
+}
+```
+
+```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.blog-router]
   rule = "Host(`blog.example.com`)"
