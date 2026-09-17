@@ -1,8 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/public/banner.png">
-    <img src="docs/public/banner.png" alt="RouteWarden Banner" width="600">
-  </picture>
+  <img src="docs/public/icon.svg" alt="RouteWarden Icon" width="160">
 </p>
 
 <p align="center">
