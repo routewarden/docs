@@ -3,13 +3,15 @@
 </p>
 
 <p align="center">
-  <strong>High-Performance Traefik Middleware for Sensitive Path Defense & Anti-Evasion</strong>
+  <strong>High-Performance Traefik &amp; Caddy Middleware for Sensitive Path Defense &amp; Anti-Evasion</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/routewarden/traefik-warden/actions/workflows/ci.yml"><img src="https://github.com/routewarden/traefik-warden/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
+  <a href="https://github.com/routewarden/traefik-warden/actions/workflows/ci.yml"><img src="https://github.com/routewarden/traefik-warden/actions/workflows/ci.yml/badge.svg" alt="Traefik CI Status"></a>
+  <a href="https://github.com/routewarden/caddy-warden/actions/workflows/ci.yml"><img src="https://github.com/routewarden/caddy-warden/actions/workflows/ci.yml/badge.svg" alt="Caddy CI Status"></a>
   <a href="https://github.com/routewarden/docs/actions/workflows/deploy-docs.yml"><img src="https://github.com/routewarden/docs/actions/workflows/deploy-docs.yml/badge.svg" alt="Docs Deployment"></a>
   <a href="https://plugins.traefik.io"><img src="https://img.shields.io/badge/Traefik-v2%20%7C%20v3-blue.svg" alt="Traefik v2/v3 Compatible"></a>
+  <a href="https://caddyserver.com"><img src="https://img.shields.io/badge/Caddy-v2-22b573.svg" alt="Caddy v2 Compatible"></a>
   <a href="https://routewarden.github.io/docs/"><img src="https://img.shields.io/badge/docs-vitepress-6366f1.svg" alt="Documentation Site"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
 </p>
@@ -18,7 +20,7 @@
 
 ## 📖 RouteWarden Documentation Site
 
-This repository (`routewarden/docs`) houses the official documentation, deployment guides, security research, interactive examples, and versioned releases for the **[RouteWarden](https://github.com/routewarden/traefik-warden)** Traefik middleware plugin.
+This repository (`routewarden/docs`) houses the official documentation, deployment guides, security research, interactive examples, and versioned releases for RouteWarden on both **[Traefik](https://github.com/routewarden/traefik-warden)** and **[Caddy](https://github.com/routewarden/caddy-warden)**.
 
 🌐 **Live Documentation Site**: [https://routewarden.github.io/docs/](https://routewarden.github.io/docs/)
 
@@ -40,14 +42,16 @@ This repository (`routewarden/docs`) houses the official documentation, deployme
 
 ## 🛡️ What is RouteWarden?
 
-**RouteWarden** is an ultra-fast, zero-dependency Traefik middleware plugin written in pure Go. It acts as an **in-line security shield** deployed at your edge router or ingress controller, intercepting malicious bot crawlers and vulnerability scanners probing for sensitive assets before requests ever touch your upstream containers:
+**RouteWarden** is an ultra-fast, zero-dependency security middleware written in pure Go for **Traefik** and **Caddy v2**. It acts as an **in-line security shield** deployed at your edge router or ingress controller, intercepting malicious bot crawlers and vulnerability scanners probing for sensitive assets before requests ever touch your upstream containers:
 
-- **🔐 Sensitive Asset Shielding**: Blocks `.env`, `.git`, `.aws`, `.ssh`, `.sql`, database dumps, and server configs out-of-the-box (`enableDefaultPatterns: true`).
+- **🔐 Sensitive Asset Shielding**: Blocks `.env`, `.git`, `.aws`, `.ssh`, `.sql`, database dumps, and server configs out-of-the-box (`enableDefaultPatterns: true` / `enable_default_patterns`).
 - **⚡ Anti-Evasion Normalization**: Defeats double URL encoding (`%252e%252e`), semicolon matrix paths (`/;param/.env`), Windows backslashes (`\`), and null bytes (`%00`).
 - **🌐 IP & CIDR Whitelisting**: Grants immediate bypass for corporate VPNs, office subnets, or developer IPs with support for `X-Forwarded-For` and `X-Real-IP`.
 - **🎭 Multi-Action Response Engine**: Emits custom JSON, branded HTML 404/403 pages, interactive **Cloudflare Turnstile** / **hCaptcha** / **reCAPTCHA** challenges, silent TCP drops, or bot-crashing **Gzip Bombs**.
 
-### Quick Plugin Usage
+### Quick Usage
+
+#### Traefik
 
 ```yaml
 # traefik.yml (Static Configuration)
@@ -71,6 +75,31 @@ http:
             mode: json
             statusCode: 404
             body: '{"error":"Not Found"}'
+```
+
+#### Caddy
+
+Build Caddy with `xcaddy`:
+```bash
+xcaddy build --with github.com/routewarden/caddy-warden@v0.2.4
+```
+
+Configure `Caddyfile`:
+```caddyfile
+{
+    order routewarden first
+}
+
+:80 {
+    routewarden {
+        enable_default_patterns
+        response json {
+            status 404
+            body "{\"error\":\"Not Found\"}"
+        }
+    }
+    reverse_proxy app:8080
+}
 ```
 
 ---
