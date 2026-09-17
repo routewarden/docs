@@ -14,11 +14,10 @@ RouteWarden uses [docs/version.json](file:///Users/aman/git/routewarden/docs/ver
 }
 ```
 
-Whenever this version changes, RouteWarden's automated tooling synchronizes it across:
-- Root `package.json` (`version: "0.2.2"`)
-- Root `README.md` Traefik CLI flags and YAML configurations
-- All `examples/**/docker-compose.yml` Traefik plugin flags (`--experimental.plugins.routewarden.version=...`)
-- All VitePress markdown pages using `{{version}}` dynamic interpolation
+Whenever this version changes, RouteWarden Docs' automated tooling synchronizes it across:
+- Docs repository `package.json` (`version: "0.2.2"`)
+- All VitePress markdown pages using `{{version}}` dynamic interpolation and the version dropdown registry
+- (The core plugin repository maintains its own version sync for `README.md` and `examples/`)
 
 ---
 

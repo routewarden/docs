@@ -24,12 +24,6 @@ Synchronizes the single source of truth (`docs/version.json`) across the entire 
   ```
 - **Target Files**:
   - `package.json`
-  - `README.md`
-  - `examples/01-basic-sensitive-files/docker-compose.yml`
-  - `examples/02-global-entrypoint-shield/docker-compose.yml`
-  - `examples/03-ip-whitelist-vpn/docker-compose.yml`
-  - `examples/04-captcha-challenge/docker-compose.yml`
-  - `examples/05-kubernetes-ingressroute/README.md`
 
 ---
 

@@ -21,45 +21,9 @@ export function syncVersion(options = {}) {
     targetVersion = data.version
   }
 
-  const filesToSync = [
-    'README.md',
-    'examples/01-basic-sensitive-files/docker-compose.yml',
-    'examples/02-global-entrypoint-shield/docker-compose.yml',
-    'examples/03-ip-whitelist-vpn/docker-compose.yml',
-    'examples/04-captcha-challenge/docker-compose.yml',
-    'examples/05-kubernetes-ingressroute/README.md'
-  ]
-
   const updatedFiles = []
 
-  for (const relPath of filesToSync) {
-    const filePath = path.join(rootDir, relPath)
-    if (!fs.existsSync(filePath)) {
-      continue
-    }
-
-    let content = fs.readFileSync(filePath, 'utf8')
-    const original = content
-
-    // Match CLI flag: --experimental.plugins.routewarden.version=vX.Y.Z
-    content = content.replace(
-      /(--experimental\.plugins\.routewarden\.version=)v?[0-9]+\.[0-9]+\.[0-9]+/g,
-      `$1${targetVersion}`
-    )
-
-    // Match YAML property: version: vX.Y.Z
-    content = content.replace(
-      /(version:\s+)v?[0-9]+\.[0-9]+\.[0-9]+/g,
-      `$1${targetVersion}`
-    )
-
-    if (content !== original) {
-      fs.writeFileSync(filePath, content, 'utf8')
-      updatedFiles.push(relPath)
-    }
-  }
-
-  // Also ensure package.json version matches (without leading 'v')
+  // Ensure package.json version matches (without leading 'v')
   const pkgPath = path.join(rootDir, 'package.json')
   if (fs.existsSync(pkgPath)) {
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))

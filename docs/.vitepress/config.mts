@@ -7,6 +7,31 @@ export default defineConfig({
   description: 'High-Performance Traefik Middleware for Sensitive Path Defense',
   base: '/docs/',
   cleanUrls: true,
+  vite: {
+    server: {
+      host: true
+    },
+    plugins: [
+      {
+        name: 'redirect-root-to-docs',
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url === '/' || req.url === '') {
+              res.writeHead(302, { Location: '/docs/' })
+              res.end()
+              return
+            }
+            if (req.url === '/favicon.ico') {
+              res.writeHead(302, { Location: '/docs/favicon.ico' })
+              res.end()
+              return
+            }
+            next()
+          })
+        }
+      }
+    ]
+  },
   transformPageData(pageData) {
     // Provide version globally to markdown templates
     pageData.params = { ...pageData.params, version: versionData.version }
@@ -22,6 +47,7 @@ export default defineConfig({
   },
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/docs/icon.svg' }],
+    ['link', { rel: 'alternate icon', type: 'image/x-icon', href: '/docs/favicon.ico' }],
     ['meta', { name: 'theme-color', content: '#6366f1' }],
     ['meta', { name: 'author', content: 'RouteWarden Contributors' }],
     ['meta', { name: 'keywords', content: 'traefik, traefik plugin, middleware, security, anti-evasion, ip whitelist, sensitive files, env protection, reverse proxy waf' }],
