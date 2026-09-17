@@ -65,6 +65,26 @@
   border-color: rgba(52, 211, 153, 0.3);
 }
 
+.badge-docker {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--vp-font-family-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(14, 165, 233, 0.08);
+  color: #0284c7;
+  border: 1px solid rgba(14, 165, 233, 0.25);
+}
+
+.dark .badge-docker {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
 /* Mobile optimizations (< 768px) */
 @media (max-width: 767px) {
   .VPNavBarTitle {
@@ -282,3 +302,24 @@
 .bomb-callout-warning strong {
   color: #eab308;
 }
+
+/* RouteWarden Syntax Highlighting Tokens (Light & Dark) */
+.tok-comment { color: #94a3b8; font-style: italic; }
+.dark .tok-comment { color: #64748b; }
+.tok-keyword { color: #7c3aed; font-weight: 600; }
+.dark .tok-keyword { color: #c084fc; }
+.tok-section { color: #6d28d9; font-weight: 700; }
+.dark .tok-section { color: #d8b4fe; }
+.tok-key { color: #0284c7; font-weight: 600; }
+.dark .tok-key { color: #38bdf8; }
+.tok-str { color: #059669; }
+.dark .tok-str { color: #34d399; }
+.tok-num { color: #d97706; font-weight: 600; }
+.dark .tok-num { color: #fbbf24; }
+.tok-bool { color: #db2777; font-weight: 600; }
+.dark .tok-bool { color: #f472b6; }
+.tok-verb { color: #2563eb; font-weight: 700; }
+.dark .tok-verb { color: #60a5fa; }
+.tok-punct { color: var(--vp-c-text-3); }
+.tok-val { color: var(--vp-c-text-1); }
+

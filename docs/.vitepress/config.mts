@@ -40,7 +40,20 @@ export default defineConfig({
     config(md) {
       const originalRender = md.render.bind(md)
       md.render = (src, env) => {
-        const replaced = src.replace(/\{\{version\}\}/g, versionData.version)
+        let replaced = src.replace(/\{\{version\}\}/g, versionData.version)
+        // Escape raw unescaped pipes and backslashes inside inline code spans (`...`) within markdown table lines
+        // so that table columns are not prematurely split by regex alternation pipes (e.g. `(^|/)`)
+        // and backslashes are not stripped by markdown HTML parsing
+        replaced = replaced.replace(/^(\|.*?\|)$/gm, (tableLine) => {
+          return tableLine.replace(/`([^`\r\n]+?)`/g, (_match, code) => {
+            return '<code>' + code
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/\\/g, '&#92;')
+              .replace(/\|/g, '&#124;') + '</code>'
+          })
+        })
         return originalRender(replaced, env)
       }
     }
@@ -78,13 +91,14 @@ export default defineConfig({
         link: '/core/architecture',
         activeMatch: '^/core/'
       },
+
       {
         text: 'Case Studies',
         link: '/examples/case-study-immich',
         activeMatch: '^/examples/'
       },
       {
-        text: 'v0.2.x',
+        text: 'v0.3.x',
         activeMatch: '^/v0\\.',
         items: [
           ...versionsRegistry.versions.map(v => ({ text: v.text, link: v.link })),
@@ -94,6 +108,21 @@ export default defineConfig({
       }
     ],
     sidebar: {
+      '/v0.2/': [
+        {
+          text: 'RouteWarden v0.2.x',
+          collapsed: false,
+          items: [
+            { text: 'Traefik Gateway (v0.2.x)', link: '/v0.2/traefik/getting-started' },
+            { text: 'Traefik Config (v0.2.x)', link: '/v0.2/traefik/configuration' },
+            { text: 'Caddy Gateway (v0.2.x)', link: '/v0.2/caddy/getting-started' },
+            { text: 'Caddyfile Reference (v0.2.x)', link: '/v0.2/caddy/caddyfile' },
+            { text: 'Core Architecture (v0.2.x)', link: '/v0.2/core/architecture' },
+            { text: 'Response Modes (v0.2.x)', link: '/v0.2/core/response-modes' },
+            { text: 'Switch to Latest (v0.3.x) ➔', link: '/traefik/getting-started' }
+          ]
+        }
+      ],
       '/v0.1/': [
         {
           text: 'RouteWarden v0.1.x',
@@ -101,7 +130,7 @@ export default defineConfig({
           items: [
             { text: 'Overview & Setup (v0.1.x)', link: '/v0.1/guide/getting-started' },
             { text: 'Configuration (v0.1.x)', link: '/v0.1/reference/configuration' },
-            { text: 'Switch to Latest (v0.2.x) ➔', link: '/traefik/getting-started' }
+            { text: 'Switch to Latest (v0.3.x) ➔', link: '/traefik/getting-started' }
           ]
         }
       ],
@@ -130,6 +159,7 @@ export default defineConfig({
             { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' }
           ]
         },
+
         {
           text: 'Core Engine',
           collapsed: false,
@@ -165,6 +195,7 @@ export default defineConfig({
             { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' }
           ]
         },
+
         {
           text: 'Core Engine',
           collapsed: false,
@@ -188,6 +219,7 @@ export default defineConfig({
             { text: 'Changelog & Migrations', link: '/core/changelog' }
           ]
         },
+
         {
           text: 'Production Case Studies',
           collapsed: false,
@@ -265,6 +297,7 @@ export default defineConfig({
             { text: 'Changelog & Migrations', link: '/core/changelog' }
           ]
         },
+
         {
           text: 'Production Case Studies',
           collapsed: false,

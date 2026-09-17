@@ -43,6 +43,9 @@ route_warden {
     # IP / CIDR Subnet Allowlist (Bypasses all checks)
     allowed_ips <ip_or_cidr...>
 
+    # HTTP Methods to Inspect (Default: GET)
+    methods <methods...>
+
     # Response Actions
     response {
         mode <json|html|text|xml|redirect|captcha|silent_drop|gzip_bomb|tarpit|fake_success|ratelimit|proxy|infinite_stream>
@@ -76,10 +79,40 @@ route_warden {
 | `path_patterns` | `list` | `[]` | Additional regex patterns to intercept. |
 | `allow_patterns` | `list` | `[]` | Regex patterns that should always be allowed through. |
 | `allowed_ips` | `list` | `[]` | IPv4, IPv6, or CIDR blocks exempted from checks. |
+| `methods` | `list` | `["GET"]` | HTTP verbs to inspect (e.g. `methods GET POST`). Non-matching verbs bypass inspection. |
 
 ---
 
-## 4. Response Modes Matrix
+## 4. Built-in Default Patterns
+
+### Default Block Patterns (`enable_default_patterns true`)
+
+When enabled (default), Caddy-Warden intercepts requests matching these compiled regular expressions:
+
+| Target Category | Compiled Regex | Intercepted Examples |
+|---|---|---|
+| **Environment & Configs** | `(?i)(^|/)(\.env.*\|.*\.(txt\|log\|bak\|backup\|sql\|conf\|config\|ini\|yaml\|yml))$` | `/.env`, `/.env.production`, `/app.config`, `/dump.sql`, `/debug.log`, `/app.ini` |
+| **VCS & Hidden Metadata** | `(?i)(^|/)\.(git\|svn\|hg\|bzr\|cvs)(/.*\|$)` | `/.git/config`, `/.git/HEAD`, `/.svn/entries` |
+| **Cloud & Shell Credentials** | `(?i)(^|/)\.(aws\|ssh\|kube\|docker)(/.*\|$)` | `/.aws/credentials`, `/.ssh/id_rsa`, `/.kube/config` |
+| **Archives & DB Dumps** | `(?i).*\.(tar\|tar\.gz\|tgz\|zip\|rar\|7z\|gz\|bz2\|iso\|dump\|sqlite\|sqlite3\|db)$` | `/backup.tar.gz`, `/site.zip`, `/users.dump`, `/data.sqlite3` |
+| **Sensitive Admin & Metrics** | `(?i)(^|/)(phpinfo\.php\|info\.php\|server-status\|server-info\|actuator(/.*)?\|metrics\|heapdump\|trace\|env)$` | `/phpinfo.php`, `/server-status`, `/actuator/health`, `/metrics` |
+| **Package Managers & Locks** | `(?i)(^|/)(composer\.(json\|lock)\|package-lock\.json\|yarn\.lock\|pnpm-lock\.yaml\|Pipfile\|Pipfile\.lock\|requirements\.txt)$` | `/package-lock.json`, `/yarn.lock`, `/composer.lock`, `/requirements.txt` |
+
+### Default Allow Patterns (`enable_default_allow_patterns true`)
+
+When enabled (default), Caddy-Warden immediately allows standard public resources through without checking block rules:
+
+| Target Resource | Compiled Regex | Purpose |
+|---|---|---|
+| **Crawler Indexing Directives** | `(?i)^/robots\.txt$` | Search engine bot crawling policy |
+| **Search Engine XML Sitemaps** | `(?i)^/sitemap.*\.xml$` | Public sitemaps (`/sitemap.xml`, `/sitemap_index.xml`) |
+| **Digital Ad Transparency** | `(?i)^/ads\.txt$` | Authorized digital advertising sellers verification |
+| **Security Disclosure Policies** | `(?i)^/security\.txt$` | RFC 9116 security researcher reporting endpoint |
+| **ACME & Web Standards** | `(?i)^/\.well-known(/.*)?$` | TLS certificate challenges & discovery (`/.well-known/*`) |
+
+---
+
+## 5. Response Modes Matrix
 
 | Mode | Options | Typical Use Case |
 |---|---|---|
@@ -97,7 +130,7 @@ route_warden {
 
 ---
 
-## 5. JSON Configuration (Caddy REST API)
+## 6. JSON Configuration (Caddy REST API)
 
 For zero-downtime environments configured via Caddy's dynamic API:
 
@@ -107,6 +140,7 @@ For zero-downtime environments configured via Caddy's dynamic API:
   "enabled": true,
   "enable_default_patterns": true,
   "allowed_ips": ["10.0.0.0/8", "192.168.1.50"],
+  "methods": ["GET", "POST"],
   "path_patterns": ["(?i)^/admin(/.*)?$"],
   "allow_patterns": ["(?i)^/admin/health$"],
   "response": {

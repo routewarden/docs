@@ -67,6 +67,7 @@ route_warden {
     path_patterns <regex...>
     allow_patterns <regex...>
     allowed_ips <ip_or_cidr...>
+    methods <methods...> # e.g. methods GET POST (default: GET)
 
     response {
         mode <json|html|text|xml|redirect|captcha|silent_drop|gzip_bomb|tarpit|fake_success|ratelimit|proxy|infinite_stream>

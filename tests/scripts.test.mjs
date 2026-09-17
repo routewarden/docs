@@ -77,11 +77,18 @@ test('syncVersion updates versions in files when target version changes', (t) =>
   const result = syncVersion({ rootDir: ws })
 
   assert.equal(result.targetVersion, 'v0.3.0')
-  assert.deepEqual(result.updatedFiles, ['package.json'])
+  assert.ok(result.updatedFiles.includes('package.json'))
+  assert.ok(result.updatedFiles.includes('README.md'))
+  assert.ok(result.updatedFiles.includes('examples/01-basic-sensitive-files/docker-compose.yml'))
 
   // Verify package.json
   const pkg = JSON.parse(fs.readFileSync(path.join(ws, 'package.json'), 'utf8'))
   assert.equal(pkg.version, '0.3.0')
+
+  // Verify README.md
+  const readme = fs.readFileSync(path.join(ws, 'README.md'), 'utf8')
+  assert.match(readme, /version: v0\.3\.0/)
+  assert.match(readme, /--experimental\.plugins\.routewarden\.version=v0\.3\.0/)
 
   // Running sync again without version changes should be idempotent
   const secondRun = syncVersion({ rootDir: ws })
