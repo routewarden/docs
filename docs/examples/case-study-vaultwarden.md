@@ -16,11 +16,11 @@ However, the `/admin` portal (which allows creating/deleting accounts, viewing s
 
 ---
 
-## Traefik Configuration
+## Configuration (Traefik & Caddy)
 
 ::: code-group
 
-```yaml [File (YAML)]
+```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:
   middlewares:
@@ -52,7 +52,29 @@ http:
       service: vault-service
 ```
 
-```toml [File (TOML)]
+```nginx [Caddy (Caddyfile)]
+# Caddyfile
+{
+    order route_warden before reverse_proxy
+}
+
+vault.example.com {
+    route_warden {
+        enable_default_patterns true
+        path_patterns "(?i)^/admin(/.*)?$"
+        allowed_ips "100.64.0.0/10" "10.8.0.0/24" "127.0.0.1"
+        response {
+            mode json
+            status_code 404
+            body '{"error":"Not Found","message":"The requested resource was not found"}'
+        }
+    }
+
+    reverse_proxy vault-service:80
+}
+```
+
+```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.vault-router]
   rule = "Host(`vault.example.com`)"

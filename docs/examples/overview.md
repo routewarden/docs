@@ -8,12 +8,12 @@ Browse ready-to-run configurations and production blueprints for RouteWarden acr
 
 | Scenario | Description | Target |
 |---|---|---|
-| [1. Basic Sensitive Files](/examples/basic-sensitive-files) | Shield `.env`, `.git`, backups, and configs with custom JSON errors. | Docker Compose / Traefik |
-| [2. Global EntryPoint Shield](/examples/docker-compose-global) | Protect all microservices and routes automatically at the Traefik entrypoint. | Docker Compose |
-| [3. Service-Level Docker Compose](/examples/docker-compose-service) | Tailor rules, custom regexes, and safe allowlists per service. | Docker Compose |
-| [4. IP / Subnet Whitelisting](/examples/ip-whitelisting) | Allow internal corporate VPNs, office IPs, and developer subnets. | Docker Compose / Traefik |
-| [5. Captcha Verification Challenge](/examples/captcha) | Challenge clients via Cloudflare Turnstile or hCaptcha on sensitive routes. | Docker Compose / Traefik |
-| [6. Kubernetes IngressRoute](/examples/kubernetes) | Production IngressRoute and Middleware CRD setup for Traefik Kubernetes. | Kubernetes CRD |
+| [1. Basic Sensitive Files](/examples/basic-sensitive-files) | Shield `.env`, `.git`, backups, and configs with custom JSON errors. | Traefik & Caddy |
+| [2. Global EntryPoint Shield](/examples/docker-compose-global) | Protect all microservices and routes automatically at the proxy gateway. | Traefik & Caddy |
+| [3. Service-Level Docker Compose](/examples/docker-compose-service) | Tailor rules, custom regexes, and safe allowlists per service. | Traefik & Caddy |
+| [4. IP / Subnet Whitelisting](/examples/ip-whitelisting) | Allow internal corporate VPNs, office IPs, and developer subnets. | Traefik & Caddy |
+| [5. Captcha Verification Challenge](/examples/captcha) | Challenge clients via Cloudflare Turnstile or hCaptcha on sensitive routes. | Traefik & Caddy |
+| [6. Kubernetes IngressRoute](/examples/kubernetes) | Production Ingress and Middleware setups for Traefik CRDs & Caddy Ingress. | Kubernetes (Traefik & Caddy) |
 
 ---
 

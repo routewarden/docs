@@ -19,7 +19,7 @@ Both exact IPv4/IPv6 addresses (`127.0.0.1`, `2001:db8::1`) and CIDR blocks (`10
 
 ::: code-group
 
-```yaml [File (YAML)]
+```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:
   middlewares:
@@ -48,7 +48,42 @@ http:
       service: admin-service
 ```
 
-```toml [File (TOML)]
+```nginx [Caddy (Caddyfile)]
+# Caddyfile
+{
+    order route_warden before reverse_proxy
+}
+
+admin.localhost {
+    route_warden {
+        path_patterns "(?i)^/admin(/.*)?$" "(?i)^/metrics(/.*)?$"
+        allowed_ips "10.0.0.0/8" "192.168.1.100"
+        response {
+            mode json
+            status_code 403
+            body '{"error":"Forbidden","message":"Restricted to authorized IP/VPN"}'
+        }
+    }
+
+    reverse_proxy admin-service:80
+}
+```
+
+```bash [Traefik (Docker Compose)]
+# Docker Compose Labels / CLI equivalent
+- "traefik.enable=true"
+- "traefik.http.routers.admin.rule=Host(`admin.localhost`)"
+- "traefik.http.routers.admin.entrypoints=web"
+- "traefik.http.routers.admin.middlewares=admin-shield"
+- "traefik.http.middlewares.admin-shield.plugin.routewarden.enabled=true"
+- "traefik.http.middlewares.admin-shield.plugin.routewarden.pathPatterns=(?i)^/admin(/.*)?$,(?i)^/metrics(/.*)?$"
+- "traefik.http.middlewares.admin-shield.plugin.routewarden.allowedIps=10.0.0.0/8,192.168.1.100"
+- "traefik.http.middlewares.admin-shield.plugin.routewarden.response.mode=json"
+- "traefik.http.middlewares.admin-shield.plugin.routewarden.response.statusCode=403"
+- 'traefik.http.middlewares.admin-shield.plugin.routewarden.response.body={"error":"Forbidden","message":"Restricted to authorized IP/VPN"}'
+```
+
+```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.admin-router]
   rule = "Host(`admin.localhost`)"
@@ -67,27 +102,15 @@ http:
   body = '{"error":"Forbidden","message":"Restricted to authorized IP/VPN"}'
 ```
 
-```bash [CLI]
-# Docker Compose Labels / CLI equivalent
-- "traefik.enable=true"
-- "traefik.http.routers.admin.rule=Host(`admin.localhost`)"
-- "traefik.http.routers.admin.entrypoints=web"
-- "traefik.http.routers.admin.middlewares=admin-shield"
-- "traefik.http.middlewares.admin-shield.plugin.routewarden.enabled=true"
-- "traefik.http.middlewares.admin-shield.plugin.routewarden.pathPatterns=(?i)^/admin(/.*)?$,(?i)^/metrics(/.*)?$"
-- "traefik.http.middlewares.admin-shield.plugin.routewarden.allowedIps=10.0.0.0/8,192.168.1.100"
-- "traefik.http.middlewares.admin-shield.plugin.routewarden.response.mode=json"
-- "traefik.http.middlewares.admin-shield.plugin.routewarden.response.statusCode=403"
-- 'traefik.http.middlewares.admin-shield.plugin.routewarden.response.body={"error":"Forbidden","message":"Restricted to authorized IP/VPN"}'
-```
-
 :::
 
 ---
 
 ## Docker Compose Example
 
-```yaml
+::: code-group
+
+```yaml [Traefik (Docker Compose)]
 services:
   traefik:
     image: traefik:v3.1
@@ -118,6 +141,30 @@ services:
       - "traefik.http.middlewares.admin-shield.plugin.routewarden.response.statusCode=403"
       - "traefik.http.middlewares.admin-shield.plugin.routewarden.response.body={\"error\":\"Forbidden\",\"message\":\"Restricted to authorized IP/VPN\"}"
 ```
+
+```yaml [Caddy (Docker Compose)]
+services:
+  caddy:
+    image: caddy:2-alpine
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM caddy:2-builder AS builder
+        RUN xcaddy build --with github.com/routewarden/caddy-warden@{{version}}
+        FROM caddy:2-alpine
+        COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - admin-service
+
+  admin-service:
+    image: nginx:alpine
+```
+
+:::
 
 ---
 

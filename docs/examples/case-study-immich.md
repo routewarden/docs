@@ -81,7 +81,7 @@ Here is how to configure Traefik with RouteWarden to implement this dual-router 
 
 ::: code-group
 
-```yaml [File (YAML)]
+```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:
   middlewares:
@@ -127,7 +127,35 @@ http:
           - url: "http://immich-server:2283"
 ```
 
-```toml [File (TOML)]
+```nginx [Caddy (Caddyfile)]
+# Caddyfile: Dual-Site Architecture
+{
+    order route_warden before reverse_proxy
+}
+
+# 1. PUBLIC SITE: Shielded from login and administration probes
+photos.example.com {
+    route_warden {
+        enable_default_patterns true
+        path_patterns "(?i)^/api/auth/login.*$" "(?i)^/api/auth/admin-sign-up.*$" "(?i)^/api/users.*$" "(?i)^/api/admin.*$" "(?i)^/api/server-info/stats.*$"
+        response {
+            mode json
+            status_code 404
+            body '{"error":"Not Found","message":"Endpoint unavailable on public router"}'
+        }
+    }
+
+    reverse_proxy immich-server:2283
+}
+
+# 2. PRIVATE SITE: Accessible only via internal VPN / Tailscale / LAN
+photos-internal.example.com {
+    # Full access: no RouteWarden restrictions
+    reverse_proxy immich-server:2283
+}
+```
+
+```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.immich-public]
   rule = "Host(`photos.example.com`)"
