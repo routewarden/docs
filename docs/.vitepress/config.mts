@@ -137,7 +137,7 @@ export default defineConfig({
         activeMatch: '^/examples/'
       },
       {
-        text: 'v0.3.x',
+        text: versionsRegistry.current,
         activeMatch: '^/v0\\.',
         items: [
           ...versionsRegistry.versions.map(v => ({ text: v.text, link: v.link })),

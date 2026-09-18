@@ -206,7 +206,7 @@ example.com {
         response {
             mode json
             status_code 404
-            body '{"error":"Not Found","message":"The requested resource does not exist"}'
+            body "{\"error\":\"Not Found\",\"message\":\"The requested resource does not exist\"}"
         }
     }
 

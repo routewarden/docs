@@ -47,7 +47,7 @@ http:
         response {
             mode json
             status_code 403
-            body '{"error":"Forbidden","scope":"global-shield"}'
+            body "{"error":"Forbidden","scope":"global-shield"}"
         }
     }
 }

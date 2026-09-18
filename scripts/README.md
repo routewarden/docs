@@ -23,7 +23,11 @@ Synchronizes the single source of truth (`docs/version.json`) across the entire 
   console.log(`Updated ${updatedFiles.length} files to ${targetVersion}`)
   ```
 - **Target Files**:
-  - `package.json`
+  - `package.json` (semver without `v`)
+  - `docs/versions.json` (`current` series and `(Latest)` item tag/text)
+  - `README.md` and `VERSIONING.md`
+  - Active documentation markdown files in `docs/` (excluding frozen `docs/v0.x/` snapshots)
+  - Static docker-compose / kubernetes example files
 
 ---
 

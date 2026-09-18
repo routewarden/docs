@@ -30,6 +30,7 @@ Or before `reverse_proxy` if you do not use Caddy's built-in `basicauth`:
 route_warden {
     # Boolean Flags
     enabled <true|false>                        # Default: true
+    debug <true|false>                          # Default: false (verbose diagnostic logs)
     enable_default_patterns <true|false>        # Default: true (.env, .git, backups, etc.)
     enable_default_allow_patterns <true|false>  # Default: true (/robots.txt, /favicon.ico, etc.)
     check_query <true|false>                    # Default: false (inspect URI query strings)

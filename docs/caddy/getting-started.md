@@ -96,7 +96,7 @@ example.com {
         response {
             mode json
             status_code 404
-            body '{"error":"Not Found"}'
+            body "{\"error\":\"Not Found\"}"
         }
     }
 
@@ -176,7 +176,7 @@ example.com {
         response {
             mode json
             status_code 404
-            body '{"error":"Not Found"}'
+            body "{\"error\":\"Not Found\"}"
         }
     }
 
@@ -202,7 +202,7 @@ app.example.com {
         response {
             mode json
             status_code 403
-            body '{"error":"Access Denied: Internal Network Only"}'
+            body "{\"error\":\"Access Denied: Internal Network Only\"}"
         }
     }
 
