@@ -53,26 +53,31 @@ Every internet-connected IP is continuously bombarded by automated crawlers, Sho
 
 ## Request Inspection Lifecycle
 
-RouteWarden evaluates every inbound HTTP request across four deterministic security stages:
+RouteWarden evaluates every inbound HTTP request across five deterministic security stages:
 
 <div class="home-pipeline">
   <div class="pipeline-step">
     <div class="pipeline-num">Stage 1</div>
+    <div class="pipeline-title">HTTP Verb Filtering</div>
+    <div class="pipeline-desc">Checks request method against configured <code>methods</code> (default: <code>["GET"]</code>). Non-matching verbs bypass inspection immediately.</div>
+  </div>
+  <div class="pipeline-step">
+    <div class="pipeline-num">Stage 2</div>
     <div class="pipeline-title">IP / CIDR Whitelisting</div>
     <div class="pipeline-desc">Evaluates origin IP against <code>allowedIps</code> via socket <code>RemoteAddr</code>, <code>X-Forwarded-For</code>, or <code>X-Real-IP</code>. Trusted VPN/office IPs bypass checks immediately.</div>
   </div>
   <div class="pipeline-step">
-    <div class="pipeline-num">Stage 2</div>
+    <div class="pipeline-num">Stage 3</div>
     <div class="pipeline-title">Anti-Evasion Normalization</div>
     <div class="pipeline-desc">Unescapes double URL encoding (<code>%252e%252e</code>), strips semicolon matrix parameters (<code>/;param/.env</code>), normalizes IIS backslashes (<code>\</code>), and scrubs null bytes.</div>
   </div>
   <div class="pipeline-step">
-    <div class="pipeline-num">Stage 3</div>
+    <div class="pipeline-num">Stage 4</div>
     <div class="pipeline-title">Dual Match Engine</div>
     <div class="pipeline-desc">Matches against safe overrides (<code>allowPatterns</code>) before testing built-in sensitive dictionaries (<code>.env</code>, <code>.git</code>, backups, configs) and custom <code>pathPatterns</code>.</div>
   </div>
   <div class="pipeline-step">
-    <div class="pipeline-num">Stage 4</div>
+    <div class="pipeline-num">Stage 5</div>
     <div class="pipeline-title">Multi-Action Response</div>
     <div class="pipeline-desc">Emits custom JSON, branded HTML, redirect honeypots, silent TCP drops, interactive <b>Cloudflare Turnstile</b> / <b>hCaptcha</b> challenges, or active defense <b>Gzip Bombs</b>.</div>
   </div>
@@ -156,13 +161,13 @@ When a sensitive route is intercepted, you decide how Traefik responds to the cl
 
 ---
 
-## 60-Second Quickstart
+## 30-Second Quick Start
 
 Get RouteWarden running on your Traefik instance in under a minute:
 
 ::: code-group
 
-```yaml [Traefik (YAML)]
+```yaml [Traefik (Dynamic YAML)]
 # dynamic_conf.yml
 http:
   middlewares:
@@ -171,6 +176,10 @@ http:
         routewarden:
           enabled: true
           enableDefaultPatterns: true
+          # (Optional) HTTP methods to inspect (default: ["GET"])
+          methods:
+            - "GET"
+            - "POST"
           # (Optional) Custom regex patterns to guard
           pathPatterns:
             - '(?i)^/admin(/.*)?$'
@@ -209,6 +218,8 @@ example.com {
     route_warden {
         enabled true
         enable_default_patterns true
+        # (Optional) HTTP methods to inspect (default: GET)
+        methods GET POST
         # (Optional) Custom regex patterns to guard
         path_patterns "(?i)^/admin(/.*)?$" "(?i)^/api/internal(/.*)?$"
         # (Optional) Safe exceptions (always allowed)
@@ -232,6 +243,8 @@ example.com {
 # Docker Compose Labels
 - "traefik.http.middlewares.global-warden.plugin.routewarden.enabled=true"
 - "traefik.http.middlewares.global-warden.plugin.routewarden.enableDefaultPatterns=true"
+# (Optional) HTTP methods to inspect (default: GET)
+- "traefik.http.middlewares.global-warden.plugin.routewarden.methods=GET,POST"
 # (Optional) Custom regex patterns to guard
 - "traefik.http.middlewares.global-warden.plugin.routewarden.pathPatterns=(?i)^/admin(/.*)?$,(?i)^/api/internal(/.*)?$"
 # (Optional) Safe exceptions (always allowed)
@@ -249,6 +262,7 @@ example.com {
   "handler": "route_warden",
   "enabled": true,
   "enable_default_patterns": true,
+  "methods": ["GET", "POST"],
   // (Optional) Custom regex patterns to guard
   "path_patterns": ["(?i)^/admin(/.*)?$", "(?i)^/api/internal(/.*)?$"],
   // (Optional) Safe exceptions (always allowed)

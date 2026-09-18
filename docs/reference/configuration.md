@@ -15,21 +15,38 @@ This reference covers all configuration options available in RouteWarden.
 | `blockPatterns` | `[]string` | `[]` | Alias for `pathPatterns`. |
 | `allowPatterns` | `[]string` | `[]` | Additional custom regex patterns to explicitly allow even if matching blocked rules. |
 | `allowedIps` | `[]string` | `[]` | Whitelisted IPv4/IPv6 addresses or CIDR subnets (e.g., `10.0.0.0/8`, `127.0.0.1`). |
+| `methods` | `[]string` | `["GET"]` | HTTP request verbs to inspect (e.g. `["GET", "POST"]`). Non-matching verbs bypass inspection. |
 | `checkQuery` | `bool` | `false` | Also inspects the URL raw query string for blocked patterns. |
 | `statusCode` | `int` | `403` | Default HTTP status code when request is blocked (legacy shortcut). |
 
 ---
 
-## Default Allow Patterns
+## Built-in Default Patterns
 
-By default, RouteWarden allows standard public informational files and ACME certificate verification paths:
+### Default Block Patterns (`enableDefaultPatterns: true`)
 
-```regex
-(?i)^/robots\.txt$
-(?i)^/ads\.txt$
-(?i)^/security\.txt$
-(?i)^/\.well-known(/.*)?$
-```
+When `enableDefaultPatterns: true` (default), RouteWarden intercepts requests matching these compiled regular expressions:
+
+| Target Category | Compiled Regex | Intercepted Examples |
+|---|---|---|
+| **Environment & Configs** | `(?i)(^|/)(\.env.*\|.*\.(txt\|log\|bak\|backup\|sql\|conf\|config\|ini\|yaml\|yml))$` | `/.env`, `/.env.production`, `/app.config`, `/dump.sql`, `/debug.log`, `/app.ini` |
+| **VCS & Hidden Metadata** | `(?i)(^|/)\.(git\|svn\|hg\|bzr\|cvs)(/.*\|$)` | `/.git/config`, `/.git/HEAD`, `/.svn/entries` |
+| **Cloud & Shell Credentials** | `(?i)(^|/)\.(aws\|ssh\|kube\|docker)(/.*\|$)` | `/.aws/credentials`, `/.ssh/id_rsa`, `/.kube/config` |
+| **Archives & DB Dumps** | `(?i).*\.(tar\|tar\.gz\|tgz\|zip\|rar\|7z\|gz\|bz2\|iso\|dump\|sqlite\|sqlite3\|db)$` | `/backup.tar.gz`, `/site.zip`, `/users.dump`, `/data.sqlite3` |
+| **Sensitive Admin & Metrics** | `(?i)(^|/)(phpinfo\.php\|info\.php\|server-status\|server-info\|actuator(/.*)?\|metrics\|heapdump\|trace\|env)$` | `/phpinfo.php`, `/server-status`, `/actuator/health`, `/metrics` |
+| **Package Managers & Locks** | `(?i)(^|/)(composer\.(json\|lock)\|package-lock\.json\|yarn\.lock\|pnpm-lock\.yaml\|Pipfile\|Pipfile\.lock\|requirements\.txt)$` | `/package-lock.json`, `/yarn.lock`, `/composer.lock`, `/requirements.txt` |
+
+### Default Allow Patterns (`enableDefaultAllowPatterns: true`)
+
+When `enableDefaultAllowPatterns: true` (default), RouteWarden immediately permits standard public and ACME paths before testing block patterns:
+
+| Target Resource | Compiled Regex |
+|---|---|
+| Crawler Indexing Directives | `(?i)^/robots\.txt$` |
+| Search Engine XML Sitemaps | `(?i)^/sitemap.*\.xml$` |
+| Digital Ad Transparency | `(?i)^/ads\.txt$` |
+| Security Disclosure Policies | `(?i)^/security\.txt$` |
+| ACME & Web Standards | `(?i)^/\.well-known(/.*)?$` |
 
 ---
 
@@ -60,3 +77,69 @@ By default, RouteWarden allows standard public informational files and ACME cert
 | `siteKey` | `string` | `""` | Public site key for the captcha widget. |
 | `title` | `string` | `"Verification"` | Heading displayed on the verification challenge page. |
 | `template` | `string` | `""` | Optional custom HTML template string override. |
+
+---
+
+## HTTP Request Verbs Inspection (`methods`)
+
+By default, RouteWarden inspects incoming `GET` requests (`methods: ["GET"]`), as automated scanners and vulnerability reconnaissance probes primarily use `GET` to check for leaked files (`.env`, `.git`, backups, configs).
+
+You can configure `methods` to inspect additional HTTP request verbs (e.g. `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`) or tailor inspection to specific workloads. Any incoming request whose HTTP method is **not** included in `methods` will immediately bypass inspection and pass downstream to upstream containers.
+
+### Configuration Examples
+
+::: code-group
+```yaml [Traefik (File / YAML)]
+http:
+  middlewares:
+    routewarden:
+      plugin:
+        routewarden:
+          enabled: true
+          enableDefaultPatterns: true
+          # Inspect GET and POST requests (default: ["GET"])
+          methods:
+            - "GET"
+            - "POST"
+```
+
+```toml [Traefik (TOML)]
+[http.middlewares.routewarden.plugin.routewarden]
+enabled = true
+enableDefaultPatterns = true
+methods = ["GET", "POST"]
+```
+
+```yaml [Docker Compose]
+services:
+  webapp:
+    labels:
+      - "traefik.http.middlewares.my-warden.plugin.routewarden.enableDefaultPatterns=true"
+      - "traefik.http.middlewares.my-warden.plugin.routewarden.methods=GET,POST"
+```
+
+```yaml [Kubernetes IngressRoute]
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: routewarden
+spec:
+  plugin:
+    routewarden:
+      enableDefaultPatterns: true
+      methods:
+        - "GET"
+        - "POST"
+```
+
+```nginx [Caddy (Caddyfile)]
+example.com {
+    route_warden {
+        enable_default_patterns true
+        # Inspect GET and POST verbs (default: GET)
+        methods GET POST
+    }
+    reverse_proxy localhost:8080
+}
+```
+:::

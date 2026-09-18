@@ -43,6 +43,9 @@ route_warden {
     # IP / CIDR Subnet Allowlist (Bypasses all checks)
     allowed_ips <ip_or_cidr...>
 
+    # HTTP Methods to Inspect (Default: GET)
+    methods <methods...>
+
     # Response Actions
     response {
         mode <json|html|text|xml|redirect|captcha|silent_drop|gzip_bomb|tarpit|fake_success|ratelimit|proxy|infinite_stream>
@@ -76,6 +79,7 @@ route_warden {
 | `path_patterns` | `list` | `[]` | Additional regex patterns to intercept. |
 | `allow_patterns` | `list` | `[]` | Regex patterns that should always be allowed through. |
 | `allowed_ips` | `list` | `[]` | IPv4, IPv6, or CIDR blocks exempted from checks. |
+| `methods` | `list` | `["GET"]` | HTTP verbs to inspect (e.g. `methods GET POST`). Non-matching verbs bypass inspection. |
 
 ---
 
@@ -107,6 +111,7 @@ For zero-downtime environments configured via Caddy's dynamic API:
   "enabled": true,
   "enable_default_patterns": true,
   "allowed_ips": ["10.0.0.0/8", "192.168.1.50"],
+  "methods": ["GET", "POST"],
   "path_patterns": ["(?i)^/admin(/.*)?$"],
   "allow_patterns": ["(?i)^/admin/health$"],
   "response": {

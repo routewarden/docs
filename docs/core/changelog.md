@@ -6,7 +6,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [v0.2.x Series] — Latest
+## [v0.3.x Series] — Latest
+
+The `v0.3.x` release series introduces granular HTTP method filtering (`methods` / `method` variable) across RouteWarden Core, Traefik, Caddy, Docker Compose, and Kubernetes gateways, alongside an upgraded interactive Pattern Checker & Security Playground.
+
+### Breaking Changes & Upgrade Considerations
+
+::: info Compatibility Notice
+- **Non-breaking Addition**: `methods` is entirely optional. When omitted or left empty, patterns default to matching **ALL** HTTP methods, preserving full backward compatibility with `v0.2.x` configurations.
+- **Case-Insensitive Method Matching**: Specified HTTP methods are matched case-insensitively (`GET`, `POST`, `HEAD`).
+:::
+
+### Version Differences (v0.2.x vs v0.3.x)
+
+| Feature / Capability | v0.2.x | v0.3.x | Notes / Details |
+|---|---|---|---|
+| **HTTP Method Filtering** | ❌ Matches all methods | ✅ **`methods` / `method`** | Filter rules by specific HTTP verbs (e.g., `["POST", "PUT", "DELETE"]` for state-changing endpoints, leaving `GET` open). |
+| **Caddy Method Directive** | ❌ Path regex only | ✅ **`method` subdirective** | Define method constraints directly in `route_warden` Caddyfile blocks and Caddy JSON matchers. |
+| **Interactive Matrix Simulator** | ❌ Single URL check | ✅ **Multi-Verb Matrix** | Test and preview verdict and HTTP responses simultaneously across all selected HTTP verbs (`GET`, `POST`, `PUT`, `DELETE`, etc.). |
+| **Deterministic Syntax Highlighting** | ❌ Plain code block | ✅ **Multi-Gateway Highlighter** | Rich syntax highlighting for Caddyfile, Traefik YAML, Traefik TOML, Docker Compose, and Kubernetes manifests. |
+| **Kubernetes Gateway Generation** | Traefik CRD only | ✅ **Traefik CRD & Caddy ConfigMap** | Generates native Traefik `Middleware` CRDs and Caddy `ConfigMap` manifests with proper ordering (`order route_warden before reverse_proxy`). |
+| **Pattern Checker Architecture** | Single-column cards | ✅ **Inline 2-Column Grid** | Side-by-side color-differentiated Block (crimson) and Allow (emerald) lists with dynamic URL-to-regex compilation. |
+
+### [v0.3.0] - 2026-09-17
+
+#### Added
+- **Granular HTTP Method Filtering (`methods` / `method`)**:
+  - **Traefik Middleware Configuration**: Added `methods` array property to path pattern rules (`pathPatterns[].methods` and `allowPatterns[].methods`), accepting standard HTTP verbs (`GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`, `OPTIONS`, etc.).
+  - **Caddy Directive & JSON API**: Added `method <verbs...>` subdirective within `route_warden` Caddyfile blocks and method array matching in Caddy JSON configuration.
+  - **Docker Compose & CLI Labels**: Added support for comma-separated method labels (e.g. `traefik.http.middlewares.shield.plugin.routewarden.pathPatterns[0].methods=GET,POST`).
+  - **Kubernetes CRD & ConfigMap**: Integrated `methods` into Traefik `Middleware` CRDs and Caddy `ConfigMap` templates.
+  - **Anti-Evasion Normalization Alignment**: Method checking runs alongside canonical anti-evasion path decoding, ensuring methods cannot be spoofed or bypassed.
+- **Interactive Security Playground & Pattern Checker (`/tools/pattern-checker`)**:
+  - **Multi-Verb Selection & Simulation Matrix**: Select multiple HTTP verbs simultaneously and view immediate individual evaluation verdicts (BLOCK / ALLOW / PASS) and simulated HTTP protocol responses per verb.
+  - **Auto-Generate Regex from URL**: Single-click `⚡ + Block Rule` and `⚡ + Allow Rule` actions compiling the active test path into optimized, anchored RE2 regular expressions (disabled when input is empty).
+  - **Deterministic Syntax Highlighter**: Custom built-in tokenizer and highlighter engine with light/dark theme support for Caddyfile, Traefik YAML, Traefik TOML, Docker labels, and Kubernetes manifests.
+  - **Dual Kubernetes Gateway Exports**: Dedicated generator tabs for both `K8s (Traefik)` Middleware CRD and `K8s (Caddy)` ConfigMap manifest.
+  - **Inline Color-Differentiated Protection Layout**: Compact 2-column protection strip with crimson/red Block list and emerald/green Allow list.
+  - **Gateway Container Theming**: Generated configuration block dynamically theme-colors its borders, tabs, copy button, and filename indicator based on the active gateway (Emerald for Caddy, Electric Blue for Traefik, Cyan for Docker).
+- **Documentation Migration & Archived v0.2.x Snapshot**:
+  - Archived `v0.2.x` documentation preserved under `/v0.2/` with legacy version notices and internal link rewrites.
+  - Promoted `v0.3.x (Latest)` across navigation bar, version dropdown, and versioning tooling.
+
+---
+
+## [v0.2.x Series] (Archived)
 
 The `v0.2.x` release series introduces CIDR/IP whitelisting, comprehensive anti-evasion hardening, a multi-mode response engine, and an interactive documentation site.
 
