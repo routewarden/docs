@@ -65,7 +65,7 @@ admin.localhost {
         response {
             mode json
             status_code 403
-            body "{"error":"Forbidden","message":"Restricted to authorized IP/VPN"}"
+            body "{\"error\":\"Forbidden\",\"message\":\"Restricted to authorized IP/VPN\"}"
         }
     }
 

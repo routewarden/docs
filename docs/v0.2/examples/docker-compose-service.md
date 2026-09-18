@@ -64,7 +64,7 @@ example.com {
         response {
             mode json
             status_code 403
-            body "{"error":"access_denied","service":"web"}"
+            body "{\"error\":\"access_denied\",\"service\":\"web\"}"
         }
     }
 

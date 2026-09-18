@@ -79,7 +79,7 @@ app.example.com {
         response {
             mode json
             status_code 404
-            body "{"error":"Not Found","message":"The requested URL was not found on this server"}"
+            body "{\"error\":\"Not Found\",\"message\":\"The requested URL was not found on this server\"}"
         }
     }
 
