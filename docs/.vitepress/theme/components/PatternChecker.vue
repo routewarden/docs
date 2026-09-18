@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 // --- Built-in Rule Definitions (RouteWarden Go Core RE2 Regexes) ---
 interface BuiltInRule {
@@ -1341,6 +1341,220 @@ async function copySnippet() {
     }, 2000)
   } catch {}
 }
+
+// 6. Playground Deeplinking & Shareable URL
+const shareFeedback = ref(false)
+
+function buildShareUrl(): string {
+  if (typeof window === 'undefined') return ''
+  const url = new URL(window.location.href)
+  url.search = '' // Clear existing params
+  url.searchParams.set('playground', 'open')
+
+  // 1. Inputs
+  if (testPath.value && testPath.value !== '/%252e%252e/.env') {
+    url.searchParams.set('path', testPath.value)
+  }
+  if (testMethod.value && testMethod.value !== 'GET') {
+    url.searchParams.set('method', testMethod.value)
+  }
+  if (testIp.value && testIp.value !== '198.51.100.42') {
+    url.searchParams.set('ip', testIp.value)
+  }
+
+  // 2. Custom patterns
+  if (pathPatternsInput.value.trim()) {
+    url.searchParams.set('block', pathPatternsInput.value.trim())
+  }
+  if (allowPatternsInput.value.trim()) {
+    url.searchParams.set('allow', allowPatternsInput.value.trim())
+  }
+
+  // 3. Flags
+  if (!enabled.value) {
+    url.searchParams.set('enabled', '0')
+  }
+  if (!enableDefaultPatterns.value) {
+    url.searchParams.set('defaultBlock', '0')
+  }
+  if (!enableDefaultAllowPatterns.value) {
+    url.searchParams.set('defaultAllow', '0')
+  }
+  if (checkQuery.value) {
+    url.searchParams.set('checkQuery', '1')
+  }
+  if (allowedIpsInput.value.trim() && allowedIpsInput.value.trim() !== '127.0.0.1, 10.0.0.0/8') {
+    url.searchParams.set('allowedIps', allowedIpsInput.value.trim())
+  }
+  if (methodsInput.value.trim() && methodsInput.value.trim() !== 'GET') {
+    url.searchParams.set('methods', methodsInput.value.trim())
+  }
+
+  // 4. Response settings
+  if (responseMode.value !== 'json') {
+    url.searchParams.set('mode', responseMode.value)
+  }
+  if (statusCode.value !== 403) {
+    url.searchParams.set('status', String(statusCode.value))
+  }
+  if (customBody.value.trim()) {
+    url.searchParams.set('body', customBody.value.trim())
+  }
+  if (responseMode.value === 'redirect' && redirectUrl.value) {
+    url.searchParams.set('redirectUrl', redirectUrl.value)
+  }
+  if (responseMode.value === 'proxy' && proxyUrl.value) {
+    url.searchParams.set('proxyUrl', proxyUrl.value)
+  }
+  if (responseMode.value === 'gzipBomb' && gzipBombMB.value !== 10) {
+    url.searchParams.set('gzipMB', String(gzipBombMB.value))
+  }
+  if (responseMode.value === 'tarpit') {
+    if (tarpitDelayMs.value !== 1000) url.searchParams.set('tarpitDelay', String(tarpitDelayMs.value))
+    if (tarpitMaxDurationSeconds.value !== 60) url.searchParams.set('tarpitDuration', String(tarpitMaxDurationSeconds.value))
+  }
+  if (responseMode.value === 'rateLimitChallenge' && retryAfterSeconds.value !== 300) {
+    url.searchParams.set('retryAfter', String(retryAfterSeconds.value))
+  }
+  if (responseMode.value === 'infiniteStream' && streamSizeMB.value !== 50) {
+    url.searchParams.set('streamMB', String(streamSizeMB.value))
+  }
+  if (responseMode.value === 'captcha') {
+    if (captchaProvider.value !== 'turnstile') url.searchParams.set('captchaProvider', captchaProvider.value)
+    if (captchaSiteKey.value) url.searchParams.set('captchaKey', captchaSiteKey.value)
+    if (captchaTitle.value) url.searchParams.set('captchaTitle', captchaTitle.value)
+  }
+
+  // 5. Snippet format
+  if (snippetFormat.value !== 'caddy') {
+    url.searchParams.set('format', snippetFormat.value)
+  }
+
+  return url.toString()
+}
+
+async function copyShareLink() {
+  try {
+    const url = buildShareUrl()
+    if (!url) return
+    await navigator.clipboard.writeText(url)
+    shareFeedback.value = true
+    setTimeout(() => {
+      shareFeedback.value = false
+    }, 2500)
+  } catch {}
+}
+
+onMounted(() => {
+  if (typeof window === 'undefined') return
+  try {
+    const params = new URLSearchParams(window.location.search)
+    if (!params || [...params.keys()].length === 0) return
+
+    // 1. Input parameters
+    const pPath = params.get('path') || params.get('url')
+    if (pPath) testPath.value = pPath
+
+    const pMethod = params.get('method')
+    if (pMethod) testMethod.value = pMethod.toUpperCase()
+
+    const pIp = params.get('ip')
+    if (pIp) testIp.value = pIp
+
+    // 2. Custom patterns
+    const pBlock = params.get('block') || params.get('pathPatterns')
+    if (pBlock) pathPatternsInput.value = pBlock
+
+    const pAllow = params.get('allow') || params.get('allowPatterns')
+    if (pAllow) allowPatternsInput.value = pAllow
+
+    // 3. Flags
+    if (params.has('enabled')) {
+      enabled.value = params.get('enabled') !== '0' && params.get('enabled') !== 'false'
+    }
+    if (params.has('defaultBlock')) {
+      enableDefaultPatterns.value = params.get('defaultBlock') !== '0' && params.get('defaultBlock') !== 'false'
+    }
+    if (params.has('defaultAllow')) {
+      enableDefaultAllowPatterns.value = params.get('defaultAllow') !== '0' && params.get('defaultAllow') !== 'false'
+    }
+    if (params.has('checkQuery')) {
+      checkQuery.value = params.get('checkQuery') === '1' || params.get('checkQuery') === 'true'
+    }
+    if (params.has('allowedIps')) {
+      allowedIpsInput.value = params.get('allowedIps') || ''
+    }
+    if (params.has('methods')) {
+      methodsInput.value = params.get('methods') || 'GET'
+    }
+
+    // 4. Response settings
+    const pMode = params.get('mode')
+    const validModes: ResponseMode[] = [
+      'json', 'html', 'text', 'xml', 'redirect', 'captcha',
+      'silentDrop', 'gzipBomb', 'tarpit', 'fakeSuccess',
+      'rateLimitChallenge', 'proxy', 'infiniteStream'
+    ]
+    if (pMode && validModes.includes(pMode as ResponseMode)) {
+      responseMode.value = pMode as ResponseMode
+    }
+
+    if (params.has('status')) {
+      const code = parseInt(params.get('status') || '', 10)
+      if (!isNaN(code)) statusCode.value = code
+    }
+
+    if (params.has('body')) {
+      customBody.value = params.get('body') || ''
+    }
+    if (params.has('redirectUrl')) {
+      redirectUrl.value = params.get('redirectUrl') || ''
+    }
+    if (params.has('proxyUrl')) {
+      proxyUrl.value = params.get('proxyUrl') || ''
+    }
+    if (params.has('gzipMB')) {
+      const mb = parseInt(params.get('gzipMB') || '', 10)
+      if (!isNaN(mb)) gzipBombMB.value = mb
+    }
+    if (params.has('tarpitDelay')) {
+      const d = parseInt(params.get('tarpitDelay') || '', 10)
+      if (!isNaN(d)) tarpitDelayMs.value = d
+    }
+    if (params.has('tarpitDuration')) {
+      const dur = parseInt(params.get('tarpitDuration') || '', 10)
+      if (!isNaN(dur)) tarpitMaxDurationSeconds.value = dur
+    }
+    if (params.has('retryAfter')) {
+      const ra = parseInt(params.get('retryAfter') || '', 10)
+      if (!isNaN(ra)) retryAfterSeconds.value = ra
+    }
+    if (params.has('streamMB')) {
+      const sm = parseInt(params.get('streamMB') || '', 10)
+      if (!isNaN(sm)) streamSizeMB.value = sm
+    }
+    if (params.has('captchaProvider')) {
+      const prov = params.get('captchaProvider')
+      if (prov === 'turnstile' || prov === 'hcaptcha' || prov === 'recaptcha') {
+        captchaProvider.value = prov
+      }
+    }
+    if (params.has('captchaKey')) {
+      captchaSiteKey.value = params.get('captchaKey') || ''
+    }
+    if (params.has('captchaTitle')) {
+      captchaTitle.value = params.get('captchaTitle') || ''
+    }
+
+    // 5. Snippet format
+    const pFmt = params.get('format')
+    if (pFmt && ['caddy', 'traefik_yaml', 'traefik_toml', 'docker', 'k8s_traefik', 'k8s_caddy', 'k8s'].includes(pFmt)) {
+      snippetFormat.value = pFmt as any
+    }
+  } catch (err) {
+    console.error('Failed to parse URL query params in RouteWarden playground:', err)
+  }
+})
 </script>
 
 <template>
@@ -1379,7 +1593,7 @@ async function copySnippet() {
         </div>
       </div>
 
-      <!-- Quick sample presets & normalization trace -->
+      <!-- Quick sample presets, normalization trace & Share Deeplink -->
       <div class="rw-sub-bar">
         <div class="rw-presets">
           <span class="rw-dim">Try:</span>
@@ -1392,10 +1606,22 @@ async function copySnippet() {
           >{{ p.label }}</button>
         </div>
 
-        <div v-if="evaluation.transformations.length > 0" class="rw-norm-info">
-          <span class="rw-dim">Anti-Evasion:</span>
-          <code>{{ evaluation.normalizedPath }}</code>
-          <span class="rw-norm-text">({{ evaluation.transformations.join(', ') }})</span>
+        <div class="rw-sub-actions">
+          <div v-if="evaluation.transformations.length > 0" class="rw-norm-info">
+            <span class="rw-dim">Anti-Evasion:</span>
+            <code>{{ evaluation.normalizedPath }}</code>
+            <span class="rw-norm-text">({{ evaluation.transformations.join(', ') }})</span>
+          </div>
+          <button
+            type="button"
+            class="rw-btn-share-link"
+            :class="{ copied: shareFeedback }"
+            title="Copy shareable link with current playground parameters"
+            @click="copyShareLink"
+          >
+            <span v-if="shareFeedback" class="rw-share-icon">✓</span>
+            <span>{{ shareFeedback ? 'Link Copied' : 'Share Link' }}</span>
+          </button>
         </div>
       </div>
     </div>
@@ -1406,12 +1632,12 @@ async function copySnippet() {
       <div class="rw-block rw-pattern-col rw-pattern-block-col">
         <div class="rw-row-header">
           <div class="rw-header-title-group">
-            <span class="rw-title rw-title-block">⛔ Block Patterns (<code>pathPatterns</code>)</span>
+            <span class="rw-title rw-title-block">Block Patterns (<code>pathPatterns</code>)</span>
             <span v-if="customBlockList.length" class="rw-count red">{{ customBlockList.length }}</span>
           </div>
         </div>
 
-        <!-- Clean Input with ⚡ Regex / From URL & Add -->
+        <!-- Clean Input with Regex / From URL & Add -->
         <form class="rw-inline-add rw-inline-add-block" @submit.prevent="addNewBlockPattern">
           <input
             v-model="newBlockInput"
@@ -1424,10 +1650,10 @@ async function copySnippet() {
             class="rw-btn-regex-act"
             :disabled="isBlockRegexDisabled"
             :class="{ active: blockRegexGenerated }"
-            :title="newBlockInput.trim() ? 'Convert pattern to RE2 regex' : 'Auto-generate regex from URL input above'"
+            :title="newBlockInput.trim() ? 'Convert pattern to RE2 regex' : 'Generate regex from URL input above'"
             @click="generateBlockRegex"
           >
-            {{ blockRegexGenerated ? '✓ Regex' : (newBlockInput.trim() ? '⚡ Regex' : '⚡ From URL') }}
+            {{ blockRegexGenerated ? 'Regex' : (newBlockInput.trim() ? 'To Regex' : 'From URL') }}
           </button>
           <button type="submit" class="rw-btn-add-block" :disabled="!newBlockInput.trim()">+ Add</button>
         </form>
@@ -1452,12 +1678,12 @@ async function copySnippet() {
       <div class="rw-block rw-pattern-col rw-pattern-allow-col">
         <div class="rw-row-header">
           <div class="rw-header-title-group">
-            <span class="rw-title rw-title-allow">🛡️ Allow Patterns (<code>allowPatterns</code>)</span>
+            <span class="rw-title rw-title-allow">Allow Patterns (<code>allowPatterns</code>)</span>
             <span v-if="customAllowList.length" class="rw-count green">{{ customAllowList.length }}</span>
           </div>
         </div>
 
-        <!-- Clean Input with ⚡ Regex / From URL & Add -->
+        <!-- Clean Input with Regex / From URL & Add -->
         <form class="rw-inline-add rw-inline-add-allow" @submit.prevent="addNewAllowPattern">
           <input
             v-model="newAllowInput"
@@ -1470,10 +1696,10 @@ async function copySnippet() {
             class="rw-btn-regex-act green"
             :disabled="isAllowRegexDisabled"
             :class="{ active: allowRegexGenerated }"
-            :title="newAllowInput.trim() ? 'Convert pattern to RE2 regex' : 'Auto-generate regex from URL input above'"
+            :title="newAllowInput.trim() ? 'Convert pattern to RE2 regex' : 'Generate regex from URL input above'"
             @click="generateAllowRegex"
           >
-            {{ allowRegexGenerated ? '✓ Regex' : (newAllowInput.trim() ? '⚡ Regex' : '⚡ From URL') }}
+            {{ allowRegexGenerated ? 'Regex' : (newAllowInput.trim() ? 'To Regex' : 'From URL') }}
           </button>
           <button type="submit" class="rw-btn-add-allow" :disabled="!newAllowInput.trim()">+ Add</button>
         </form>
@@ -1498,7 +1724,7 @@ async function copySnippet() {
     <!-- 4. Built-in Flags & IPs -->
     <div class="rw-block">
       <div class="rw-row-header">
-        <span class="rw-title">⚙️ Middleware Flags</span>
+        <span class="rw-title">Middleware Options</span>
       </div>
 
       <div class="rw-flags-line">
@@ -1527,7 +1753,7 @@ async function copySnippet() {
       <!-- Enhanced HTTP Verbs Selector Row -->
       <div class="rw-verbs-selector-bar">
         <div class="rw-vsb-header">
-          <span class="rw-vsb-label">⚡ Inspect HTTP Verbs (<code>methods</code>):</span>
+          <span class="rw-vsb-label">Inspect HTTP Verbs (<code>methods</code>):</span>
           <span class="rw-vsb-desc">Non-selected verbs bypass inspection and forward directly to upstream backends</span>
         </div>
         <div class="rw-vsb-controls">
@@ -1567,7 +1793,7 @@ async function copySnippet() {
     <!-- 5. Response Configuration & Simulated Output (Below Config) -->
     <div class="rw-block">
       <div class="rw-row-header">
-        <span class="rw-title">📡 HTTP Response</span>
+        <span class="rw-title">HTTP Response</span>
         <div class="rw-resp-opts">
           <label>
             <span>Mode:</span>
@@ -1750,7 +1976,7 @@ async function copySnippet() {
               @click="copyResponse"
               title="Copy raw HTTP response"
             >
-              {{ copyResponseSuccess ? '✓ Copied' : '📋 Copy HTTP' }}
+              {{ copyResponseSuccess ? 'Copied' : 'Copy HTTP' }}
             </button>
           </div>
         </div>
@@ -1782,7 +2008,7 @@ async function copySnippet() {
     >
       <div class="rw-export-top-bar">
         <div class="rw-header-title-group">
-          <span class="rw-title rw-export-title">📦 Generated Gateway Configuration</span>
+          <span class="rw-title rw-export-title">Generated Gateway Configuration</span>
           <span
             class="rw-filename-label"
             :class="{
@@ -1846,7 +2072,7 @@ async function copySnippet() {
             @click="copySnippet"
             title="Copy generated configuration"
           >
-            {{ copySuccess ? '✓ Copied Config' : '📋 Copy Config' }}
+            {{ copySuccess ? 'Copied' : 'Copy Config' }}
           </button>
         </div>
       </div>
@@ -2073,6 +2299,44 @@ async function copySnippet() {
   font-size: 10px;
 }
 
+.rw-sub-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.rw-btn-share-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2.5px 9px;
+  border-radius: 4px;
+  border: 1px solid var(--vp-c-brand-1);
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--vp-c-brand-1);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.rw-btn-share-link:hover {
+  background: var(--vp-c-brand-1);
+  color: #fff;
+}
+.rw-btn-share-link.copied {
+  border-color: #059669;
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+}
+.dark .rw-btn-share-link.copied {
+  color: #34d399;
+}
+.rw-share-icon {
+  font-size: 11px;
+}
+
 /* 2 & 3. Patterns Rows */
 .rw-row-header {
   display: flex;
@@ -2104,19 +2368,25 @@ async function copySnippet() {
 .rw-count.green { background: rgba(16,185,129,0.12); color: #059669; }
 .dark .rw-count.green { color: #34d399; }
 
-/* Patterns Row: 2-Column Side-by-Side Inline Layout */
+/* Patterns Row: 2-Column Side-by-Side with Container-Responsive Vertical Alignment */
 .rw-patterns-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
   gap: 0.85rem;
+  width: 100%;
+  min-width: 0;
+  container-type: inline-size;
 }
 
 .rw-pattern-col {
   height: 100%;
+  min-width: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   transition: all 0.2s ease;
+  overflow: hidden;
 }
 
 /* Color differentiation for Block Patterns Column */
@@ -2185,7 +2455,13 @@ async function copySnippet() {
   background: #10b981 !important;
 }
 
-@media (max-width: 820px) {
+@container (max-width: 720px) {
+  .rw-patterns-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
   .rw-patterns-row {
     grid-template-columns: 1fr;
   }
@@ -2276,9 +2552,12 @@ async function copySnippet() {
   display: flex;
   align-items: center;
   gap: 0.35rem;
+  width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 .rw-inline-add input {
-  flex: 1;
+  flex: 1 1 140px;
   min-width: 0;
   padding: 5px 8px;
   border: 1px solid var(--vp-c-divider);
@@ -2370,6 +2649,15 @@ async function copySnippet() {
   font-size: 11px;
   border: 1px solid;
   transition: all 0.15s ease;
+  max-width: 100%;
+  min-width: 0;
+}
+.rw-chip code {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: break-all;
 }
 .rw-chip.red {
   background: rgba(239,68,68,0.06);

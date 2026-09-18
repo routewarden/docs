@@ -2,8 +2,7 @@
 
 RouteWarden provides a flexible regular expression matching engine allowing you to define custom blocking rules (`pathPatterns` / `blockPatterns`) and safe overrides (`allowPatterns`).
 
-> [!TIP]
-> **Test Your Rules Interactively**: Use the new [Pattern & Anti-Evasion Checker](/tools/pattern-checker) tool to test obfuscated URLs, custom regex patterns, and allowlist rules against RouteWarden's live simulation engine.
+> **Test Your Rules Interactively**: Use the [Pattern & Anti-Evasion Playground](/?playground=open) to test obfuscated URLs, custom regex patterns, and allowlist rules against RouteWarden's live simulation engine.
 
 ---
 

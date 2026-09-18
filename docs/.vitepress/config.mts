@@ -28,9 +28,48 @@ export default defineConfig({
             }
             next()
           })
+        },
+        configurePreviewServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url === '/' || req.url === '') {
+              res.writeHead(302, { Location: '/docs/' })
+              res.end()
+              return
+            }
+            if (req.url === '/favicon.ico') {
+              res.writeHead(302, { Location: '/docs/favicon.ico' })
+              res.end()
+              return
+            }
+            next()
+          })
         }
       }
     ]
+  },
+  async buildEnd(siteConfig) {
+    // Generate a fallback root index.html and 404.html redirecting to /docs/ if hosted at domain root
+    const fs = await import('node:fs')
+    const path = await import('node:path')
+    const outDir = siteConfig.outDir
+    
+    const rootRedirectHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Redirecting to RouteWarden Documentation...</title>
+  <meta http-equiv="refresh" content="0; url=/docs/">
+  <link rel="canonical" href="/docs/">
+  <script>window.location.replace("/docs/" + window.location.search + window.location.hash);</script>
+</head>
+<body>
+  <p>Redirecting to <a href="/docs/">RouteWarden Documentation</a>...</p>
+</body>
+</html>
+`
+    // If output dir exists, write root-redirect helper
+    const targetFile = path.join(outDir, 'root-redirect.html')
+    fs.writeFileSync(targetFile, rootRedirectHtml, 'utf8')
   },
   transformPageData(pageData) {
     // Provide version globally to markdown templates
@@ -314,6 +353,12 @@ export default defineConfig({
     },
     search: {
       provider: 'local'
+    },
+    notFound: {
+      title: 'PAGE NOT FOUND',
+      quote: 'RouteWarden caught an unmatched path or the resource has been moved.',
+      linkLabel: 'Return to Documentation',
+      linkText: 'Go to Home'
     },
     socialLinks: [
       { icon: 'github', link: 'https://github.com/routewarden' }
