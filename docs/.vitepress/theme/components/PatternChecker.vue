@@ -189,16 +189,48 @@ function applyPreset(p: { path: string; ip: string; method?: string }) {
   if (p.method) testMethod.value = p.method
 }
 
-// Anti-Evasion Normalization
-function normalizePath(rawPath: string): { normalized: string; transformations: string[] } {
-  const transformations: string[] = []
-  let path = rawPath.trim()
+// Anti-Evasion Normalization & Candidate Extraction
+interface CandidateExtractionResult {
+  normalized: string
+  candidates: string[]
+  rawPathOnly: string
+  rawQuery: string
+  transformations: string[]
+}
 
-  if (!path) {
-    return { normalized: '/', transformations: ['Empty path resolved to /'] }
+function extractCandidatePaths(rawPath: string, shouldCheckQuery = false): CandidateExtractionResult {
+  const transformations: string[] = []
+  const candidatesSet = new Set<string>()
+
+  let input = (rawPath || '').trim()
+  if (!input) {
+    return {
+      normalized: '/',
+      candidates: ['/'],
+      rawPathOnly: '/',
+      rawQuery: '',
+      transformations: ['Empty path resolved to /']
+    }
   }
 
-  let prev = path
+  // 1. Separate path and query string
+  let pathPart = input
+  let queryPart = ''
+  const qIdx = input.indexOf('?')
+  if (qIdx >= 0) {
+    pathPart = input.substring(0, qIdx)
+    queryPart = input.substring(qIdx + 1)
+    transformations.push(`Separated query string: ?${queryPart}`)
+  }
+
+  if (!pathPart.startsWith('/')) {
+    pathPart = '/' + pathPart
+  }
+
+  candidatesSet.add(pathPart)
+
+  // 2. Multi-layer URL decoding
+  let prev = pathPart
   let passes = 0
   while (passes < 5) {
     try {
@@ -212,25 +244,35 @@ function normalizePath(rawPath: string): { normalized: string; transformations: 
   }
   if (passes > 0) {
     transformations.push(`Decoded ${passes} layer(s) percent-encoding`)
-    path = prev
+    candidatesSet.add(prev)
   }
 
-  if (path.includes('\0')) {
-    path = path.replace(/\0/g, '')
-    transformations.push('Stripped null bytes')
+  let working = prev
+
+  // 3. Null bytes stripping
+  if (working.includes('\0') || working.includes('%00')) {
+    working = working.replace(/\0|%00/gi, '')
+    transformations.push('Stripped null bytes (\\x00 / %00)')
+    candidatesSet.add(working)
   }
 
-  if (path.includes('\\')) {
-    path = path.replace(/\\/g, '/')
+  // 4. Backslash conversion
+  if (working.includes('\\')) {
+    working = working.replace(/\\/g, '/')
     transformations.push('Converted \\ to /')
+    candidatesSet.add(working)
   }
 
-  if (path.includes(';')) {
-    path = path.replace(/;[^/]+/g, '')
+  // 5. Matrix parameters stripping
+  if (working.includes(';')) {
+    const withoutMatrix = working.replace(/;[^/]+/g, '')
     transformations.push('Stripped matrix params (;...)')
+    candidatesSet.add(withoutMatrix)
+    working = withoutMatrix
   }
 
-  const segments = path.split('/').filter(s => s.length > 0 && s !== '.')
+  // 6. Canonical traversal resolution
+  const segments = working.split('/').filter(s => s.length > 0 && s !== '.')
   const resolved: string[] = []
   let traversalDetected = false
 
@@ -247,8 +289,40 @@ function normalizePath(rawPath: string): { normalized: string; transformations: 
     transformations.push('Canonicalized traversal (/../)')
   }
 
-  const normalized = '/' + resolved.join('/')
-  return { normalized, transformations }
+  const canonical = '/' + resolved.join('/')
+  candidatesSet.add(canonical)
+
+  // 7. Query candidates if checkQuery is active
+  if (shouldCheckQuery && queryPart) {
+    candidatesSet.add(input)
+    candidatesSet.add(`${canonical}?${queryPart}`)
+    candidatesSet.add(queryPart)
+    try {
+      const decodedQuery = decodeURIComponent(queryPart)
+      if (decodedQuery !== queryPart) {
+        candidatesSet.add(decodedQuery)
+        candidatesSet.add(`${canonical}?${decodedQuery}`)
+      }
+    } catch {}
+  }
+
+  const candidates = Array.from(candidatesSet).filter(Boolean)
+  return {
+    normalized: canonical,
+    candidates,
+    rawPathOnly: pathPart,
+    rawQuery: queryPart,
+    transformations
+  }
+}
+
+function normalizePath(rawPath: string): { normalized: string; transformations: string[]; candidates: string[] } {
+  const res = extractCandidatePaths(rawPath, checkQuery.value)
+  return {
+    normalized: res.normalized,
+    transformations: res.transformations,
+    candidates: res.candidates
+  }
 }
 
 function isIpWhitelisted(ip: string, allowedListStr: string): boolean {
@@ -463,36 +537,47 @@ function evaluateForVerb(methodName: string): VerbEvalResult {
   }
 
   const norm = normalizePath(testPath.value)
-  const pathToEvaluate = norm.normalized
+  const candidatePaths = norm.candidates.length > 0 ? norm.candidates : [norm.normalized]
 
+  // 4. Allowlist / Allow Patterns Check (allow_patterns / enable_default_allow_patterns)
+  // If any candidate path matches an allow pattern, RouteWarden immediately passes the request
+  // through to the backend (next.ServeHTTP) and stops all further processing (short-circuit).
   if (enableDefaultAllowPatterns.value) {
     for (const rule of defaultAllowRules) {
-      if (matchRegex(rule.pattern, pathToEvaluate)) {
-        return {
-          method: m,
-          verdict: 'ALLOW',
-          statusTitle: `Allowed (${rule.category})`,
-          badgeClass: 'verdict-allow',
-          statusCode: 200,
-          statusText: 'OK (Safe Exemption)',
-          reason: `Matches safe rule: ${rule.pattern}`,
-          isInspected
+      for (const cand of candidatePaths) {
+        if (matchRegex(rule.pattern, cand)) {
+          return {
+            method: m,
+            verdict: 'ALLOW',
+            statusTitle: `Allowed (${rule.category})`,
+            badgeClass: 'verdict-allow',
+            statusCode: 200,
+            statusText: 'OK (Safe Exemption)',
+            reason: cand !== norm.normalized
+              ? `Matches safe rule: ${rule.pattern} on candidate path '${cand}'`
+              : `Matches safe rule: ${rule.pattern}`,
+            isInspected
+          }
         }
       }
     }
   }
 
   for (const pat of customAllowList.value) {
-    if (matchRegex(pat, pathToEvaluate)) {
-      return {
-        method: m,
-        verdict: 'ALLOW',
-        statusTitle: 'Allowed by allowPatterns',
-        badgeClass: 'verdict-allow',
-        statusCode: 200,
-        statusText: 'OK (Safe Override)',
-        reason: `Matches custom rule: ${pat}`,
-        isInspected
+    for (const cand of candidatePaths) {
+      if (matchRegex(pat, cand)) {
+        return {
+          method: m,
+          verdict: 'ALLOW',
+          statusTitle: 'Allowed by allowPatterns',
+          badgeClass: 'verdict-allow',
+          statusCode: 200,
+          statusText: 'OK (Safe Override)',
+          reason: cand !== norm.normalized
+            ? `Matches custom rule: ${pat} on candidate path '${cand}'`
+            : `Matches custom rule: ${pat}`,
+          isInspected
+        }
       }
     }
   }
@@ -515,34 +600,44 @@ function evaluateForVerb(methodName: string): VerbEvalResult {
     finalStatusText = 'TCP Reset'
   }
 
+  // 5. Blocklist Check (block_patterns / path_patterns / enable_default_patterns)
+  // Only evaluated if the request was NOT matched by any allow pattern.
   if (enableDefaultPatterns.value) {
     for (const rule of defaultBlockRules) {
-      if (matchRegex(rule.pattern, pathToEvaluate)) {
-        return {
-          method: m,
-          verdict: 'BLOCK',
-          statusTitle: `Blocked (${rule.category})`,
-          badgeClass: 'verdict-block',
-          statusCode: finalCode,
-          statusText: finalStatusText,
-          reason: `Matches built-in pattern: ${rule.pattern}`,
-          isInspected
+      for (const cand of candidatePaths) {
+        if (matchRegex(rule.pattern, cand)) {
+          return {
+            method: m,
+            verdict: 'BLOCK',
+            statusTitle: `Blocked (${rule.category})`,
+            badgeClass: 'verdict-block',
+            statusCode: finalCode,
+            statusText: finalStatusText,
+            reason: cand !== norm.normalized
+              ? `Matches built-in pattern: ${rule.pattern} on candidate path '${cand}'`
+              : `Matches built-in pattern: ${rule.pattern}`,
+            isInspected
+          }
         }
       }
     }
   }
 
   for (const pat of customBlockList.value) {
-    if (matchRegex(pat, pathToEvaluate)) {
-      return {
-        method: m,
-        verdict: 'BLOCK',
-        statusTitle: 'Blocked by pathPatterns',
-        badgeClass: 'verdict-block',
-        statusCode: finalCode,
-        statusText: finalStatusText,
-        reason: `Matches custom pattern: ${pat}`,
-        isInspected
+    for (const cand of candidatePaths) {
+      if (matchRegex(pat, cand)) {
+        return {
+          method: m,
+          verdict: 'BLOCK',
+          statusTitle: 'Blocked by pathPatterns',
+          badgeClass: 'verdict-block',
+          statusCode: finalCode,
+          statusText: finalStatusText,
+          reason: cand !== norm.normalized
+            ? `Matches custom pattern: ${pat} on candidate path '${cand}'`
+            : `Matches custom pattern: ${pat}`,
+          isInspected
+        }
       }
     }
   }
@@ -565,7 +660,8 @@ const evaluation = computed(() => {
   return {
     ...res,
     normalizedPath: norm.normalized,
-    transformations: norm.transformations
+    transformations: norm.transformations,
+    candidates: norm.candidates
   }
 })
 
@@ -614,7 +710,11 @@ function generateAllowRegex() {
 }
 
 function patternMatchesTest(pattern: string): boolean {
-  return matchRegex(pattern, evaluation.value.normalizedPath)
+  const cands = evaluation.value.candidates || [evaluation.value.normalizedPath]
+  for (const c of cands) {
+    if (matchRegex(pattern, c)) return true
+  }
+  return false
 }
 
 // Simulated Response
@@ -1248,30 +1348,34 @@ async function copySnippet() {
     <!-- 1. Input & Live Verdict Strip -->
     <div class="rw-block">
       <div class="rw-input-bar">
-        <select v-model="testMethod" class="rw-method-select" title="Simulated HTTP request verb">
-          <option value="GET">GET</option>
-          <option value="POST">POST</option>
-          <option value="PUT">PUT</option>
-          <option value="DELETE">DELETE</option>
-          <option value="PATCH">PATCH</option>
-          <option value="HEAD">HEAD</option>
-          <option value="OPTIONS">OPTIONS</option>
-        </select>
-        <input
-          v-model="testPath"
-          class="rw-url-input"
-          placeholder="/admin/.env"
-          autocomplete="off"
-          spellcheck="false"
-        />
-        <input
-          v-model="testIp"
-          class="rw-ip-input"
-          placeholder="Client IP"
-          title="Simulated Client IP"
-        />
-        <div class="rw-verdict-tag" :class="evaluation.badgeClass">
-          {{ evaluation.verdict }}
+        <div class="rw-input-main">
+          <select v-model="testMethod" class="rw-method-select" title="Simulated HTTP request verb">
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="DELETE">DELETE</option>
+            <option value="PATCH">PATCH</option>
+            <option value="HEAD">HEAD</option>
+            <option value="OPTIONS">OPTIONS</option>
+          </select>
+          <input
+            v-model="testPath"
+            class="rw-url-input"
+            placeholder="/admin/.env"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+        <div class="rw-input-extra">
+          <input
+            v-model="testIp"
+            class="rw-ip-input"
+            placeholder="Client IP"
+            title="Simulated Client IP"
+          />
+          <div class="rw-verdict-tag" :class="evaluation.badgeClass">
+            {{ evaluation.verdict }}
+          </div>
         </div>
       </div>
 
@@ -1785,14 +1889,31 @@ async function copySnippet() {
 .rw-input-bar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.45rem;
   background: var(--vp-c-bg);
   border: 1px solid var(--vp-c-divider);
   border-radius: 6px;
   padding: 3px 6px;
+  transition: border-color 0.15s ease;
 }
 .rw-input-bar:focus-within {
   border-color: var(--vp-c-brand-1);
+}
+
+.rw-input-main {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.rw-input-extra {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
 }
 
 .rw-badge-get,
@@ -2067,6 +2188,87 @@ async function copySnippet() {
 @media (max-width: 820px) {
   .rw-patterns-row {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .rw-input-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+    padding: 6px 8px;
+  }
+
+  .rw-input-main {
+    width: 100%;
+    min-width: 0;
+    gap: 0.4rem;
+  }
+
+  .rw-url-input {
+    width: 100%;
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+  }
+
+  .rw-input-extra {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding-top: 5px;
+    border-top: 1px solid var(--vp-c-divider);
+  }
+
+  .rw-ip-input {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+    border-left: none;
+    padding: 2px 4px;
+    text-align: left;
+    font-size: 11.5px;
+  }
+
+  .rw-verdict-tag {
+    flex-shrink: 0;
+  }
+
+  .rw-flags-line {
+    gap: 0.5rem;
+  }
+
+  .rw-inline-ip {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-between;
+    padding-top: 5px;
+    border-top: 1px dashed var(--vp-c-divider);
+  }
+
+  .rw-inline-ip input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+  }
+
+  .rw-vsb-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+  }
+
+  .rw-vsb-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .rw-vsb-input {
+    flex: 1;
+    width: auto;
+    min-width: 0;
   }
 }
 
