@@ -7,10 +7,10 @@ RouteWarden provides a flexible regular expression matching engine allowing you 
 ## 1. How Path Matching Works
 
 Before regular expressions are evaluated, RouteWarden runs every request path through its **Anti-Evasion Engine**:
-- Decodes layered percent-encoding (`%252e` ➔ `.`)
-- Strips semicolon matrix parameters (`/;param=1/admin` ➔ `/admin`)
-- Normalizes Windows backslashes (`\admin` ➔ `/admin`)
-- Cleans directory traversals (`/static/../admin` ➔ `/admin`)
+- Decodes layered percent-encoding (`%252e` -> `.`)
+- Strips semicolon matrix parameters (`/;param=1/admin` -> `/admin`)
+- Normalizes Windows backslashes (`\admin` -> `/admin`)
+- Cleans directory traversals (`/static/../admin` -> `/admin`)
 
 Regex patterns are evaluated against the clean normalized path (and optionally the query string if `checkQuery: true`).
 
@@ -95,7 +95,7 @@ pathPatterns:
 
 Below are complete, production-tested RouteWarden configurations designed for specific popular application stacks:
 
-### 🌟 Blueprint A: WordPress / WooCommerce Store
+### Blueprint A: WordPress / WooCommerce Store
 Stops XML-RPC amplification attacks, wp-config exposure, and brute-force bot scans on wp-login:
 
 ::: code-group
@@ -169,7 +169,7 @@ http:
 
 :::
 
-### 🌟 Blueprint B: Next.js / React / SvelteKit Full-Stack App
+### Blueprint B: Next.js / React / SvelteKit Full-Stack App
 Protects internal server assets, environment secrets, and build manifests:
 
 ```yaml
@@ -192,7 +192,7 @@ services:
       - "traefik.http.middlewares.nextjs-warden.plugin.routewarden.response.body={\"error\":\"Forbidden\"}"
 ```
 
-### 🌟 Blueprint C: Python / Django / FastAPI Backend
+### Blueprint C: Python / Django / FastAPI Backend
 Guards virtual environment directories, SQLite database files, and Django management endpoints:
 
 ```yaml
@@ -216,7 +216,7 @@ services:
       - "traefik.http.middlewares.django-warden.plugin.routewarden.response.statusCode=403"
 ```
 
-### 🌟 Blueprint D: Spring Boot / Java Cloud Microservice
+### Blueprint D: Spring Boot / Java Cloud Microservice
 Shields internal Actuator management metrics, trace dumps, and H2 database consoles:
 
 ```yaml
@@ -240,7 +240,7 @@ services:
       - "traefik.http.middlewares.spring-warden.plugin.routewarden.response.body={\"error\":\"Forbidden\",\"scope\":\"actuator-protected\"}"
 ```
 
-### 🌟 Blueprint E: PHP / Laravel Application
+### Blueprint E: PHP / Laravel Application
 Protects `.env`, Artisan CLI files, storage logs, and debug toolbars:
 
 ```yaml

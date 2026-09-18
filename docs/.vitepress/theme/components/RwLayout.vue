@@ -7,19 +7,44 @@ const { Layout } = DefaultTheme
 
 const isOpen = ref(false)
 
+function openPlayground() {
+  isOpen.value = true
+}
+
 function toggle() {
-  isOpen.value = !isOpen.value
+  if (isOpen.value) {
+    close()
+  } else {
+    openPlayground()
+  }
 }
 
 function close() {
   isOpen.value = false
 }
 
-// Lock body & html scroll when panel is open
+// Sync URL and lock body/html scroll when panel is open/closed
 watch(isOpen, (open) => {
-  if (typeof document !== 'undefined') {
+  if (typeof window !== 'undefined') {
+    // 1. Scroll lock
     document.body.style.overflow = open ? 'hidden' : ''
     document.documentElement.style.overflow = open ? 'hidden' : ''
+
+    // 2. URL synchronization
+    try {
+      const url = new URL(window.location.href)
+      if (open) {
+        if (!url.searchParams.has('playground')) {
+          url.searchParams.set('playground', 'open')
+          window.history.pushState({ playground: true }, '', url.toString())
+        }
+      } else {
+        if (url.searchParams.has('playground')) {
+          url.searchParams.delete('playground')
+          window.history.replaceState({}, '', url.toString())
+        }
+      }
+    } catch {}
   }
 })
 
@@ -30,17 +55,47 @@ function onKeydown(e: KeyboardEvent) {
   }
 }
 
+// Check URL query parameters or hash to open or close the playground drawer
+function checkDeeplink() {
+  if (typeof window === 'undefined') return
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const hash = window.location.hash
+    const shouldOpen =
+      params.get('playground') === 'open' ||
+      params.get('playground') === '1' ||
+      params.get('playground') === 'true' ||
+      params.has('path') ||
+      params.has('url') ||
+      params.has('block') ||
+      params.has('allow') ||
+      params.has('mode') ||
+      hash === '#playground'
+
+    if (shouldOpen) {
+      isOpen.value = true
+    } else if (isOpen.value) {
+      isOpen.value = false
+    }
+  } catch {}
+}
+
 onMounted(() => {
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', onKeydown)
-    // Expose toggle function globally so the navbar button can call it
+    window.addEventListener('popstate', checkDeeplink)
+    window.addEventListener('hashchange', checkDeeplink)
+    // Expose toggle function globally so any link or button can call it
     ;(window as any).__rwCheckerToggle = toggle
+    checkDeeplink()
   }
 })
 
 onUnmounted(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener('keydown', onKeydown)
+    window.removeEventListener('popstate', checkDeeplink)
+    window.removeEventListener('hashchange', checkDeeplink)
     delete (window as any).__rwCheckerToggle
     document.body.style.overflow = ''
     document.documentElement.style.overflow = ''

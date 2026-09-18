@@ -36,8 +36,7 @@ The `v0.3.x` release series introduces granular HTTP method filtering (`methods`
   - **Caddy Directive & JSON API**: Added `method <verbs...>` subdirective within `route_warden` Caddyfile blocks and method array matching in Caddy JSON configuration.
   - **Docker Compose & CLI Labels**: Added support for comma-separated method labels (e.g. `traefik.http.middlewares.shield.plugin.routewarden.pathPatterns[0].methods=GET,POST`).
   - **Kubernetes CRD & ConfigMap**: Integrated `methods` into Traefik `Middleware` CRDs and Caddy `ConfigMap` templates.
-  - **Anti-Evasion Normalization Alignment**: Method checking runs alongside canonical anti-evasion path decoding, ensuring methods cannot be spoofed or bypassed.
-- **Interactive Security Playground & Pattern Checker (`/tools/pattern-checker`)**:
+- **Interactive Security Playground & Pattern Checker**:
   - **Multi-Verb Selection & Simulation Matrix**: Select multiple HTTP verbs simultaneously and view immediate individual evaluation verdicts (BLOCK / ALLOW / PASS) and simulated HTTP protocol responses per verb.
   - **Auto-Generate Regex from URL**: Single-click `⚡ + Block Rule` and `⚡ + Allow Rule` actions compiling the active test path into optimized, anchored RE2 regular expressions (disabled when input is empty).
   - **Deterministic Syntax Highlighter**: Custom built-in tokenizer and highlighter engine with light/dark theme support for Caddyfile, Traefik YAML, Traefik TOML, Docker labels, and Kubernetes manifests.
