@@ -37,6 +37,10 @@ When building routes via JSON, specify `"handler": "route_warden"` in your route
     "10.0.0.0/8",
     "192.168.1.100"
   ],
+  "methods": [
+    "GET",
+    "POST"
+  ],
   "response": {
     "mode": "json",
     "status_code": 403,
@@ -69,6 +73,7 @@ curl -X POST http://localhost:2019/config/apps/http/servers/srv0/routes/0/handle
     "enabled": true,
     "enable_default_patterns": true,
     "allowed_ips": ["10.0.0.0/8"],
+    "methods": ["GET", "POST"],
     "response": {
       "mode": "json",
       "status_code": 404,

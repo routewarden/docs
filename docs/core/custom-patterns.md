@@ -2,6 +2,9 @@
 
 RouteWarden provides a flexible regular expression matching engine allowing you to define custom blocking rules (`pathPatterns` / `blockPatterns`) and safe overrides (`allowPatterns`).
 
+> [!TIP]
+> **Test Your Rules Interactively**: Use the new [Pattern & Anti-Evasion Checker](/tools/pattern-checker) tool to test obfuscated URLs, custom regex patterns, and allowlist rules against RouteWarden's live simulation engine.
+
 ---
 
 ## 1. How Path Matching Works
@@ -16,9 +19,27 @@ Regex patterns are evaluated against the clean normalized path (and optionally t
 
 ---
 
-## 2. Defining Block Patterns (`pathPatterns`)
+## 2. Built-in Default Block Patterns (`enableDefaultPatterns`)
 
-You can supply one or more regular expressions to block. `pathPatterns` and `blockPatterns` are interchangeable aliases.
+When `enableDefaultPatterns: true` (Traefik) or `enable_default_patterns true` (Caddy) is configured (which is enabled by default), RouteWarden activates the following compiled regular expressions:
+
+| Target Category | Compiled Regular Expression | Target Examples Intercepted |
+|---|---|---|
+| **Environment & Config Files** | `(?i)(^|/)(\.env.*\|.*\.(txt\|log\|bak\|backup\|sql\|conf\|config\|ini\|yaml\|yml))$` | `/.env`, `/.env.production`, `/app.config`, `/dump.sql`, `/debug.log`, `/database.sqlite` |
+| **Source Control & VCS Meta** | `(?i)(^|/)\.(git\|svn\|hg\|bzr\|cvs)(/.*\|$)` | `/.git/config`, `/.git/HEAD`, `/.svn/entries`, `/.hg/hgrc` |
+| **Cloud & Shell Credentials** | `(?i)(^|/)\.(aws\|ssh\|kube\|docker)(/.*\|$)` | `/.aws/credentials`, `/.ssh/id_rsa`, `/.kube/config`, `/.docker/config.json` |
+| **Archives & DB Dump Files** | `(?i).*\.(tar\|tar\.gz\|tgz\|zip\|rar\|7z\|gz\|bz2\|iso\|dump\|sqlite\|sqlite3\|db)$` | `/backup.tar.gz`, `/site.zip`, `/users.dump`, `/app.db`, `/database.sqlite3` |
+| **Sensitive Admin & Metrics** | `(?i)(^|/)(phpinfo\.php\|info\.php\|server-status\|server-info\|actuator(/.*)?\|metrics\|heapdump\|trace\|env)$` | `/phpinfo.php`, `/server-status`, `/actuator/health`, `/metrics`, `/heapdump` |
+| **Package Managers & Locks** | `(?i)(^|/)(composer\.(json\|lock)\|package-lock\.json\|yarn\.lock\|pnpm-lock\.yaml\|Pipfile\|Pipfile\.lock\|requirements\.txt)$` | `/package-lock.json`, `/yarn.lock`, `/composer.json`, `/requirements.txt`, `/Pipfile` |
+
+> [!TIP]
+> If your application legitimately serves files ending in extensions matched above (such as `/robots.txt` or `/ads.txt`), RouteWarden's built-in allowlist automatically grants permission before these block patterns are tested.
+
+---
+
+## 3. Defining Custom Block Patterns (`pathPatterns` / `blockPatterns`)
+
+You can supply one or more custom regular expressions to block. `pathPatterns` and `blockPatterns` are interchangeable aliases.
 
 ### Syntax & Flags
 RouteWarden uses Go's standard `regexp` syntax (RE2).
@@ -91,7 +112,7 @@ pathPatterns:
 
 ---
 
-## 3. Predefined Sample Application Blueprints
+## 4. Predefined Sample Application Blueprints
 
 Below are complete, production-tested RouteWarden configurations designed for specific popular application stacks:
 
@@ -374,19 +395,24 @@ laravel.example.com {
 
 ---
 
-## 3. Allowing Safe Endpoints (`allowPatterns`)
+---
 
-The `allowPatterns` list takes precedence over both built-in default patterns and your custom `pathPatterns`. If a path matches **any** regex in `allowPatterns`, RouteWarden immediately permits the request to pass downstream.
+## 5. Built-in Default Allow Patterns (`allowPatterns`)
 
-### Default Built-in Allow Rules
-By default, RouteWarden automatically whitelists:
-```regex
-(?i)^/robots\.txt$
-(?i)^/sitemap.*\.xml$
-(?i)^/ads\.txt$
-(?i)^/security\.txt$
-(?i)^/\.well-known(/.*)?$
-```
+The `allowPatterns` list takes precedence over both built-in default patterns and your custom `pathPatterns`. If a path matches **any** regex in `allowPatterns`, RouteWarden immediately permits the request to pass downstream without blocking or challenging.
+
+### Default Built-in Allow Rules (`enableDefaultAllowPatterns`)
+When `enableDefaultAllowPatterns: true` (or `enable_default_allow_patterns true` in Caddy), RouteWarden automatically permits:
+
+| Target Legitimate Resource | Compiled Regular Expression | Purpose |
+|---|---|---|
+| **Crawler Indexing Directives** | `(?i)^/robots\.txt$` | Allows search engine bots (Googlebot, Bingbot) to fetch crawl policies |
+| **Search Engine XML Sitemaps** | `(?i)^/sitemap.*\.xml$` | Allows discovery of public pages and sitemaps (e.g. `/sitemap.xml`, `/sitemap_index.xml`) |
+| **Digital Ad Transparency** | `(?i)^/ads\.txt$` | Allows IAB / Google AdSense crawler verification |
+| **Security Disclosure Policies** | `(?i)^/security\.txt$` | RFC 9116 security contact information |
+| **ACME & Web Standards** | `(?i)^/\.well-known(/.*)?$` | Let's Encrypt / ZeroSSL TLS challenges, OpenID Connect (`/.well-known/openid-configuration`), etc. |
+
+To disable these automatic exemptions entirely, set `enableDefaultAllowPatterns: false` (or `enable_default_allow_patterns false` in Caddy).
 
 ### Adding Custom Exceptions
 For example, if you block all `*.yaml` files or `/api/*`, but need to allow a public spec file or public health check:
@@ -405,7 +431,7 @@ allowPatterns:
 
 ---
 
-## 4. Query String Inspection (`checkQuery`)
+## 6. Query String Inspection (`checkQuery`)
 
 By default (`checkQuery: false`), RouteWarden inspects only the URL path. If attackers attempt to smuggle sensitive files via query parameters (e.g. `?file=../../.env` or `?redirect=phpinfo.php`), enable `checkQuery`:
 
@@ -417,7 +443,7 @@ pathPatterns:
 
 ---
 
-## 5. Complete Multi-Gateway Configuration Example
+## 7. Complete Multi-Gateway Configuration Example
 
 ::: code-group
 

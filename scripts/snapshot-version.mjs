@@ -65,8 +65,8 @@ export function snapshotVersion(newVersion, options = {}) {
   const minorSnapshotDirName = `v${versionParts[0]}.${versionParts[1]}`
   const targetSnapshotDir = path.join(rootDir, `docs/${minorSnapshotDirName}`)
 
-  // 1. Snapshot current guide, reference, and examples
-  const dirsToSnapshot = ['guide', 'reference', 'examples']
+  // 1. Snapshot current documentation sections
+  const dirsToSnapshot = options.dirs || ['traefik', 'caddy', 'core', 'examples', 'guide', 'reference']
   for (const dir of dirsToSnapshot) {
     const srcDir = path.join(rootDir, `docs/${dir}`)
     const destDir = path.join(rootDir, `docs/${minorSnapshotDirName}/${dir}`)
@@ -77,7 +77,7 @@ export function snapshotVersion(newVersion, options = {}) {
           const firstLineEnd = replaced.indexOf('\n')
           const title = replaced.substring(0, firstLineEnd)
           const rest = replaced.substring(firstLineEnd)
-          const banner = `\n\n::: warning Legacy Version Notice\nYou are viewing archived documentation for **${currentVersion}**. [Switch to Latest ➔](/guide/getting-started)\n:::`
+          const banner = `\n\n::: warning Legacy Version Notice\nYou are viewing archived documentation for **${currentVersion}**. [Switch to Latest ➔](/traefik/getting-started)\n:::`
           return `${title} (${currentVersion})${banner}${rest}`
         }
         return replaced
@@ -93,15 +93,18 @@ export function snapshotVersion(newVersion, options = {}) {
     (v) => v.tag !== newSeries && v.tag !== prevSeries
   )
 
+  const currentLatestLink = registry.versions[0]?.link || '/guide/getting-started'
+  const archiveLink = `/${minorSnapshotDirName}${currentLatestLink.replace(/^\/v\d+\.\d+/, '')}`
+
   const newRegistryVersions = [
     {
       text: `${newSeries} (Latest)`,
-      link: '/guide/getting-started',
+      link: currentLatestLink.startsWith('/v') ? '/traefik/getting-started' : currentLatestLink,
       tag: newSeries
     },
     {
       text: `${prevSeries}`,
-      link: `/${minorSnapshotDirName}/guide/getting-started`,
+      link: archiveLink,
       tag: prevSeries
     },
     ...updatedVersions

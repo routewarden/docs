@@ -1,5 +1,7 @@
 import DefaultTheme from 'vitepress/theme'
 import './custom.css'
+import PatternChecker from './components/PatternChecker.vue'
+import RwLayout from './components/RwLayout.vue'
 
 const STORAGE_KEY = 'routewarden-preferred-tab'
 
@@ -53,7 +55,9 @@ function syncTabs(targetTitle: string, triggeringGroup?: HTMLElement) {
 
 export default {
   extends: DefaultTheme,
-  enhanceApp() {
+  Layout: RwLayout,
+  enhanceApp({ app }) {
+    app.component('PatternChecker', PatternChecker)
     if (typeof window !== 'undefined') {
       const handleTabSelection = (target: HTMLElement) => {
         let label: HTMLLabelElement | null = null
