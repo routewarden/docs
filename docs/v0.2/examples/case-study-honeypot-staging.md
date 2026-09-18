@@ -174,7 +174,7 @@ pr-142.staging.example.com {
         response {
             mode json
             status_code 404
-            body '{"error":"Not Found"}'
+            body "{\"error\":\"Not Found\"}"
         }
     }
     reverse_proxy preview-app:3000

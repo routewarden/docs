@@ -50,7 +50,7 @@ localhost {
         response {
             mode json
             status_code 403
-            body '{"error":"Forbidden","message":"Sensitive path blocked by RouteWarden"}'
+            body "{\"error\":\"Forbidden\",\"message\":\"Sensitive path blocked by RouteWarden\"}"
         }
     }
 

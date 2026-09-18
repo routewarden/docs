@@ -94,6 +94,7 @@ const newAllowInput = ref('')
 
 // 3. Flags state
 const enabled = ref(true)
+const debug = ref(false)
 const enableDefaultPatterns = ref(true)
 const enableDefaultAllowPatterns = ref(true)
 const checkQuery = ref(false)
@@ -896,6 +897,7 @@ const generatedSnippet = computed(() => {
   if (snippetFormat.value === 'caddy') {
     let out = `example.com {\n  route_warden {\n`
     if (!enabled.value) out += `    enabled false\n`
+    if (debug.value) out += `    debug true\n`
     if (!enableDefaultPatterns.value) out += `    enable_default_patterns false\n`
     if (!enableDefaultAllowPatterns.value) out += `    enable_default_allow_patterns false\n`
     if (checkQuery.value) out += `    check_query true\n`
@@ -918,30 +920,33 @@ const generatedSnippet = computed(() => {
     if (hasCustomMethods) {
       out += `    methods ${methodsList.join(' ')}\n`
     }
-    if (responseMode.value !== 'json') out += `    response_mode ${responseMode.value}\n`
-    if (statusCode.value !== 403) out += `    status_code ${statusCode.value}\n`
-    if (customBody.value) out += `    body "${customBody.value.replace(/"/g, '\\"')}"\n`
-    if (responseMode.value === 'redirect') out += `    redirect_url "${redirectUrl.value}"\n`
-    if (responseMode.value === 'proxy') out += `    proxy_url "${proxyUrl.value}"\n`
-    if (responseMode.value === 'gzipBomb') out += `    gzip_bomb_mb ${gzipBombMB.value}\n`
+    out += `    response {\n`
+    out += `      mode ${responseMode.value}\n`
+    if (statusCode.value !== 403) out += `      status_code ${statusCode.value}\n`
+    if (customBody.value) out += `      body "${customBody.value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"\n`
+    if (responseMode.value === 'redirect') out += `      redirect_url "${redirectUrl.value}"\n`
+    if (responseMode.value === 'proxy') out += `      proxy_url "${proxyUrl.value}"\n`
+    if (responseMode.value === 'gzipBomb') out += `      gzip_bomb_mb ${gzipBombMB.value}\n`
     if (responseMode.value === 'tarpit') {
-      out += `    tarpit_delay_ms ${tarpitDelayMs.value}\n`
-      out += `    tarpit_max_duration_seconds ${tarpitMaxDurationSeconds.value}\n`
+      out += `      tarpit_delay_ms ${tarpitDelayMs.value}\n`
+      out += `      tarpit_max_duration_seconds ${tarpitMaxDurationSeconds.value}\n`
     }
-    if (responseMode.value === 'rateLimitChallenge') out += `    retry_after_seconds ${retryAfterSeconds.value}\n`
-    if (responseMode.value === 'infiniteStream') out += `    stream_size_mb ${streamSizeMB.value}\n`
+    if (responseMode.value === 'rateLimitChallenge') out += `      retry_after_seconds ${retryAfterSeconds.value}\n`
+    if (responseMode.value === 'infiniteStream') out += `      stream_size_mb ${streamSizeMB.value}\n`
     if (responseMode.value === 'captcha') {
-      out += `    captcha_provider ${captchaProvider.value}\n`
-      out += `    captcha_site_key "${captchaSiteKey.value}"\n`
-      out += `    captcha_title "${captchaTitle.value}"\n`
+      out += `      captcha {\n`
+      out += `        provider ${captchaProvider.value}\n`
+      out += `        site_key "${captchaSiteKey.value}"\n`
+      out += `      }\n`
     }
-    out += `  }\n  reverse_proxy localhost:8080\n}`
+    out += `    }\n  }\n  reverse_proxy localhost:8080\n}`
     return out
   }
 
   if (snippetFormat.value === 'traefik_yaml') {
     let out = `http:\n  middlewares:\n    routewarden:\n      plugin:\n        routewarden:\n`
     if (!enabled.value) out += `          enabled: false\n`
+    if (debug.value) out += `          debug: true\n`
     if (!enableDefaultPatterns.value) out += `          enableDefaultPatterns: false\n`
     if (!enableDefaultAllowPatterns.value) out += `          enableDefaultAllowPatterns: false\n`
     if (checkQuery.value) out += `          checkQuery: true\n`
@@ -986,6 +991,7 @@ const generatedSnippet = computed(() => {
   if (snippetFormat.value === 'traefik_toml') {
     let out = `[http.middlewares.routewarden.plugin.routewarden]\n`
     if (!enabled.value) out += `enabled = false\n`
+    if (debug.value) out += `debug = true\n`
     if (!enableDefaultPatterns.value) out += `enableDefaultPatterns = false\n`
     if (!enableDefaultAllowPatterns.value) out += `enableDefaultAllowPatterns = false\n`
     if (checkQuery.value) out += `checkQuery = true\n`
@@ -1033,6 +1039,7 @@ const generatedSnippet = computed(() => {
     let out = `services:\n  traefik:\n    labels:\n`
     const prefix = 'traefik.http.middlewares.routewarden.plugin.routewarden'
     if (!enabled.value) out += `      - "${prefix}.enabled=false"\n`
+    if (debug.value) out += `      - "${prefix}.debug=true"\n`
     if (!enableDefaultPatterns.value) out += `      - "${prefix}.enableDefaultPatterns=false"\n`
     if (!enableDefaultAllowPatterns.value) out += `      - "${prefix}.enableDefaultAllowPatterns=false"\n`
     if (checkQuery.value) out += `      - "${prefix}.checkQuery=true"\n`
@@ -1070,6 +1077,7 @@ const generatedSnippet = computed(() => {
   if (snippetFormat.value === 'k8s_traefik' || snippetFormat.value === 'k8s') {
     let out = `apiVersion: traefik.io/v1alpha1\nkind: Middleware\nmetadata:\n  name: routewarden\n  namespace: default\nspec:\n  plugin:\n    routewarden:\n`
     if (!enabled.value) out += `      enabled: false\n`
+    if (debug.value) out += `      debug: true\n`
     if (!enableDefaultPatterns.value) out += `      enableDefaultPatterns: false\n`
     if (!enableDefaultAllowPatterns.value) out += `      enableDefaultAllowPatterns: false\n`
     if (checkQuery.value) out += `      checkQuery: true\n`
@@ -1111,6 +1119,7 @@ const generatedSnippet = computed(() => {
   if (snippetFormat.value === 'k8s_caddy') {
     let out = `apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: caddy-config\n  namespace: default\ndata:\n  Caddyfile: |\n    {\n      order route_warden before reverse_proxy\n    }\n\n    example.com {\n      route_warden {\n`
     if (!enabled.value) out += `        enabled false\n`
+    if (debug.value) out += `        debug true\n`
     if (!enableDefaultPatterns.value) out += `        enable_default_patterns false\n`
     if (!enableDefaultAllowPatterns.value) out += `        enable_default_allow_patterns false\n`
     if (checkQuery.value) out += `        check_query true\n`
@@ -1133,24 +1142,26 @@ const generatedSnippet = computed(() => {
     if (hasCustomMethods) {
       out += `        methods ${methodsList.join(' ')}\n`
     }
-    if (responseMode.value !== 'json') out += `        response_mode ${responseMode.value}\n`
-    if (statusCode.value !== 403) out += `        status_code ${statusCode.value}\n`
-    if (customBody.value) out += `        body "${customBody.value.replace(/"/g, '\\"')}"\n`
-    if (responseMode.value === 'redirect') out += `        redirect_url "${redirectUrl.value}"\n`
-    if (responseMode.value === 'proxy') out += `        proxy_url "${proxyUrl.value}"\n`
-    if (responseMode.value === 'gzipBomb') out += `        gzip_bomb_mb ${gzipBombMB.value}\n`
+    out += `        response {\n`
+    out += `          mode ${responseMode.value}\n`
+    if (statusCode.value !== 403) out += `          status_code ${statusCode.value}\n`
+    if (customBody.value) out += `          body "${customBody.value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"\n`
+    if (responseMode.value === 'redirect') out += `          redirect_url "${redirectUrl.value}"\n`
+    if (responseMode.value === 'proxy') out += `          proxy_url "${proxyUrl.value}"\n`
+    if (responseMode.value === 'gzipBomb') out += `          gzip_bomb_mb ${gzipBombMB.value}\n`
     if (responseMode.value === 'tarpit') {
-      out += `        tarpit_delay_ms ${tarpitDelayMs.value}\n`
-      out += `        tarpit_max_duration_seconds ${tarpitMaxDurationSeconds.value}\n`
+      out += `          tarpit_delay_ms ${tarpitDelayMs.value}\n`
+      out += `          tarpit_max_duration_seconds ${tarpitMaxDurationSeconds.value}\n`
     }
-    if (responseMode.value === 'rateLimitChallenge') out += `        retry_after_seconds ${retryAfterSeconds.value}\n`
-    if (responseMode.value === 'infiniteStream') out += `        stream_size_mb ${streamSizeMB.value}\n`
+    if (responseMode.value === 'rateLimitChallenge') out += `          retry_after_seconds ${retryAfterSeconds.value}\n`
+    if (responseMode.value === 'infiniteStream') out += `          stream_size_mb ${streamSizeMB.value}\n`
     if (responseMode.value === 'captcha') {
-      out += `        captcha_provider ${captchaProvider.value}\n`
-      out += `        captcha_site_key "${captchaSiteKey.value}"\n`
-      out += `        captcha_title "${captchaTitle.value}"\n`
+      out += `          captcha {\n`
+      out += `            provider ${captchaProvider.value}\n`
+      out += `            site_key "${captchaSiteKey.value}"\n`
+      out += `          }\n`
     }
-    out += `      }\n      reverse_proxy app-service.default.svc.cluster.local:80\n    }\n`
+    out += `        }\n      }\n      reverse_proxy app-service.default.svc.cluster.local:80\n    }\n`
     return out
   }
 
@@ -1374,6 +1385,9 @@ function buildShareUrl(): string {
   if (!enabled.value) {
     url.searchParams.set('enabled', '0')
   }
+  if (debug.value) {
+    url.searchParams.set('debug', '1')
+  }
   if (!enableDefaultPatterns.value) {
     url.searchParams.set('defaultBlock', '0')
   }
@@ -1471,6 +1485,9 @@ onMounted(() => {
     // 3. Flags
     if (params.has('enabled')) {
       enabled.value = params.get('enabled') !== '0' && params.get('enabled') !== 'false'
+    }
+    if (params.has('debug')) {
+      debug.value = params.get('debug') === '1' || params.get('debug') === 'true'
     }
     if (params.has('defaultBlock')) {
       enableDefaultPatterns.value = params.get('defaultBlock') !== '0' && params.get('defaultBlock') !== 'false'
@@ -1743,6 +1760,10 @@ onMounted(() => {
         <label class="rw-check">
           <input v-model="enabled" type="checkbox" />
           <span>Enabled</span>
+        </label>
+        <label class="rw-check">
+          <input v-model="debug" type="checkbox" />
+          <span>Debug</span>
         </label>
         <div class="rw-inline-ip">
           <span>Allowed IPs:</span>

@@ -78,12 +78,19 @@ test('syncVersion updates versions in files when target version changes', (t) =>
 
   assert.equal(result.targetVersion, 'v0.3.0')
   assert.ok(result.updatedFiles.includes('package.json'))
+  assert.ok(result.updatedFiles.includes('docs/versions.json'))
   assert.ok(result.updatedFiles.includes('README.md'))
   assert.ok(result.updatedFiles.includes('examples/01-basic-sensitive-files/docker-compose.yml'))
 
   // Verify package.json
   const pkg = JSON.parse(fs.readFileSync(path.join(ws, 'package.json'), 'utf8'))
   assert.equal(pkg.version, '0.3.0')
+
+  // Verify docs/versions.json
+  const registry = JSON.parse(fs.readFileSync(path.join(ws, 'docs/versions.json'), 'utf8'))
+  assert.equal(registry.current, 'v0.3.x')
+  assert.equal(registry.versions[0].tag, 'v0.3.x')
+  assert.equal(registry.versions[0].text, 'v0.3.x (Latest)')
 
   // Verify README.md
   const readme = fs.readFileSync(path.join(ws, 'README.md'), 'utf8')

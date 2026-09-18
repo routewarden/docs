@@ -88,7 +88,7 @@ data:
             response {
                 mode json
                 status_code 403
-                body '{"error":"Forbidden","source":"caddy-k8s"}'
+                body "{\"error\":\"Forbidden\",\"source\":\"caddy-k8s\"}"
             }
         }
 

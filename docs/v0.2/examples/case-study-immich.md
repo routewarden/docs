@@ -145,7 +145,7 @@ photos.example.com {
         response {
             mode json
             status_code 404
-            body '{"error":"Not Found","message":"Endpoint unavailable on public router"}'
+            body "{\"error\":\"Not Found\",\"message\":\"Endpoint unavailable on public router\"}"
         }
     }
 

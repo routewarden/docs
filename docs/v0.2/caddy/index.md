@@ -44,7 +44,7 @@ example.com {
         response {
             mode json
             status_code 404
-            body '{"error":"Not Found","message":"Endpoint unavailable"}'
+            body "{\"error\":\"Not Found\",\"message\":\"Endpoint unavailable\"}"
         }
     }
 

@@ -22,6 +22,7 @@ When building routes via JSON, specify `"handler": "route_warden"` in your route
 {
   "handler": "route_warden",
   "enabled": true,
+  "debug": false,
   "enable_default_patterns": true,
   "enable_default_allow_patterns": true,
   "check_query": false,
