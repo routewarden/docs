@@ -246,7 +246,7 @@ app.example.com {
         response {
             mode json
             status_code 403
-            body '{"error":"Forbidden"}'
+            body "{\"error\":\"Forbidden\"}"
         }
     }
 
@@ -336,7 +336,7 @@ service.internal.example.com {
         response {
             mode json
             status_code 403
-            body '{"error":"Forbidden","scope":"actuator-protected"}'
+            body "{\"error\":\"Forbidden\",\"scope\":\"actuator-protected\"}"
         }
     }
 
@@ -481,7 +481,7 @@ app.example.com {
         response {
             mode json
             status_code 403
-            body '{"error":"Forbidden","message":"Restricted path pattern"}'
+            body "{\"error\":\"Forbidden\",\"message\":\"Restricted path pattern\"}"
         }
     }
 

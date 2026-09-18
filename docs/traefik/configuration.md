@@ -9,6 +9,7 @@ This reference covers all configuration options available in RouteWarden.
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `enabled` | `bool` | `true` | Enables or disables the middleware. When `false`, all traffic passes through. |
+| `debug` | `bool` | `false` | Enables verbose diagnostic logging for request candidate normalization, method matching, and allow/block evaluation details. |
 | `enableDefaultPatterns` | `bool` | `true` | Enables built-in protection for `.env*`, `.git`, `.aws`, `.sql`, backups, and logs. |
 | `enableDefaultAllowPatterns` | `bool` | `true` | Enables built-in allowlist exemptions (`/robots.txt`, `/sitemap.xml`, `/ads.txt`, `/security.txt`, `/.well-known/*`). Set to `false` to disable. |
 | `pathPatterns` | `[]string` | `[]` | List of custom regular expressions to block (matches against normalized path). |

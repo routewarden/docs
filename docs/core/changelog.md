@@ -28,6 +28,19 @@ The `v0.3.x` release series introduces granular HTTP method filtering (`methods`
 | **Kubernetes Gateway Generation** | Traefik CRD only | ✅ **Traefik CRD & Caddy ConfigMap** | Generates native Traefik `Middleware` CRDs and Caddy `ConfigMap` manifests with proper ordering (`order route_warden before reverse_proxy`). |
 | **Pattern Checker Architecture** | Single-column cards | ✅ **Inline 2-Column Grid** | Side-by-side color-differentiated Block (crimson) and Allow (emerald) lists with dynamic URL-to-regex compilation. |
 
+### [v0.3.2] - 2026-09-18
+
+#### Added
+- **Diagnostic Debug Logging Flag (`debug`)**:
+  - Added `debug` configuration boolean option across RouteWarden Core, Traefik, and Caddy gateways (defaults to `false`).
+  - When `debug: true`, RouteWarden outputs detailed diagnostic logs to stdout / reverse proxy logging, capturing:
+    - Inbound request method, client IP, and original raw URL path.
+    - Candidate path transformations generated during multi-layer anti-evasion normalization (unescaping, matrix param stripping, backslash conversion, null-byte stripping, traversal cleanup).
+    - Matched allowlist rules or blocking pattern hits with rule IDs, or non-matching verb bypass details.
+  - Supported across Traefik YAML/TOML (`debug: true`), Docker Compose labels (`traefik.http.middlewares.<name>.plugin.routewarden.debug=true`), Caddyfile (`debug true`), and Caddy JSON API (`"debug": true`).
+
+---
+
 ### [v0.3.0] - 2026-09-17
 
 #### Added
