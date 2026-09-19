@@ -286,6 +286,10 @@ Real-world deployment patterns demonstrating how engineering teams and self-host
     <h4><a href="/docs/examples/case-study-honeypot-staging">Honeypots & Active Defense</a></h4>
     <p>Crash scanning bots with <code>gzipBomb</code> decompression traps, reset TCP connections with <code>silentDrop</code>, and cloak staging preview clusters.</p>
   </div>
+  <div class="attack-card">
+    <h4><a href="/docs/examples/crowdsec">CrowdSec Integration & Auto-Ban</a></h4>
+    <p>Emit structured JSON security audit events directly into CrowdSec to automatically ban attacker IPs across your firewall on their first request.</p>
+  </div>
 </div>
 
 ---

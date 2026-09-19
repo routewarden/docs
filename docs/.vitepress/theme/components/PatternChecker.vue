@@ -95,6 +95,7 @@ const newAllowInput = ref('')
 // 3. Flags state
 const enabled = ref(true)
 const debug = ref(false)
+const securityLog = ref(true)
 const enableDefaultPatterns = ref(true)
 const enableDefaultAllowPatterns = ref(true)
 const checkQuery = ref(false)
@@ -898,6 +899,7 @@ const generatedSnippet = computed(() => {
     let out = `example.com {\n  route_warden {\n`
     if (!enabled.value) out += `    enabled false\n`
     if (debug.value) out += `    debug true\n`
+    if (!securityLog.value) out += `    security_log false\n`
     if (!enableDefaultPatterns.value) out += `    enable_default_patterns false\n`
     if (!enableDefaultAllowPatterns.value) out += `    enable_default_allow_patterns false\n`
     if (checkQuery.value) out += `    check_query true\n`
@@ -947,6 +949,7 @@ const generatedSnippet = computed(() => {
     let out = `http:\n  middlewares:\n    routewarden:\n      plugin:\n        routewarden:\n`
     if (!enabled.value) out += `          enabled: false\n`
     if (debug.value) out += `          debug: true\n`
+    if (!securityLog.value) out += `          securityLog: false\n`
     if (!enableDefaultPatterns.value) out += `          enableDefaultPatterns: false\n`
     if (!enableDefaultAllowPatterns.value) out += `          enableDefaultAllowPatterns: false\n`
     if (checkQuery.value) out += `          checkQuery: true\n`
@@ -992,6 +995,7 @@ const generatedSnippet = computed(() => {
     let out = `[http.middlewares.routewarden.plugin.routewarden]\n`
     if (!enabled.value) out += `enabled = false\n`
     if (debug.value) out += `debug = true\n`
+    if (!securityLog.value) out += `securityLog = false\n`
     if (!enableDefaultPatterns.value) out += `enableDefaultPatterns = false\n`
     if (!enableDefaultAllowPatterns.value) out += `enableDefaultAllowPatterns = false\n`
     if (checkQuery.value) out += `checkQuery = true\n`
@@ -1040,6 +1044,7 @@ const generatedSnippet = computed(() => {
     const prefix = 'traefik.http.middlewares.routewarden.plugin.routewarden'
     if (!enabled.value) out += `      - "${prefix}.enabled=false"\n`
     if (debug.value) out += `      - "${prefix}.debug=true"\n`
+    if (!securityLog.value) out += `      - "${prefix}.securityLog=false"\n`
     if (!enableDefaultPatterns.value) out += `      - "${prefix}.enableDefaultPatterns=false"\n`
     if (!enableDefaultAllowPatterns.value) out += `      - "${prefix}.enableDefaultAllowPatterns=false"\n`
     if (checkQuery.value) out += `      - "${prefix}.checkQuery=true"\n`
@@ -1078,6 +1083,7 @@ const generatedSnippet = computed(() => {
     let out = `apiVersion: traefik.io/v1alpha1\nkind: Middleware\nmetadata:\n  name: routewarden\n  namespace: default\nspec:\n  plugin:\n    routewarden:\n`
     if (!enabled.value) out += `      enabled: false\n`
     if (debug.value) out += `      debug: true\n`
+    if (!securityLog.value) out += `      securityLog: false\n`
     if (!enableDefaultPatterns.value) out += `      enableDefaultPatterns: false\n`
     if (!enableDefaultAllowPatterns.value) out += `      enableDefaultAllowPatterns: false\n`
     if (checkQuery.value) out += `      checkQuery: true\n`
@@ -1120,6 +1126,7 @@ const generatedSnippet = computed(() => {
     let out = `apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: caddy-config\n  namespace: default\ndata:\n  Caddyfile: |\n    {\n      order route_warden before reverse_proxy\n    }\n\n    example.com {\n      route_warden {\n`
     if (!enabled.value) out += `        enabled false\n`
     if (debug.value) out += `        debug true\n`
+    if (!securityLog.value) out += `        security_log false\n`
     if (!enableDefaultPatterns.value) out += `        enable_default_patterns false\n`
     if (!enableDefaultAllowPatterns.value) out += `        enable_default_allow_patterns false\n`
     if (checkQuery.value) out += `        check_query true\n`
@@ -1388,6 +1395,9 @@ function buildShareUrl(): string {
   if (debug.value) {
     url.searchParams.set('debug', '1')
   }
+  if (!securityLog.value) {
+    url.searchParams.set('securityLog', '0')
+  }
   if (!enableDefaultPatterns.value) {
     url.searchParams.set('defaultBlock', '0')
   }
@@ -1488,6 +1498,9 @@ onMounted(() => {
     }
     if (params.has('debug')) {
       debug.value = params.get('debug') === '1' || params.get('debug') === 'true'
+    }
+    if (params.has('securityLog')) {
+      securityLog.value = params.get('securityLog') !== '0' && params.get('securityLog') !== 'false'
     }
     if (params.has('defaultBlock')) {
       enableDefaultPatterns.value = params.get('defaultBlock') !== '0' && params.get('defaultBlock') !== 'false'
@@ -1764,6 +1777,10 @@ onMounted(() => {
         <label class="rw-check">
           <input v-model="debug" type="checkbox" />
           <span>Debug</span>
+        </label>
+        <label class="rw-check" title="Emit single-line structured JSON security events on stdout for CrowdSec and SIEM">
+          <input v-model="securityLog" type="checkbox" />
+          <span>Security Log (CrowdSec)</span>
         </label>
         <div class="rw-inline-ip">
           <span>Allowed IPs:</span>
