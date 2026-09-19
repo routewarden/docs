@@ -27,6 +27,18 @@ The `v0.3.x` release series introduces granular HTTP method filtering (`methods`
 | **Deterministic Syntax Highlighting** | ❌ Plain code block | ✅ **Multi-Gateway Highlighter** | Rich syntax highlighting for Caddyfile, Traefik YAML, Traefik TOML, Docker Compose, and Kubernetes manifests. |
 | **Kubernetes Gateway Generation** | Traefik CRD only | ✅ **Traefik CRD & Caddy ConfigMap** | Generates native Traefik `Middleware` CRDs and Caddy `ConfigMap` manifests with proper ordering (`order route_warden before reverse_proxy`). |
 | **Pattern Checker Architecture** | Single-column cards | ✅ **Inline 2-Column Grid** | Side-by-side color-differentiated Block (crimson) and Allow (emerald) lists with dynamic URL-to-regex compilation. |
+| **CrowdSec / SIEM Security Logging** | ❌ None | ✅ **`securityLog` / `security_log`** | Single-line structured JSON security events on stdout for CrowdSec 1-strike auto-ban and SIEM threat monitoring. |
+
+### [v0.3.3] - 2026-09-19
+
+#### Added
+- **CrowdSec & SIEM Structured Security Audit Logging (`securityLog` / `security_log`)**:
+  - Added built-in structured security audit logging enabled by default across both `traefik-warden` (`securityLog: true`) and `caddy-warden` (`security_log true`).
+  - When a request is blocked (via path patterns, query strings, or query parameters), RouteWarden emits a deterministic, single-line JSON payload to stdout with `type: "routewarden_block"`, `client_ip`, `path`, `pattern`, `action`, `reason`, and `user_agent`.
+  - Added official CrowdSec parser (`routewarden-logs.yaml`) and trigger scenario (`routewarden-threat.yaml`) enabling instant 1-strike firewall auto-bans without multi-request thresholds or excessive log parsing overhead.
+  - Added comprehensive [CrowdSec Integration Guide](/examples/crowdsec) covering Docker Compose setup, CrowdSec log acquisition, and SIEM ingestion.
+
+---
 
 ### [v0.3.2] - 2026-09-18
 

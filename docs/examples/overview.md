@@ -14,6 +14,7 @@ Browse ready-to-run configurations and production blueprints for RouteWarden acr
 | [4. IP / Subnet Whitelisting](/examples/ip-whitelisting) | Allow internal corporate VPNs, office IPs, and developer subnets. | Traefik & Caddy |
 | [5. Captcha Verification Challenge](/examples/captcha) | Challenge clients via Cloudflare Turnstile or hCaptcha on sensitive routes. | Traefik & Caddy |
 | [6. Kubernetes IngressRoute](/examples/kubernetes) | Production Ingress and Middleware setups for Traefik CRDs & Caddy Ingress. | Kubernetes (Traefik & Caddy) |
+| [7. CrowdSec Integration & Security Logging](/examples/crowdsec) | Connect RouteWarden to CrowdSec for instant 1-strike attacker auto-bans. | Traefik & Caddy + CrowdSec |
 
 ---
 

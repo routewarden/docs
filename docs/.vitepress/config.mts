@@ -195,7 +195,8 @@ export default defineConfig({
             { text: '3. Observability Cloaking', link: '/examples/case-study-observability' },
             { text: '4. CMS & WordPress Shield', link: '/examples/case-study-cms-shield' },
             { text: '5. Password Vaults (Vaultwarden)', link: '/examples/case-study-vaultwarden' },
-            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' }
+            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' },
+            { text: '7. CrowdSec Auto-Ban Shield', link: '/examples/crowdsec' }
           ]
         },
 
@@ -231,7 +232,8 @@ export default defineConfig({
             { text: '3. Observability Cloaking', link: '/examples/case-study-observability' },
             { text: '4. CMS & WordPress Shield', link: '/examples/case-study-cms-shield' },
             { text: '5. Password Vaults (Vaultwarden)', link: '/examples/case-study-vaultwarden' },
-            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' }
+            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' },
+            { text: '7. CrowdSec Auto-Ban Shield', link: '/examples/crowdsec' }
           ]
         },
 
@@ -268,7 +270,8 @@ export default defineConfig({
             { text: '3. Observability Cloaking', link: '/examples/case-study-observability' },
             { text: '4. CMS & WordPress Shield', link: '/examples/case-study-cms-shield' },
             { text: '5. Password Vaults (Vaultwarden)', link: '/examples/case-study-vaultwarden' },
-            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' }
+            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' },
+            { text: '7. CrowdSec Auto-Ban Shield', link: '/examples/crowdsec' }
           ]
         },
         {
@@ -291,7 +294,8 @@ export default defineConfig({
             { text: '3. Observability Cloaking', link: '/examples/case-study-observability' },
             { text: '4. CMS & WordPress Shield', link: '/examples/case-study-cms-shield' },
             { text: '5. Password Vaults (Vaultwarden)', link: '/examples/case-study-vaultwarden' },
-            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' }
+            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' },
+            { text: '7. CrowdSec Auto-Ban Shield', link: '/examples/crowdsec' }
           ]
         },
         {
@@ -346,7 +350,8 @@ export default defineConfig({
             { text: '3. Observability Cloaking', link: '/examples/case-study-observability' },
             { text: '4. CMS & WordPress Shield', link: '/examples/case-study-cms-shield' },
             { text: '5. Password Vaults (Vaultwarden)', link: '/examples/case-study-vaultwarden' },
-            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' }
+            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' },
+            { text: '7. CrowdSec Auto-Ban Shield', link: '/examples/crowdsec' }
           ]
         }
       ]

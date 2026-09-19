@@ -41,6 +41,11 @@ Incoming Request
 ┌─────────────────────────┐
 │ Response Handler        │ ───► JSON / HTML / Captcha / Redirect / Silent Drop
 └─────────────────────────┘
+       │
+       ▼ (if securityLog: true)
+┌─────────────────────────┐
+│ Structured Security Log │ ───► JSON on stdout ──► CrowdSec / SIEM Auto-Ban
+└─────────────────────────┘
 ```
 
 ---
@@ -55,8 +60,9 @@ RouteWarden is constructed with clean, decoupled Go components adhering to Yaegi
 2. **`path_normalizer.go` (`PathNormalizer`)**:
    - Extracts URL paths, unescapes recursive percent-encoding (`%252e%252e` ➔ `..`), strips semicolon matrix parameters (`/;param/.env`), normalizes Windows backslashes (`\`), and generates canonical candidate paths.
 3. **`config.go` (`Config`)**:
-   - Defines plugin parameters, default sensitive regex sets, allowlist patterns, and compiler factories.
+   - Defines plugin parameters, default sensitive regex sets, allowlist patterns, compiler factories, and security logging settings.
 4. **`response_handler.go` (`ResponseHandler`)**:
    - Manages HTTP response emission for custom JSON, HTML, redirect codes, and embedded Captcha challenges (**Turnstile**, **hCaptcha**, **reCAPTCHA**).
-5. **`routewarden.go` (`RouteWarden`)**:
-   - Implements Traefik's standard `http.Handler` interface.
+5. **`routewarden.go` (`RouteWarden`) / `caddywarden.go`**:
+   - Implements gateway interface (`http.Handler` for Traefik, `caddyhttp.MiddlewareHandler` for Caddy).
+   - Coordinates candidate normalization, allow/block evaluation, and emits structured JSON audit events (`logSecurityEvent`) on blocked requests for [CrowdSec](/examples/crowdsec) and SIEM log shippers.
