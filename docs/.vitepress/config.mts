@@ -15,7 +15,7 @@ export default defineConfig({
       {
         name: 'redirect-root-to-docs',
         configureServer(server) {
-          server.middlewares.use((req, res, next) => {
+          server.middlewares.use((req: any, res: any, next: any) => {
             if (req.url === '/' || req.url === '') {
               res.writeHead(302, { Location: '/docs/' })
               res.end()
@@ -30,7 +30,7 @@ export default defineConfig({
           })
         },
         configurePreviewServer(server) {
-          server.middlewares.use((req, res, next) => {
+          server.middlewares.use((req: any, res: any, next: any) => {
             if (req.url === '/' || req.url === '') {
               res.writeHead(302, { Location: '/docs/' })
               res.end()
@@ -49,8 +49,10 @@ export default defineConfig({
   },
   async buildEnd(siteConfig) {
     // Generate a fallback root index.html and 404.html redirecting to /docs/ if hosted at domain root
-    const fs = await import('node:fs')
-    const path = await import('node:path')
+    // Dynamically import node modules via runtime loader to avoid TS static resolution errors when @types/node is not installed
+    const importModule = (name: string) => new Function('n', 'return import(n)')(name)
+    const fs = await importModule('node:fs')
+    const path = await importModule('node:path')
     const outDir = siteConfig.outDir
     
     const rootRedirectHtml = `<!DOCTYPE html>
