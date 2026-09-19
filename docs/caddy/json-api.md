@@ -23,6 +23,7 @@ When building routes via JSON, specify `"handler": "route_warden"` in your route
   "handler": "route_warden",
   "enabled": true,
   "debug": false,
+  "security_log": true,
   "enable_default_patterns": true,
   "enable_default_allow_patterns": true,
   "check_query": false,
@@ -72,6 +73,7 @@ curl -X POST http://localhost:2019/config/apps/http/servers/srv0/routes/0/handle
   -d '{
     "handler": "route_warden",
     "enabled": true,
+    "security_log": true,
     "enable_default_patterns": true,
     "allowed_ips": ["10.0.0.0/8"],
     "methods": ["GET", "POST"],

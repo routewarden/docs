@@ -31,6 +31,7 @@ route_warden {
     # Boolean Flags
     enabled <true|false>                        # Default: true
     debug <true|false>                          # Default: false (verbose diagnostic logs)
+    security_log <true|false>                   # Default: true (emit structured JSON audit events on stdout)
     enable_default_patterns <true|false>        # Default: true (.env, .git, backups, etc.)
     enable_default_allow_patterns <true|false>  # Default: true (/robots.txt, /favicon.ico, etc.)
     check_query <true|false>                    # Default: false (inspect URI query strings)
@@ -74,6 +75,8 @@ route_warden {
 | Directive | Type | Default | Description |
 |---|---|---|---|
 | `enabled` | `bool` | `true` | Enables or disables RouteWarden inspection. |
+| `debug` | `bool` | `false` | Enables verbose diagnostic logging in Caddy's logger. |
+| `security_log` | `bool` | `true` | Emits single-line structured JSON security events on stdout for CrowdSec, SIEMs, or log aggregators on blocked requests. |
 | `enable_default_patterns` | `bool` | `true` | Blocks high-risk files (`.env`, `.git`, `.aws`, `.ssh`, `.sql`, `.bak`, etc.). |
 | `enable_default_allow_patterns` | `bool` | `true` | Whitelists standard files like `/robots.txt`, `/favicon.ico`, `/sitemap.xml`. |
 | `check_query` | `bool` | `false` | When enabled, also evaluates query parameters for sensitive file targets. |
@@ -81,6 +84,9 @@ route_warden {
 | `allow_patterns` | `list` | `[]` | Regex patterns that should always be allowed through. |
 | `allowed_ips` | `list` | `[]` | IPv4, IPv6, or CIDR blocks exempted from checks. |
 | `methods` | `list` | `["GET"]` | HTTP verbs to inspect (e.g. `methods GET POST`). Non-matching verbs bypass inspection. |
+
+> [!TIP]
+> **CrowdSec Integration**: For automated attacker remediation using `security_log`, see the **[CrowdSec Integration Guide](/examples/crowdsec)**.
 
 ---
 

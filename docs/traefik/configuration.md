@@ -10,6 +10,7 @@ This reference covers all configuration options available in RouteWarden.
 |---|---|---|---|
 | `enabled` | `bool` | `true` | Enables or disables the middleware. When `false`, all traffic passes through. |
 | `debug` | `bool` | `false` | Enables verbose diagnostic logging for request candidate normalization, method matching, and allow/block evaluation details. |
+| `securityLog` | `bool` | `true` | Emits single-line structured JSON security audit events on stdout for CrowdSec, SIEMs, or fail2ban on blocked requests. |
 | `enableDefaultPatterns` | `bool` | `true` | Enables built-in protection for `.env*`, `.git`, `.aws`, `.sql`, backups, and logs. |
 | `enableDefaultAllowPatterns` | `bool` | `true` | Enables built-in allowlist exemptions (`/robots.txt`, `/sitemap.xml`, `/ads.txt`, `/security.txt`, `/.well-known/*`). Set to `false` to disable. |
 | `pathPatterns` | `[]string` | `[]` | List of custom regular expressions to block (matches against normalized path). |
@@ -19,6 +20,34 @@ This reference covers all configuration options available in RouteWarden.
 | `methods` | `[]string` | `["GET"]` | HTTP request verbs to inspect (e.g. `["GET", "POST"]`). Non-matching verbs bypass inspection. |
 | `checkQuery` | `bool` | `false` | Also inspects the URL raw query string for blocked patterns. |
 | `statusCode` | `int` | `403` | Default HTTP status code when request is blocked (legacy shortcut). |
+
+---
+
+## Security Audit Logging (`securityLog`)
+
+RouteWarden includes built-in structured security audit logging designed for [CrowdSec](/examples/crowdsec), SIEM platforms (Elasticsearch, Loki, Splunk, Datadog), and automated intrusion remediation tools.
+
+When `securityLog: true` (the default), every intercepted probe emits a single-line JSON payload to `stdout`:
+
+```json
+{"action":"json","client_ip":"198.51.100.42","method":"GET","path":"/.env","pattern":"(?i)(^|/)(\\.env.*|.*\\.(txt|log|bak|backup|sql|conf|config|ini|yaml|yml))$","plugin":"routewarden","reason":"path_blocked","request_uri":"/.env","timestamp":"2026-09-19T15:30:00Z","type":"routewarden_block","user_agent":"Nuclei/v3.1.0"}
+```
+
+| Field | Description |
+|---|---|
+| `type` | Constant identifier `routewarden_block` for log parsers and alerting rules. |
+| `timestamp` | ISO-8601 UTC timestamp of the interception. |
+| `plugin` | Middleware instance name. |
+| `client_ip` | Remote client IP extracted from socket RemoteAddr, `X-Forwarded-For`, or `X-Real-IP`. |
+| `method` | HTTP request verb (`GET`, `POST`, etc.). |
+| `path` | Normalized candidate path that triggered the match. |
+| `request_uri` | Original raw URI requested by the client. |
+| `pattern` | Regular expression pattern that triggered the block. |
+| `action` | Response mode executed (`json`, `html`, `fakeSuccess`, `silentDrop`, etc.). |
+| `reason` | Block trigger classification (`path_blocked`, `query_blocked`, `query_param_blocked`). |
+| `user_agent` | Inbound client User-Agent header string. |
+
+For complete end-to-end integration steps with automated firewall remediation, see the **[CrowdSec Integration Guide](/examples/crowdsec)**.
 
 ---
 
