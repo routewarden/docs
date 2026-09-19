@@ -2114,7 +2114,7 @@ onMounted(() => {
   gap: 0.85rem;
   font-size: 13px;
   color: var(--vp-c-text-1);
-  padding: 0.25rem 0 1.5rem;
+  padding: 0.25rem 0 calc(2rem + env(safe-area-inset-bottom, 0px));
 }
 
 .rw-simple-tool *, .rw-simple-tool *::before, .rw-simple-tool *::after {

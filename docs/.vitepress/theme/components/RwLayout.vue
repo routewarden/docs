@@ -229,6 +229,7 @@ onUnmounted(() => {
   right: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   background: var(--vp-c-bg);
   box-shadow: -8px 0 40px rgba(0, 0, 0, 0.15);
   display: flex;
@@ -239,6 +240,8 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .rw-panel-container {
     width: 100vw;
+    height: 100vh;
+    height: 100dvh;
   }
 }
 
@@ -301,8 +304,19 @@ onUnmounted(() => {
 .rw-panel-body {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 20px 32px;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 20px calc(32px + env(safe-area-inset-bottom, 0px));
   overscroll-behavior: contain;
+}
+
+@media (max-width: 768px) {
+  .rw-panel-header {
+    padding: 12px 14px;
+  }
+
+  .rw-panel-body {
+    padding: 12px 12px calc(48px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 /* Slide-in Transition */
