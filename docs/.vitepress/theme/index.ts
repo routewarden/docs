@@ -2,6 +2,7 @@ import DefaultTheme from 'vitepress/theme'
 import './custom.css'
 import PatternChecker from './components/PatternChecker.vue'
 import RwLayout from './components/RwLayout.vue'
+import { trackPageView, trackPlaygroundEvent } from './telemetry'
 
 const STORAGE_KEY = 'routewarden-preferred-tab'
 
@@ -56,8 +57,20 @@ function syncTabs(targetTitle: string, triggeringGroup?: HTMLElement) {
 export default {
   extends: DefaultTheme,
   Layout: RwLayout,
-  enhanceApp({ app }) {
+  enhanceApp({ app, router }) {
     app.component('PatternChecker', PatternChecker)
+
+    // Route tracking for SPA page transitions in VitePress
+    if (router && typeof window !== 'undefined') {
+      const originalAfterRouteChanged = router.onAfterRouteChanged
+      router.onAfterRouteChanged = (to: string) => {
+        if (originalAfterRouteChanged) {
+          originalAfterRouteChanged(to)
+        }
+        trackPageView(to)
+      }
+    }
+
     if (typeof window !== 'undefined') {
       const handleTabSelection = (target: HTMLElement) => {
         let label: HTMLLabelElement | null = null
@@ -80,6 +93,7 @@ export default {
           const title = getTabTitle(label)
           if (title) {
             syncTabs(title, group)
+            trackPlaygroundEvent('tab_switched', { tab: title })
           }
         }
       }
@@ -106,7 +120,10 @@ export default {
         } catch {}
       }
 
-      window.addEventListener('DOMContentLoaded', applyStoredPreference)
+      window.addEventListener('DOMContentLoaded', () => {
+        applyStoredPreference()
+        trackPageView()
+      })
 
       // Support VitePress client-side page navigation
       if (typeof MutationObserver !== 'undefined') {
@@ -122,3 +139,4 @@ export default {
     }
   }
 }
+
