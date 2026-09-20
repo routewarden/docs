@@ -196,7 +196,7 @@ const tarpitMaxDurationSeconds = ref(60)
 const streamSizeMB = ref(50)
 
 // 5. Snippet format
-const snippetFormat = ref<'caddy' | 'nginx' | 'traefik_yaml' | 'traefik_toml' | 'docker' | 'k8s_traefik' | 'k8s_caddy' | 'k8s_nginx' | 'k8s' | 'json'>('caddy')
+const snippetFormat = ref<'caddy' | 'nginx' | 'traefik_yaml' | 'traefik_toml' | 'docker' | 'k8s_traefik' | 'k8s_caddy' | 'k8s_nginx' | 'k8s'>('caddy')
 const copySuccess = ref(false)
 
 // Presets
@@ -1329,66 +1329,6 @@ const generatedSnippet = computed(() => {
     return out
   }
 
-  if (snippetFormat.value === 'json') {
-    const configObj: Record<string, any> = {
-      $schema: 'https://routewarden.github.io/schema/v1/config.json'
-    }
-
-    if (!enabled.value) configObj.enabled = false
-    if (debug.value) configObj.debug = true
-    if (!securityLog.value) configObj.securityLog = false
-    if (!enableDefaultPatterns.value) configObj.enableDefaultPatterns = false
-    if (!enableDefaultAllowPatterns.value) configObj.enableDefaultAllowPatterns = false
-    if (checkQuery.value) configObj.checkQuery = true
-
-    const headersList = checkHeadersInput.value.split(',').map(s => s.trim()).filter(Boolean)
-    if (headersList.length > 0) {
-      configObj.checkHeaders = headersList
-    }
-
-    if (blockList.length > 0) {
-      configObj.blockPatterns = blockList
-    }
-
-    if (allowList.length > 0) {
-      configObj.allowPatterns = allowList
-    }
-
-    if (ipList.length > 0) {
-      configObj.allowedIps = ipList
-    }
-
-    if (hasCustomMethods) {
-      configObj.methods = methodsList
-    }
-
-    const respObj: Record<string, any> = {
-      mode: responseMode.value
-    }
-
-    if (statusCode.value !== 403) respObj.statusCode = statusCode.value
-    if (customBody.value) respObj.body = customBody.value
-    if (responseMode.value === 'redirect') respObj.redirectUrl = redirectUrl.value
-    if (responseMode.value === 'proxy') respObj.proxyUrl = proxyUrl.value
-    if (responseMode.value === 'gzipBomb') respObj.gzipBombMB = gzipBombMB.value
-    if (responseMode.value === 'tarpit') {
-      respObj.tarpitDelayMs = tarpitDelayMs.value
-      respObj.tarpitMaxDurationSeconds = tarpitMaxDurationSeconds.value
-    }
-    if (responseMode.value === 'rateLimitChallenge') respObj.retryAfterSeconds = retryAfterSeconds.value
-    if (responseMode.value === 'infiniteStream') respObj.streamSizeMB = streamSizeMB.value
-    if (responseMode.value === 'captcha') {
-      respObj.captcha = {
-        provider: captchaProvider.value,
-        siteKey: captchaSiteKey.value
-      }
-    }
-
-    configObj.response = respObj
-
-    return JSON.stringify(configObj, null, 2)
-  }
-
   return ''
 })
 
@@ -1415,7 +1355,6 @@ async function copyResponse() {
 
 const formatFilename = computed(() => {
   switch (snippetFormat.value) {
-    case 'json': return 'routewarden.json'
     case 'caddy': return 'Caddyfile'
     case 'nginx': return 'routewarden.conf'
     case 'traefik_yaml': return 'routewarden.yml'
@@ -1429,14 +1368,12 @@ const formatFilename = computed(() => {
   }
 })
 
-const isJsonFormat = computed(() => snippetFormat.value === 'json')
 const isCaddyFormat = computed(() => snippetFormat.value === 'caddy' || snippetFormat.value === 'k8s_caddy')
 const isNginxFormat = computed(() => snippetFormat.value === 'nginx' || snippetFormat.value === 'k8s_nginx')
 const isTraefikFormat = computed(() => snippetFormat.value === 'traefik_yaml' || snippetFormat.value === 'traefik_toml' || snippetFormat.value === 'k8s_traefik' || snippetFormat.value === 'k8s')
 const isDockerFormat = computed(() => snippetFormat.value === 'docker')
 
 const gatewayBadgeText = computed(() => {
-  if (isJsonFormat.value) return 'JSON Schema'
   if (isCaddyFormat.value) return 'Caddy'
   if (isNginxFormat.value) return 'NGINX'
   if (isDockerFormat.value) return 'Docker'
@@ -1444,7 +1381,6 @@ const gatewayBadgeText = computed(() => {
 })
 
 const gatewayBadgeClass = computed(() => {
-  if (isJsonFormat.value) return 'badge-json'
   if (isCaddyFormat.value) return 'badge-caddy'
   if (isNginxFormat.value) return 'badge-nginx'
   if (isDockerFormat.value) return 'badge-docker'
@@ -1868,7 +1804,7 @@ onMounted(() => {
 
     // 5. Snippet format
     const pFmt = params.get('format')
-    if (pFmt && ['caddy', 'nginx', 'traefik_yaml', 'traefik_toml', 'docker', 'k8s_traefik', 'k8s_caddy', 'k8s_nginx', 'k8s', 'json'].includes(pFmt)) {
+    if (pFmt && ['caddy', 'nginx', 'traefik_yaml', 'traefik_toml', 'docker', 'k8s_traefik', 'k8s_caddy', 'k8s_nginx', 'k8s'].includes(pFmt)) {
       snippetFormat.value = pFmt as any
     }
   } catch (err) {
@@ -2333,7 +2269,6 @@ onMounted(() => {
     <div
       class="rw-block rw-export-block rw-copyable-block"
       :class="{
-        'gw-json': isJsonFormat,
         'gw-caddy': isCaddyFormat,
         'gw-nginx': isNginxFormat,
         'gw-traefik': isTraefikFormat,
@@ -2346,7 +2281,6 @@ onMounted(() => {
           <span
             class="rw-filename-label"
             :class="{
-              'fn-json': isJsonFormat,
               'fn-caddy': isCaddyFormat,
               'fn-nginx': isNginxFormat,
               'fn-traefik': isTraefikFormat,
@@ -2363,11 +2297,6 @@ onMounted(() => {
       <div class="rw-export-header">
         <div class="rw-export-header-left">
           <div class="rw-tabs">
-            <button
-              class="tab-json"
-              :class="{ act: snippetFormat === 'json' }"
-              @click="snippetFormat = 'json'"
-            >routewarden.json</button>
             <button
               class="tab-caddy"
               :class="{ act: snippetFormat === 'caddy' }"
@@ -2416,7 +2345,6 @@ onMounted(() => {
             class="rw-btn-copy"
             :class="{
               copied: copySuccess,
-              'btn-copy-json': isJsonFormat,
               'btn-copy-caddy': isCaddyFormat,
               'btn-copy-nginx': isNginxFormat,
               'btn-copy-traefik': isTraefikFormat,
