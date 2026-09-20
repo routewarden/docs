@@ -33,6 +33,25 @@ This example protects `/admin` and `/login` with **hCaptcha** (using the officia
 
 ::: code-group
 
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "pathPatterns": [
+    "(?i)^/(admin|login)(/.*)?$"
+  ],
+  "response": {
+    "mode": "captcha",
+    "statusCode": 403,
+    "captcha": {
+      "provider": "hcaptcha",
+      "siteKey": "10000000-ffff-ffff-ffff-000000000001",
+      "title": "Human Verification (hCaptcha)"
+    }
+  }
+}
+```
+
 ```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:
@@ -166,6 +185,26 @@ http {
 ## 2. Cloudflare Turnstile Configuration Example
 
 ::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "pathPatterns": [
+    "(?i)^/login(/.*)?$",
+    "(?i)^/reset-password(/.*)?$"
+  ],
+  "response": {
+    "mode": "captcha",
+    "statusCode": 403,
+    "captcha": {
+      "provider": "turnstile",
+      "siteKey": "1x00000000000000000000AA",
+      "title": "Security Verification Required"
+    }
+  }
+}
+```
 
 ```yaml [File (YAML)]
 # dynamic_conf.yml

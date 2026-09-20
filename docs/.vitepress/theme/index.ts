@@ -1,4 +1,5 @@
 import DefaultTheme from 'vitepress/theme'
+import type { EnhanceAppContext } from 'vitepress'
 import './custom.css'
 import PatternChecker from './components/PatternChecker.vue'
 import RwLayout from './components/RwLayout.vue'
@@ -57,7 +58,7 @@ function syncTabs(targetTitle: string, triggeringGroup?: HTMLElement) {
 export default {
   extends: DefaultTheme,
   Layout: RwLayout,
-  enhanceApp({ app, router }) {
+  enhanceApp({ app, router }: EnhanceAppContext) {
     app.component('PatternChecker', PatternChecker)
 
     // Route tracking for SPA page transitions in VitePress

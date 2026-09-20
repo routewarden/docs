@@ -8,6 +8,38 @@ When individual microservices require custom regex rules, sensitive directory ex
 
 ::: code-group
 
+```json [routewarden.json]
+// Generate Traefik dynamic.yml or labels:
+//   CLI:    rwarden generate --target [traefik|traefik-labels] --config routewarden.json
+//   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target [traefik|traefik-labels] --config /routewarden.json
+{
+  "$schema": "https://routewarden.github.io/cli/schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "checkQuery": true,
+  "pathPatterns": [
+    "(?i)^/admin(/.*)?$",
+    "(?i)^/api/internal(/.*)?$"
+  ],
+  "allowPatterns": [
+    "(?i)^/robots\\.txt$",
+    "(?i)^/\\.well-known(/.*)?$"
+  ],
+  "allowedIps": [
+    "192.168.1.0/24",
+    "10.10.0.0/16"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 403,
+    "body": "{\"error\":\"access_denied\",\"service\":\"web\"}",
+    "headers": {
+      "X-Protected-By": "RouteWarden"
+    }
+  }
+}
+```
+
 ```yaml [Traefik (File YAML)]
 # dynamic_conf.yml
 http:

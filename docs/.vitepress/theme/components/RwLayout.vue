@@ -169,36 +169,39 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Navbar Trigger Button */
+/* Navbar Trigger Button (Premium Pill) */
 .rw-nav-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-left: 8px;
-  padding: 4px 12px;
+  gap: 7px;
+  margin-left: 10px;
+  padding: 0 14px;
   border: 1px solid var(--vp-c-divider);
-  border-radius: 8px;
+  border-radius: 20px;
   background: var(--vp-c-bg-soft);
   color: var(--vp-c-text-1);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
-  line-height: 28px;
   height: 36px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .rw-nav-trigger:hover {
   border-color: var(--vp-c-brand-1);
   color: var(--vp-c-brand-1);
   background: var(--vp-c-brand-soft);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.12);
 }
 
 .rw-nav-icon {
   width: 14px;
   height: 14px;
   flex-shrink: 0;
+  stroke: var(--vp-c-brand-1);
 }
 
 @media (max-width: 768px) {

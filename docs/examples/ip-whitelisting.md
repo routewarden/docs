@@ -19,6 +19,26 @@ Both exact IPv4/IPv6 addresses (`127.0.0.1`, `2001:db8::1`) and CIDR blocks (`10
 
 ::: code-group
 
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "pathPatterns": [
+    "(?i)^/admin(/.*)?$",
+    "(?i)^/metrics(/.*)?$"
+  ],
+  "allowedIps": [
+    "10.0.0.0/8",
+    "192.168.1.100"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 403,
+    "body": "{\"error\":\"Forbidden\",\"message\":\"Restricted to authorized IP/VPN\"}"
+  }
+}
+```
+
 ```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:

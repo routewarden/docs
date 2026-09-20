@@ -146,21 +146,36 @@ export default defineConfig({
       },
       {
         text: 'Core Engine',
-        link: '/core/architecture',
-        activeMatch: '^/core/'
+        activeMatch: '^/core/',
+        items: [
+          { text: 'Architecture & Threat Model', link: '/core/architecture' },
+          { text: 'Anti-Evasion Normalization', link: '/core/anti-evasion' },
+          { text: 'Response Modes (13 Actions)', link: '/core/response-modes' },
+          { text: 'Custom Regex Patterns', link: '/core/custom-patterns' }
+        ]
       },
-
       {
-        text: 'Case Studies',
-        link: '/examples/case-study-immich',
-        activeMatch: '^/examples/'
+        text: 'Solutions',
+        activeMatch: '^/examples/',
+        items: [
+          { text: 'Production Case Studies', link: '/examples/case-study-immich' },
+          { text: 'Common Recipes & Compose', link: '/examples/basic-sensitive-files' }
+        ]
+      },
+      {
+        text: 'Tools',
+        activeMatch: '^/tools/',
+        items: [
+          { text: 'Pattern & Response Playground', link: '/tools/pattern-checker' },
+          { text: 'RouteWarden CLI & Schema Portal', link: 'https://routewarden.github.io/cli/' }
+        ]
       },
       {
         text: versionsRegistry.current,
         activeMatch: '^/v(0|1)\\.',
         items: [
           ...versionsRegistry.versions.map(v => ({ text: v.text, link: v.link })),
-          { text: 'Changelog', link: '/core/changelog' },
+          { text: 'Changelog & Migrations', link: '/core/changelog' },
           { text: 'Traefik Plugin Catalog', link: 'https://plugins.traefik.io' }
         ]
       }
@@ -327,6 +342,7 @@ export default defineConfig({
             { text: 'Anti-Evasion Normalization', link: '/core/anti-evasion' },
             { text: 'Response Modes (13 Actions)', link: '/core/response-modes' },
             { text: 'Custom Regex Patterns', link: '/core/custom-patterns' },
+            { text: 'CLI & JSON Schema', link: '/core/cli' },
             { text: 'Changelog & Migrations', link: '/core/changelog' }
           ]
         },
@@ -388,6 +404,26 @@ export default defineConfig({
             { text: 'Traefik Plugin ➔', link: '/traefik/' },
             { text: 'Caddy Module ➔', link: '/caddy/' },
             { text: 'NGINX Module ➔', link: '/nginx/' },
+            { text: 'Core Architecture ➔', link: '/core/architecture' }
+          ]
+        }
+      ],
+      '/tools/': [
+        {
+          text: 'Interactive Tools & Utilities',
+          collapsed: false,
+          items: [
+            { text: 'Pattern & Response Playground', link: '/tools/pattern-checker' },
+            { text: 'RouteWarden CLI Portal ↗', link: 'https://routewarden.github.io/cli/' }
+          ]
+        },
+        {
+          text: 'Gateways & Core',
+          collapsed: false,
+          items: [
+            { text: 'Traefik Plugin Docs ➔', link: '/traefik/' },
+            { text: 'Caddy Module Docs ➔', link: '/caddy/' },
+            { text: 'NGINX Module Docs ➔', link: '/nginx/' },
             { text: 'Core Architecture ➔', link: '/core/architecture' }
           ]
         }

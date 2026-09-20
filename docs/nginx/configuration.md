@@ -52,6 +52,10 @@ warden = routewarden.new({
 
     -- Deep inspection
     check_query = false,                   -- Default: false (evaluates unescaped query string)
+    check_headers = {                      -- Default: {} (inspects forwarded headers for path smuggling)
+        "X-Forwarded-Uri",
+        "X-Rewrite-URL"
+    },
 
     -- HTTP Method filtering
     methods = { "GET", "HEAD" },           -- Default: { "GET" } (non-matching methods bypass checks)

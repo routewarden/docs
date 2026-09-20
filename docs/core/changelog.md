@@ -4,9 +4,38 @@ All notable changes to the **RouteWarden** Traefik middleware plugin are documen
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and RouteWarden adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.0] - 2026-09-20 (Latest)
+
+### Key Highlights
+
+- **Expanded Default Block Patterns**:
+  - Added built-in protection across Traefik, Caddy, and NGINX for private cryptographic keys and certificates (`*.pem`, `*.key`, `*.crt`, `*.pfx`, `*.p12`, `*.jks`, `*.kdb`).
+  - Added container manifest blocking (`Dockerfile*`, `docker-compose*.yml`, `docker-compose*.yaml`).
+  - Added OS directory structure leak protection (`.DS_Store`).
+  - Added CMS and framework configuration file protection (`wp-config.php*`, `configuration.php*`, `settings.py`, `local_settings.py`).
+- **Header Injection & Forwarded Path Inspection (`checkHeaders` / `check_headers`)**:
+  - Configurable header inspection list to neutralize HTTP reverse-proxy header smuggling (`X-Forwarded-Uri`, `X-Rewrite-URL`, `X-Original-URL`, `X-Custom-Path`).
+  - Headers are passed through candidate path extraction and normalization before regex matching.
+- **NGINX / OpenResty Performance & Context Auto-Population**:
+  - Implemented worker-level regex caching to reuse compiled PCRE matchers across repeated requests and instances.
+  - Enhanced `warden:check()` to automatically extract URI, query string, request method, remote address, and headers directly from NGINX context when called without arguments.
+- **Dedicated RouteWarden CLI (`rwarden`) & GitHub Pages Portal**:
+  - Created standalone `routewarden/cli` repository and documentation portal (`https://routewarden.github.io/cli/`).
+  - Built high-performance CLI with `test` (offline path simulation), `validate` (configuration file & stdin verification), and `schema` (JSON Schema export) subcommands.
+  - Provided containerized distribution via `ghcr.io/routewarden/cli:latest` alongside native binaries and one-line universal installer script (`curl -fsSL https://routewarden.github.io/cli/install.sh | bash`).
+  - Added streamlined uninstallation instructions and containerized execution alternatives side-by-side.
+- **Universal Configuration File (`routewarden.json`)**:
+  - Full support for `routewarden.json` in production across Traefik, Caddy, and NGINX recipes and blueprints.
+  - Decouples security policy definitions from proxy-specific config syntax for centralized auditing and GitOps workflows.
+- **Interactive Pattern Checker & Security Playground**:
+  - Upgraded live tester with full support for new v1.1.0 pattern categories (keys, container manifests, `.DS_Store`, CMS config).
+  - Added support for header smuggling simulation and gateway export snippets.
+- **Path Normalizer Fuzz Testing**:
+  - Implemented continuous fuzz testing (`FuzzExtractCandidatePaths`) in Traefik and Caddy test suites targeting percent-decoding, null bytes, backslashes, and matrix parameters.
+
 ---
 
-## [v1.0.0] - 2026-09-20 (Latest)
+## [v1.0.0] - 2026-09-20
 
 The `v1.0.0` milestone release marks general availability and multi-gateway parity for RouteWarden across **Traefik**, **Caddy**, and **NGINX / OpenResty**.
 
