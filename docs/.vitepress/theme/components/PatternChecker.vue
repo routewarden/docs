@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { trackPlaygroundEvent } from '../telemetry'
 
 // --- Built-in Rule Definitions (RouteWarden Go Core RE2 Regexes) ---
 interface BuiltInRule {
@@ -185,10 +186,11 @@ const presets = [
   { label: 'IP Bypass', method: 'GET', path: '/.env', ip: '10.5.0.25' }
 ]
 
-function applyPreset(p: { path: string; ip: string; method?: string }) {
+function applyPreset(p: { path: string; ip: string; method?: string; label?: string }) {
   testPath.value = p.path
   testIp.value = p.ip
   if (p.method) testMethod.value = p.method
+  trackPlaygroundEvent('apply_preset', { label: p.label || p.path })
 }
 
 // Anti-Evasion Normalization & Candidate Extraction
@@ -1530,6 +1532,7 @@ async function copySnippet() {
   try {
     await navigator.clipboard.writeText(generatedSnippet.value)
     copySuccess.value = true
+    trackPlaygroundEvent('copy_snippet', { format: snippetFormat.value })
     setTimeout(() => {
       copySuccess.value = false
     }, 2000)
@@ -1639,6 +1642,7 @@ async function copyShareLink() {
     if (!url) return
     await navigator.clipboard.writeText(url)
     shareFeedback.value = true
+    trackPlaygroundEvent('copy_share_link', { format: snippetFormat.value, mode: selectedAction.value })
     setTimeout(() => {
       shareFeedback.value = false
     }, 2500)

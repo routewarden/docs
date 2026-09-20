@@ -43,6 +43,8 @@ jobs:
 
       - name: Build VitePress documentation
         run: npm run docs:build
+        env:
+          CLOUDFLARE_ANALYTICS_TOKEN: ${{ secrets.CLOUDFLARE_ANALYTICS_TOKEN }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

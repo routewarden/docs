@@ -2,6 +2,7 @@
 import DefaultTheme from 'vitepress/theme'
 import PatternChecker from './PatternChecker.vue'
 import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { trackPlaygroundEvent } from '../telemetry'
 
 const { Layout } = DefaultTheme
 
@@ -9,6 +10,7 @@ const isOpen = ref(false)
 
 function openPlayground() {
   isOpen.value = true
+  trackPlaygroundEvent('open_drawer', { source: 'nav_or_deeplink' })
 }
 
 function toggle() {
@@ -21,6 +23,7 @@ function toggle() {
 
 function close() {
   isOpen.value = false
+  trackPlaygroundEvent('close_drawer')
 }
 
 // Sync URL and lock body/html scroll when panel is open/closed
