@@ -114,6 +114,101 @@ docker compose up -d --build
 
 ---
 
+## Configuration
+
+You can define RouteWarden security rules using **`routewarden.json` (Recommended Universal Schema)** as your single source of truth, directly in your **Caddyfile**, or via Caddy's dynamic **JSON API**.
+
+### Option 1: `routewarden.json` (Recommended Universal Schema)
+
+#### How `routewarden.json` Works with Caddy
+
+`routewarden.json` acts as a portable security policy with IDE autocompletion and CI/CD validation. Its properties correspond directly to Caddy's directive blocks and JSON handler objects:
+- `"methods"` ➔ Caddyfile `methods GET POST` / JSON `"methods": ["GET", "POST"]`
+- `"allowedIps"` ➔ Caddyfile `allowed_ips ...` / JSON `"allowed_ips": [...]`
+- `"pathPatterns"` ➔ Caddyfile `path_patterns ...` / JSON `"path_patterns": [...]`
+- `"response"` ➔ Caddyfile `response { mode ... }` / JSON `"response": { ... }`
+
+::: code-group
+
+```json [routewarden.json (Source of Truth)]
+// Validate: rwarden validate --config routewarden.json (or via docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest validate --config /routewarden.json)
+// Generate Caddy directives:
+//   CLI:    rwarden generate --target caddy --config routewarden.json
+//   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target caddy --config /routewarden.json
+{
+  "$schema": "https://routewarden.github.io/cli/schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "enableDefaultAllowPatterns": true,
+  "methods": ["GET", "POST"],
+  "allowedIps": ["10.0.0.0/8", "192.168.1.0/24"],
+  "response": {
+    "mode": "json",
+    "statusCode": 403,
+    "body": "{\"error\":\"Access Denied\",\"security\":\"RouteWarden Shield\"}"
+  }
+}
+```
+
+```nginx [Equivalent Caddyfile]
+# Caddyfile mapping from routewarden.json
+{
+    order route_warden before reverse_proxy
+}
+
+example.com {
+    route_warden {
+        enabled true
+        enable_default_patterns true
+        methods GET POST
+        allowed_ips "10.0.0.0/8" "192.168.1.0/24"
+        response {
+            mode json
+            status_code 403
+            body "{\"error\":\"Access Denied\",\"security\":\"RouteWarden Shield\"}"
+        }
+    }
+
+    reverse_proxy localhost:8080
+}
+```
+
+```json [Equivalent Caddy JSON API]
+// POST /load or /config/apps/http/servers/srv0/routes
+{
+  "handler": "route_warden",
+  "enabled": true,
+  "enable_default_patterns": true,
+  "methods": ["GET", "POST"],
+  "allowed_ips": ["10.0.0.0/8", "192.168.1.0/24"],
+  "response": {
+    "mode": "json",
+    "status_code": 403,
+    "body": "{\"error\":\"Access Denied\",\"security\":\"RouteWarden Shield\"}"
+  }
+}
+```
+
+:::
+
+Validate and verify your rules with `rwarden` before deploying:
+
+::: code-group
+
+```bash [CLI]
+# Verify syntax, regex compilation, and CIDR blocks offline
+rwarden validate --config routewarden.json
+```
+
+```bash [Docker]
+# Mount configuration file and validate
+docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest validate --config /routewarden.json
+```
+
+:::
+
+---
+
 ## Directive Ordering
 
 In Caddy, custom HTTP handler modules must be ordered in the middleware chain. Add `order route_warden before basicauth` or `order route_warden before reverse_proxy` inside your Caddyfile global options block:
@@ -126,7 +221,7 @@ In Caddy, custom HTTP handler modules must be ordered in the middleware chain. A
 
 ---
 
-## Caddyfile Syntax
+## Option 2: Caddyfile Syntax
 
 ```nginx
 route_warden {
@@ -307,6 +402,7 @@ If you configure Caddy via its native JSON API:
 ## Related Links
 
 - [RouteWarden Core Architecture & Anti-Evasion Engine](/core/architecture)
+- [Using routewarden.json in Production](/core/cli#using-routewarden-json-in-production)
 - [Response Modes Deep Dive (13 Actions)](/core/response-modes)
 - [Custom Path Patterns Reference](/core/custom-patterns)
 - [Caddy-Warden GitHub Repository](https://github.com/routewarden/caddy-warden)

@@ -8,7 +8,22 @@ Production blueprints and ready-to-run configurations for deploying RouteWarden 
 
 Protect every microservice, API, and container automatically at Traefik's `web` or `websecure` entrypoints without needing to attach middleware labels to individual containers:
 
-```yaml
+::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "response": {
+    "mode": "json",
+    "statusCode": 404,
+    "body": "{\"error\":\"Not Found\"}"
+  }
+}
+```
+
+```yaml [Traefik (Docker Compose)]
 services:
   traefik:
     image: traefik:v3.0
@@ -28,13 +43,35 @@ services:
       - 'traefik.http.middlewares.traefik-warden.plugin.routewarden.response.body={"error":"Not Found"}'
 ```
 
+:::
+
 ---
 
 ## 2. Service-Specific Defense with Allowlist Exceptions
 
 Apply custom regex filters and safe whitelists on an individual web application:
 
-```yaml
+::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "pathPatterns": [
+    "(?i)^/admin(/.*)?$",
+    "(?i)^/metrics$"
+  ],
+  "allowPatterns": [
+    "(?i)^/admin/health$"
+  ],
+  "allowedIps": [
+    "10.0.0.0/8",
+    "192.168.1.100"
+  ]
+}
+```
+
+```yaml [Traefik (Docker Compose)]
 services:
   webapp:
     image: nginx:alpine
@@ -48,13 +85,36 @@ services:
       - "traefik.http.middlewares.app-warden.plugin.routewarden.allowedIps=10.0.0.0/8,192.168.1.100"
 ```
 
+:::
+
 ---
 
 ## 3. Kubernetes IngressRoute (Traefik CRD)
 
 Deploy RouteWarden in Kubernetes clusters using Traefik's Custom Resource Definitions:
 
-```yaml
+::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "pathPatterns": [
+    "(?i)^/admin(/.*)?$"
+  ],
+  "allowedIps": [
+    "10.0.0.0/8"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 403,
+    "body": "{\"error\":\"Forbidden: Internal Cluster Only\"}"
+  }
+}
+```
+
+```yaml [Traefik (Kubernetes Manifests)]
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
@@ -92,13 +152,36 @@ spec:
           port: 80
 ```
 
+:::
+
 ---
 
 ## 4. Case Study: Dual-Router Defense for Immich
 
 Safely expose public photo/video shares (`/share/*`) while strictly returning a 404 on administrative, login, and user management endpoints:
 
-```yaml
+::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "pathPatterns": [
+    "(?i)^/api/auth/login.*$",
+    "(?i)^/api/auth/admin-sign-up.*$",
+    "(?i)^/api/users.*$",
+    "(?i)^/api/admin.*$"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 404,
+    "body": "{\"error\":\"Not Found\",\"message\":\"Endpoint unavailable on public router\"}"
+  }
+}
+```
+
+```yaml [Traefik (File / Dynamic YAML)]
 http:
   middlewares:
     immich-public-shield:
@@ -131,13 +214,41 @@ http:
       service: immich-service
 ```
 
+:::
+
 ---
 
 ## 5. Case Study: WordPress / CMS Brute-Force Shield (Cloudflare Turnstile)
 
 Neutralize automated dictionary crawlers probing `wp-login.php` or `xmlrpc.php`:
 
-```yaml
+::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "pathPatterns": [
+    "(?i)^/(wp-login\\.php|xmlrpc\\.php)$",
+    "(?i)^/wp-admin(/.*)?$"
+  ],
+  "allowedIps": [
+    "10.0.0.0/8"
+  ],
+  "response": {
+    "mode": "captcha",
+    "statusCode": 403,
+    "captcha": {
+      "provider": "turnstile",
+      "siteKey": "0x4AAAAAAtestkey123",
+      "title": "Administrative Verification Required"
+    }
+  }
+}
+```
+
+```yaml [Traefik (File / Dynamic YAML)]
 http:
   middlewares:
     wordpress-shield:
@@ -159,13 +270,32 @@ http:
               title: "Administrative Verification Required"
 ```
 
+:::
+
 ---
 
 ## 6. Case Study: Active Defense Gzip Bomb Traps
 
 Neutralize high-frequency bot crawlers (`dirsearch`, `nikto`) scanning for `.env` or backups:
 
-```yaml
+::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "pathPatterns": [
+    "(?i)(^|/)(\\.env.*|\\.git.*|wp-login\\.php|phpmyadmin.*)$"
+  ],
+  "response": {
+    "mode": "gzipBomb",
+    "statusCode": 200,
+    "gzipBombMB": 10
+  }
+}
+```
+
+```yaml [Traefik (File / Dynamic YAML)]
 http:
   middlewares:
     honeypot-bomber:
@@ -179,3 +309,5 @@ http:
             statusCode: 200
             gzipBombMB: 10
 ```
+
+:::

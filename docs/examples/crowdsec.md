@@ -226,6 +226,19 @@ Security logging is **enabled by default** (`securityLog: true` / `security_log 
 
 ::: code-group
 
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "securityLog": true,
+  "enableDefaultPatterns": true,
+  "response": {
+    "mode": "fakeSuccess",
+    "statusCode": 200
+  }
+}
+```
+
 ```yaml [Traefik (File / Dynamic YAML)]
 http:
   middlewares:
@@ -346,7 +359,7 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden"
-      - "--experimental.plugins.routewarden.version=v1.0.0"
+      - "--experimental.plugins.routewarden.version=v1.1.0"
     ports:
       - "80:80"
       - "8080:8080" # Dashboard
@@ -392,7 +405,7 @@ services:
       context: .
       dockerfile_inline: |
         FROM caddy:2-builder AS builder
-        RUN xcaddy build --with github.com/routewarden/caddy-warden@v1.0.0
+        RUN xcaddy build --with github.com/routewarden/caddy-warden@v1.1.0
         FROM caddy:2-alpine
         COPY --from=builder /usr/bin/caddy /usr/bin/caddy
     ports:

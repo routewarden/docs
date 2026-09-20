@@ -27,6 +27,29 @@ If content creators always connect via a corporate VPN or office IP, RouteWarden
 
 ::: code-group
 
+```json [routewarden.json]
+// routewarden.json
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "blockPatterns": [
+    "(?i)^/(wp-login\\.php|xmlrpc\\.php)$",
+    "(?i)^/wp-admin(/.*)?$"
+  ],
+  "allowedIps": ["192.168.1.0/24", "10.0.0.0/8"],
+  "response": {
+    "mode": "captcha",
+    "statusCode": 403,
+    "captcha": {
+      "provider": "turnstile",
+      "siteKey": "0x4AAAAAAtestkey123",
+      "title": "Administrative Verification Required"
+    }
+  }
+}
+```
+
 ```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:

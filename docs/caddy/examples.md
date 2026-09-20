@@ -8,7 +8,37 @@ Production blueprints and ready-to-run configurations for deploying Caddy-Warden
 
 Allow corporate VPN (`10.0.0.0/8`) and office IP (`192.168.1.100`) access to `/admin` and `/metrics` while returning a stealth 404 to public crawlers:
 
-```nginx
+::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "pathPatterns": [
+    "(?i)^/admin(/.*)?$",
+    "(?i)^/metrics$"
+  ],
+  "allowPatterns": [
+    "(?i)^/admin/health$"
+  ],
+  "allowedIps": [
+    "10.0.0.0/8",
+    "192.168.1.100"
+  ],
+  "methods": [
+    "GET",
+    "POST"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 404,
+    "body": "{\"error\":\"Not Found\"}"
+  }
+}
+```
+
+```nginx [Caddy (Caddyfile)]
 {
     order route_warden before reverse_proxy
 }
@@ -31,13 +61,35 @@ app.example.com {
 }
 ```
 
+:::
+
 ---
 
 ## 2. Interactive Cloudflare Turnstile Verification
 
 Challenge visitors accessing sensitive routes with Turnstile before reaching backend applications:
 
-```nginx
+::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "pathPatterns": [
+    "(?i)^/portal/sensitive(/.*)?$"
+  ],
+  "response": {
+    "mode": "captcha",
+    "statusCode": 403,
+    "captcha": {
+      "provider": "turnstile",
+      "siteKey": "0x4AAAAAAAxxyyzz"
+    }
+  }
+}
+```
+
+```nginx [Caddy (Caddyfile)]
 {
     order route_warden before reverse_proxy
 }
@@ -58,13 +110,32 @@ portal.example.com {
 }
 ```
 
+:::
+
 ---
 
 ## 3. Active Defense Decompression Trap (Gzip Bomb)
 
 When automated crawlers probe for WordPress, `.env`, or PHP exploits, respond with a compressed zero-byte stream that expands ~1000x in RAM:
 
-```nginx
+::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "pathPatterns": [
+    "(?i)^/(wp-login\\.php|\\.env|\\.git.*|xmlrpc\\.php)$"
+  ],
+  "response": {
+    "mode": "gzipBomb",
+    "statusCode": 200,
+    "gzipBombMB": 10
+  }
+}
+```
+
+```nginx [Caddy (Caddyfile)]
 {
     order route_warden before reverse_proxy
 }
@@ -83,13 +154,36 @@ honeypot.example.com {
 }
 ```
 
+:::
+
 ---
 
 ## 4. Case Study: Dual-Site Architecture for Immich Photos
 
 Run public photo sharing alongside protected administrative access:
 
-```nginx
+::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "pathPatterns": [
+    "(?i)^/api/auth/login.*$",
+    "(?i)^/api/auth/admin-sign-up.*$",
+    "(?i)^/api/users.*$",
+    "(?i)^/api/admin.*$"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 404,
+    "body": "{\"error\":\"Not Found\",\"message\":\"Endpoint unavailable on public router\"}"
+  }
+}
+```
+
+```nginx [Caddy (Caddyfile)]
 {
     order route_warden before reverse_proxy
 }
@@ -116,13 +210,41 @@ photos-internal.example.com {
 }
 ```
 
+:::
+
 ---
 
 ## 5. Case Study: Zero-Trust Webhook Ingress (Stripe CIDR Whitelist)
 
 Lock down Stripe webhook ingress using official provider IP CIDRs and silent TCP resets:
 
-```nginx
+::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "pathPatterns": [
+    "(?i)^/webhooks(/.*)?$"
+  ],
+  "allowPatterns": [
+    "(?i)^/webhooks/stripe/v1$"
+  ],
+  "allowedIps": [
+    "3.18.12.63/32",
+    "3.130.192.231/32",
+    "13.235.14.237/32",
+    "13.235.122.149/32",
+    "35.154.171.200/32"
+  ],
+  "response": {
+    "mode": "silentDrop"
+  }
+}
+```
+
+```nginx [Caddy (Caddyfile)]
 {
     order route_warden before reverse_proxy
 }
@@ -142,13 +264,39 @@ api.example.com {
 }
 ```
 
+:::
+
 ---
 
 ## 6. Case Study: Prometheus & Actuator Telemetry Cloaking
 
 Hide Prometheus metrics and Spring Boot diagnostic dumps from unauthorized crawlers:
 
-```nginx
+::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "pathPatterns": [
+    "(?i)^/(metrics|server-metrics|telemetry)(/.*)?$",
+    "(?i)^/actuator(/.*)?$"
+  ],
+  "allowedIps": [
+    "10.0.0.50/32",
+    "10.244.0.0/16",
+    "127.0.0.1"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 404,
+    "body": "{\"error\":\"Not Found\"}"
+  }
+}
+```
+
+```nginx [Caddy (Caddyfile)]
 {
     order route_warden before reverse_proxy
 }
@@ -168,3 +316,5 @@ app.example.com {
     reverse_proxy app-service:8080
 }
 ```
+
+:::

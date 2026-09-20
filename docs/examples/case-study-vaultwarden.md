@@ -20,6 +20,28 @@ However, the `/admin` portal (which allows creating/deleting accounts, viewing s
 
 ::: code-group
 
+```json [routewarden.json]
+// routewarden.json
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "blockPatterns": [
+    "(?i)^/admin(/.*)?$"
+  ],
+  "allowedIps": [
+    "100.64.0.0/10",
+    "10.8.0.0/24",
+    "127.0.0.1"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 404,
+    "body": "{\"error\":\"Not Found\",\"message\":\"The requested resource was not found\"}"
+  }
+}
+```
+
 ```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:

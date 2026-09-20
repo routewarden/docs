@@ -46,6 +46,30 @@ const defaultBlockRules: BuiltInRule[] = [
     pattern: '(?i)(^|/)(composer\\.(json|lock)|package-lock\\.json|yarn\\.lock|pnpm-lock\\.yaml|Pipfile|Pipfile\\.lock|requirements\\.txt)$',
     category: 'Package Locks & Manifests',
     description: 'package-lock.json, yarn.lock, composer.lock, requirements.txt, Pipfile'
+  },
+  {
+    id: 'block-keys',
+    pattern: '(?i).*\\.(pem|key|crt|pfx|p12|jks|kdb)$',
+    category: 'TLS Keys & Keystores',
+    description: 'Private keys, TLS certificates, pfx/p12 keystores (.key, .pem, .crt, .p12)'
+  },
+  {
+    id: 'block-container',
+    pattern: '(?i)(^|/)(dockerfile.*|docker-compose.*\\.ya?ml)$',
+    category: 'Container Manifests',
+    description: 'Dockerfile, docker-compose.yml, docker-compose.prod.yaml'
+  },
+  {
+    id: 'block-metadata',
+    pattern: '(?i)(^|/)\\.ds_store$',
+    category: 'OS Metadata',
+    description: '.DS_Store directory structure leaks'
+  },
+  {
+    id: 'block-cms-configs',
+    pattern: '(?i)(^|/)(wp-config\\.php.*|configuration\\.php.*|settings\\.py|local_settings\\.py)$',
+    category: 'CMS & Framework Configs',
+    description: 'wp-config.php, Joomla configuration.php, Django settings.py'
   }
 ]
 
@@ -100,6 +124,7 @@ const securityLog = ref(true)
 const enableDefaultPatterns = ref(true)
 const enableDefaultAllowPatterns = ref(true)
 const checkQuery = ref(false)
+const checkHeadersInput = ref('')
 const allowedIpsInput = ref('127.0.0.1, 10.0.0.0/8')
 const methodsInput = ref('GET')
 
@@ -171,7 +196,7 @@ const tarpitMaxDurationSeconds = ref(60)
 const streamSizeMB = ref(50)
 
 // 5. Snippet format
-const snippetFormat = ref<'caddy' | 'nginx' | 'traefik_yaml' | 'traefik_toml' | 'docker' | 'k8s_traefik' | 'k8s_caddy' | 'k8s_nginx' | 'k8s'>('caddy')
+const snippetFormat = ref<'caddy' | 'nginx' | 'traefik_yaml' | 'traefik_toml' | 'docker' | 'k8s_traefik' | 'k8s_caddy' | 'k8s_nginx' | 'k8s' | 'json'>('caddy')
 const copySuccess = ref(false)
 
 // Presets
@@ -1304,6 +1329,66 @@ const generatedSnippet = computed(() => {
     return out
   }
 
+  if (snippetFormat.value === 'json') {
+    const configObj: Record<string, any> = {
+      $schema: 'https://routewarden.github.io/schema/v1/config.json'
+    }
+
+    if (!enabled.value) configObj.enabled = false
+    if (debug.value) configObj.debug = true
+    if (!securityLog.value) configObj.securityLog = false
+    if (!enableDefaultPatterns.value) configObj.enableDefaultPatterns = false
+    if (!enableDefaultAllowPatterns.value) configObj.enableDefaultAllowPatterns = false
+    if (checkQuery.value) configObj.checkQuery = true
+
+    const headersList = checkHeadersInput.value.split(',').map(s => s.trim()).filter(Boolean)
+    if (headersList.length > 0) {
+      configObj.checkHeaders = headersList
+    }
+
+    if (blockList.length > 0) {
+      configObj.blockPatterns = blockList
+    }
+
+    if (allowList.length > 0) {
+      configObj.allowPatterns = allowList
+    }
+
+    if (ipList.length > 0) {
+      configObj.allowedIps = ipList
+    }
+
+    if (hasCustomMethods) {
+      configObj.methods = methodsList
+    }
+
+    const respObj: Record<string, any> = {
+      mode: responseMode.value
+    }
+
+    if (statusCode.value !== 403) respObj.statusCode = statusCode.value
+    if (customBody.value) respObj.body = customBody.value
+    if (responseMode.value === 'redirect') respObj.redirectUrl = redirectUrl.value
+    if (responseMode.value === 'proxy') respObj.proxyUrl = proxyUrl.value
+    if (responseMode.value === 'gzipBomb') respObj.gzipBombMB = gzipBombMB.value
+    if (responseMode.value === 'tarpit') {
+      respObj.tarpitDelayMs = tarpitDelayMs.value
+      respObj.tarpitMaxDurationSeconds = tarpitMaxDurationSeconds.value
+    }
+    if (responseMode.value === 'rateLimitChallenge') respObj.retryAfterSeconds = retryAfterSeconds.value
+    if (responseMode.value === 'infiniteStream') respObj.streamSizeMB = streamSizeMB.value
+    if (responseMode.value === 'captcha') {
+      respObj.captcha = {
+        provider: captchaProvider.value,
+        siteKey: captchaSiteKey.value
+      }
+    }
+
+    configObj.response = respObj
+
+    return JSON.stringify(configObj, null, 2)
+  }
+
   return ''
 })
 
@@ -1330,6 +1415,7 @@ async function copyResponse() {
 
 const formatFilename = computed(() => {
   switch (snippetFormat.value) {
+    case 'json': return 'routewarden.json'
     case 'caddy': return 'Caddyfile'
     case 'nginx': return 'routewarden.conf'
     case 'traefik_yaml': return 'routewarden.yml'
@@ -1343,12 +1429,14 @@ const formatFilename = computed(() => {
   }
 })
 
+const isJsonFormat = computed(() => snippetFormat.value === 'json')
 const isCaddyFormat = computed(() => snippetFormat.value === 'caddy' || snippetFormat.value === 'k8s_caddy')
 const isNginxFormat = computed(() => snippetFormat.value === 'nginx' || snippetFormat.value === 'k8s_nginx')
 const isTraefikFormat = computed(() => snippetFormat.value === 'traefik_yaml' || snippetFormat.value === 'traefik_toml' || snippetFormat.value === 'k8s_traefik' || snippetFormat.value === 'k8s')
 const isDockerFormat = computed(() => snippetFormat.value === 'docker')
 
 const gatewayBadgeText = computed(() => {
+  if (isJsonFormat.value) return 'JSON Schema'
   if (isCaddyFormat.value) return 'Caddy'
   if (isNginxFormat.value) return 'NGINX'
   if (isDockerFormat.value) return 'Docker'
@@ -1356,6 +1444,7 @@ const gatewayBadgeText = computed(() => {
 })
 
 const gatewayBadgeClass = computed(() => {
+  if (isJsonFormat.value) return 'badge-json'
   if (isCaddyFormat.value) return 'badge-caddy'
   if (isNginxFormat.value) return 'badge-nginx'
   if (isDockerFormat.value) return 'badge-docker'
@@ -1440,9 +1529,24 @@ function highlightNginxLine(line: string): string {
   return escapeSnippetHtml(line)
 }
 
+function highlightJsonLine(line: string): string {
+  const kv = line.match(/^(\s*)("([^\\"]|\\.)*")(\s*:\s*)(.*)$/)
+  if (kv) {
+    const [, indent, keyStr, , colon, val] = kv
+    const isSchemaKey = keyStr === '"$schema"'
+    const keyClass = isSchemaKey ? 'tok-keyword' : 'tok-key'
+    return `${indent}<span class="${keyClass}">${escapeSnippetHtml(keyStr)}</span><span class="tok-punct">${colon}</span>${highlightValueTokens(val)}`
+  }
+  return highlightValueTokens(line)
+}
+
 function highlightSnippet(code: string, format: string): string {
   if (!code) return ''
   const lines = code.split('\n')
+
+  if (format === 'json') {
+    return lines.map(line => highlightJsonLine(line)).join('\n')
+  }
 
   if (format === 'caddy') {
     return lines.map(line => highlightCaddyLine(line)).join('\n')
@@ -1586,6 +1690,9 @@ function buildShareUrl(): string {
   if (checkQuery.value) {
     url.searchParams.set('checkQuery', '1')
   }
+  if (checkHeadersInput.value.trim()) {
+    url.searchParams.set('checkHeaders', checkHeadersInput.value.trim())
+  }
   if (allowedIpsInput.value.trim() && allowedIpsInput.value.trim() !== '127.0.0.1, 10.0.0.0/8') {
     url.searchParams.set('allowedIps', allowedIpsInput.value.trim())
   }
@@ -1691,6 +1798,9 @@ onMounted(() => {
     if (params.has('checkQuery')) {
       checkQuery.value = params.get('checkQuery') === '1' || params.get('checkQuery') === 'true'
     }
+    if (params.has('checkHeaders')) {
+      checkHeadersInput.value = params.get('checkHeaders') || ''
+    }
     if (params.has('allowedIps')) {
       allowedIpsInput.value = params.get('allowedIps') || ''
     }
@@ -1758,7 +1868,7 @@ onMounted(() => {
 
     // 5. Snippet format
     const pFmt = params.get('format')
-    if (pFmt && ['caddy', 'nginx', 'traefik_yaml', 'traefik_toml', 'docker', 'k8s_traefik', 'k8s_caddy', 'k8s_nginx', 'k8s'].includes(pFmt)) {
+    if (pFmt && ['caddy', 'nginx', 'traefik_yaml', 'traefik_toml', 'docker', 'k8s_traefik', 'k8s_caddy', 'k8s_nginx', 'k8s', 'json'].includes(pFmt)) {
       snippetFormat.value = pFmt as any
     }
   } catch (err) {
@@ -1962,6 +2072,10 @@ onMounted(() => {
           <input v-model="securityLog" type="checkbox" />
           <span>Security Log (CrowdSec)</span>
         </label>
+        <div class="rw-inline-ip" title="Inspect custom HTTP headers for path smuggling (e.g. X-Forwarded-Uri, X-Rewrite-URL)">
+          <span>Check Headers:</span>
+          <input v-model="checkHeadersInput" placeholder="X-Forwarded-Uri, X-Rewrite-URL" />
+        </div>
         <div class="rw-inline-ip">
           <span>Allowed IPs:</span>
           <input v-model="allowedIpsInput" placeholder="127.0.0.1, 10.0.0.0/8" />
@@ -2219,6 +2333,7 @@ onMounted(() => {
     <div
       class="rw-block rw-export-block rw-copyable-block"
       :class="{
+        'gw-json': isJsonFormat,
         'gw-caddy': isCaddyFormat,
         'gw-nginx': isNginxFormat,
         'gw-traefik': isTraefikFormat,
@@ -2231,6 +2346,7 @@ onMounted(() => {
           <span
             class="rw-filename-label"
             :class="{
+              'fn-json': isJsonFormat,
               'fn-caddy': isCaddyFormat,
               'fn-nginx': isNginxFormat,
               'fn-traefik': isTraefikFormat,
@@ -2247,6 +2363,11 @@ onMounted(() => {
       <div class="rw-export-header">
         <div class="rw-export-header-left">
           <div class="rw-tabs">
+            <button
+              class="tab-json"
+              :class="{ act: snippetFormat === 'json' }"
+              @click="snippetFormat = 'json'"
+            >routewarden.json</button>
             <button
               class="tab-caddy"
               :class="{ act: snippetFormat === 'caddy' }"
@@ -2295,6 +2416,7 @@ onMounted(() => {
             class="rw-btn-copy"
             :class="{
               copied: copySuccess,
+              'btn-copy-json': isJsonFormat,
               'btn-copy-caddy': isCaddyFormat,
               'btn-copy-nginx': isNginxFormat,
               'btn-copy-traefik': isTraefikFormat,
@@ -3304,6 +3426,15 @@ onMounted(() => {
   transition: all 0.2s ease;
 }
 
+.rw-export-block.gw-json {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  background: rgba(245, 158, 11, 0.02) !important;
+}
+.dark .rw-export-block.gw-json {
+  border-color: rgba(251, 191, 36, 0.35) !important;
+  background: rgba(245, 158, 11, 0.05) !important;
+}
+
 .rw-export-block.gw-caddy {
   border-color: rgba(16, 185, 129, 0.35) !important;
   background: rgba(16, 185, 129, 0.02) !important;
@@ -3405,6 +3536,17 @@ onMounted(() => {
   color: var(--vp-c-text-1);
 }
 
+.rw-tabs button.tab-json.act {
+  background: rgba(245, 158, 11, 0.14) !important;
+  color: #d97706 !important;
+  border-color: #f59e0b !important;
+}
+.dark .rw-tabs button.tab-json.act {
+  background: rgba(245, 158, 11, 0.25) !important;
+  color: #fbbf24 !important;
+  border-color: #fbbf24 !important;
+}
+
 .rw-tabs button.tab-caddy.act {
   background: rgba(16, 185, 129, 0.14) !important;
   color: #059669 !important;
@@ -3466,6 +3608,18 @@ onMounted(() => {
 
 .rw-fn-dot {
   font-size: 8px;
+}
+
+.rw-filename-label.fn-json {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #d97706;
+}
+.rw-filename-label.fn-json .rw-fn-dot {
+  color: #f59e0b;
+}
+.dark .rw-filename-label.fn-json {
+  color: #fbbf24;
 }
 
 .rw-filename-label.fn-caddy {
@@ -3532,6 +3686,15 @@ onMounted(() => {
 .rw-btn-copy:hover {
   filter: brightness(1.1);
 }
+.rw-btn-copy.btn-copy-json {
+  background: #d97706 !important;
+  border-color: #d97706 !important;
+}
+.dark .rw-btn-copy.btn-copy-json {
+  background: #f59e0b !important;
+  border-color: #f59e0b !important;
+}
+
 .rw-btn-copy.btn-copy-caddy {
   background: #059669 !important;
   border-color: #059669 !important;
@@ -3581,6 +3744,10 @@ onMounted(() => {
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   transition: border-color 0.2s ease;
+}
+
+.rw-export-block.gw-json .rw-code-viewport {
+  border-color: rgba(245, 158, 11, 0.35);
 }
 
 .rw-export-block.gw-caddy .rw-code-viewport {

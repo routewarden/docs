@@ -19,6 +19,7 @@ This reference covers all configuration options available in RouteWarden.
 | `allowedIps` | `[]string` | `[]` | Whitelisted IPv4/IPv6 addresses or CIDR subnets (e.g., `10.0.0.0/8`, `127.0.0.1`). |
 | `methods` | `[]string` | `["GET"]` | HTTP request verbs to inspect (e.g. `["GET", "POST"]`). Non-matching verbs bypass inspection. |
 | `checkQuery` | `bool` | `false` | Also inspects the URL raw query string for blocked patterns. |
+| `checkHeaders` | `[]string` | `[]` | Optional list of HTTP request headers to inspect for path smuggling (e.g. `["X-Forwarded-Uri", "X-Rewrite-URL"]`). |
 | `statusCode` | `int` | `403` | Default HTTP status code when request is blocked (legacy shortcut). |
 
 ---
@@ -44,7 +45,7 @@ When `securityLog: true` (the default), every intercepted probe emits a single-l
 | `request_uri` | Original raw URI requested by the client. |
 | `pattern` | Regular expression pattern that triggered the block. |
 | `action` | Response mode executed (`json`, `html`, `fakeSuccess`, `silentDrop`, etc.). |
-| `reason` | Block trigger classification (`path_blocked`, `query_blocked`, `query_param_blocked`). |
+| `reason` | Block trigger classification (`path_blocked`, `query_blocked`, `query_param_blocked`, `header_blocked`). |
 | `user_agent` | Inbound client User-Agent header string. |
 
 For complete end-to-end integration steps with automated firewall remediation, see the **[CrowdSec Integration Guide](/examples/crowdsec)**.
@@ -65,6 +66,10 @@ When `enableDefaultPatterns: true` (default), RouteWarden intercepts requests ma
 | **Archives & DB Dumps** | `(?i).*\.(tar\|tar\.gz\|tgz\|zip\|rar\|7z\|gz\|bz2\|iso\|dump\|sqlite\|sqlite3\|db)$` | `/backup.tar.gz`, `/site.zip`, `/users.dump`, `/data.sqlite3` |
 | **Sensitive Admin & Metrics** | `(?i)(^|/)(phpinfo\.php\|info\.php\|server-status\|server-info\|actuator(/.*)?\|metrics\|heapdump\|trace\|env)$` | `/phpinfo.php`, `/server-status`, `/actuator/health`, `/metrics` |
 | **Package Managers & Locks** | `(?i)(^|/)(composer\.(json\|lock)\|package-lock\.json\|yarn\.lock\|pnpm-lock\.yaml\|Pipfile\|Pipfile\.lock\|requirements\.txt)$` | `/package-lock.json`, `/yarn.lock`, `/composer.lock`, `/requirements.txt` |
+| **TLS Keys & Keystores** | `(?i).*\.(pem\|key\|crt\|pfx\|p12\|jks\|kdb)$` | `/server.key`, `/cert.pem`, `/keystore.p12` |
+| **Container Manifests** | `(?i)(^|/)(dockerfile.*\|docker-compose.*\.ya?ml)$` | `/Dockerfile`, `/docker-compose.yml`, `/docker-compose.prod.yaml` |
+| **OS Metadata Structure** | `(?i)(^|/)\.ds_store$` | `/.DS_Store` |
+| **CMS & Framework Configs** | `(?i)(^|/)(wp-config\.php.*\|configuration\.php.*\|settings\.py\|local_settings\.py)$` | `/wp-config.php`, `/configuration.php`, `/settings.py` |
 
 ### Default Allow Patterns (`enableDefaultAllowPatterns: true`)
 
