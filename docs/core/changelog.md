@@ -26,11 +26,20 @@ The `v1.0.0` milestone release marks general availability and multi-gateway pari
   - Native client IP resolution prioritizing `X-Forwarded-For`, `X-Real-IP`, and socket `remote_addr`.
   - Structured JSON security logging (`security_log`) compatible with CrowdSec parsers and SIEM collectors.
 - **Unified Multi-Gateway Parity (`traefik-warden`, `caddy-warden`, `nginx-warden`)**:
-  - Consistent 30-case validation and multi-port verification suites across all supported gateways.
-  - Unified configuration schema and terminology.
-- **Documentation Overhaul**:
-  - Archived `v0.3.x` documentation preserved under `/v0.3/` with legacy version notices.
-  - Promoted `v1.0.x (Latest)` with NGINX guides, references, and cookbook examples.
+  - Consistent 30-case live verification suites across all supported gateways (`samples/`).
+  - Unified configuration schema and parameter naming across reverse proxies.
+- **Interactive Playground Expansion**:
+  - Added dedicated **`NGINX (Lua)`** configuration export tab generating complete `init_by_lua_block` and `access_by_lua_block` snippets.
+  - Added dedicated **`K8s (NGINX)`** export tab generating Kubernetes Ingress manifests with `nginx.ingress.kubernetes.io/server-snippet` and `configuration-snippet`.
+  - Added custom hybrid syntax highlighting for YAML manifests with embedded Lua blocks.
+  - Added URL parameter sharing support for `format=nginx` and `format=k8s_nginx`.
+- **Complete Case Studies & Recipes Coverage**:
+  - Integrated NGINX / OpenResty code tabs across all 7 production case studies (Immich, Webhooks, Observability Metrics, CMS Shield, Vaultwarden Admin Lockdown, Honeypot Strategies, CrowdSec Log Ingestion).
+  - Added `NGINX / OpenResty (Docker Compose)` service definitions across all 6 core recipes.
+- **Documentation Architecture & Versioning**:
+  - Archived `v0.3.x` documentation preserved under `/v0.3/` (`traefik`, `caddy`, `core`, `examples`, `guide`, `reference`) with legacy version notices.
+  - Promoted `v1.0.x (Latest)` with new dedicated NGINX sections (`/nginx/getting-started`, `/nginx/configuration`, `/nginx/examples`).
+  - Updated snapshot automation tooling (`scripts/snapshot-version.mjs`) to include NGINX in version snapshots.
 
 ---
 
