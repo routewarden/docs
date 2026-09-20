@@ -58,6 +58,39 @@ localhost {
 }
 ```
 
+```nginx [NGINX (OpenResty)]
+# nginx.conf: Basic Sensitive File Shield
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        warden = routewarden.new({
+            enable_default_patterns = true,
+            response = {
+                mode = "json",
+                status_code = 403,
+                body = '{"error":"Forbidden","message":"Sensitive path blocked by RouteWarden"}'
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name localhost;
+
+        access_by_lua_block {
+            warden:check()
+        }
+
+        location / {
+            proxy_pass http://webapp:80;
+        }
+    }
+}
+```
+
 ```bash [Traefik (Docker Compose)]
 # Traefik Docker Compose Labels / CLI equivalent
 - "traefik.enable=true"
@@ -150,6 +183,22 @@ services:
       - "80:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - webapp
+
+  webapp:
+    image: nginx:alpine
+```
+
+```yaml [NGINX / OpenResty (Docker Compose)]
+services:
+  nginx:
+    image: openresty/openresty:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./lib/resty/routewarden:/usr/local/openresty/site/lualib/resty/routewarden:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - webapp
 

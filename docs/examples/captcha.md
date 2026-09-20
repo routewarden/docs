@@ -84,6 +84,45 @@ app.example.com {
 }
 ```
 
+```nginx [NGINX (OpenResty)]
+# nginx.conf: hCaptcha Verification Barrier
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        hcaptcha_warden = routewarden.new({
+            path_patterns = {
+                "(?i)^/(admin|login)(/.*)?$"
+            },
+            response = {
+                mode = "captcha",
+                status_code = 403,
+                captcha = {
+                    provider = "hcaptcha",
+                    site_key = "10000000-ffff-ffff-ffff-000000000001",
+                    title = "Human Verification (hCaptcha)"
+                }
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name app.example.com;
+
+        access_by_lua_block {
+            hcaptcha_warden:check()
+        }
+
+        location / {
+            proxy_pass http://app-service:80;
+        }
+    }
+}
+```
+
 ```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.app-router]
@@ -180,6 +219,46 @@ login.example.com {
 }
 ```
 
+```nginx [NGINX (OpenResty)]
+# nginx.conf: Cloudflare Turnstile Verification
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        turnstile_warden = routewarden.new({
+            path_patterns = {
+                "(?i)^/login(/.*)?$",
+                "(?i)^/reset-password(/.*)?$"
+            },
+            response = {
+                mode = "captcha",
+                status_code = 403,
+                captcha = {
+                    provider = "turnstile",
+                    site_key = "1x00000000000000000000AA",
+                    title = "Security Verification Required"
+                }
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name login.example.com;
+
+        access_by_lua_block {
+            turnstile_warden:check()
+        }
+
+        location / {
+            proxy_pass http://login-service:80;
+        }
+    }
+}
+```
+
 ```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.login-router]
@@ -272,6 +351,22 @@ services:
       - "80:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - app
+
+  app:
+    image: nginx:alpine
+```
+
+```yaml [NGINX / OpenResty (Docker Compose)]
+services:
+  nginx:
+    image: openresty/openresty:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./lib/resty/routewarden:/usr/local/openresty/site/lualib/resty/routewarden:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - app
 

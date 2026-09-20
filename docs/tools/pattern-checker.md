@@ -5,7 +5,7 @@ description: Interactive simulation tool for testing RouteWarden regex patterns,
 
 # Pattern & Response Playground
 
-Use this interactive playground to test RouteWarden's URL path normalization, built-in sensitive file blocking, allowlist bypasses, and custom regex rules. Simulate the live HTTP response returned by RouteWarden (including deceptive honeypots, gzip bombs, tarpits, and custom payloads) and export ready-to-use configurations for **Caddy**, **Traefik (YAML & TOML)**, **Docker Compose**, or **Kubernetes**.
+Use this interactive playground to test RouteWarden's URL path normalization, built-in sensitive file blocking, allowlist bypasses, and custom regex rules. Simulate the live HTTP response returned by RouteWarden (including deceptive honeypots, gzip bombs, tarpits, and custom payloads) and export ready-to-use configurations for **Caddy**, **NGINX (Lua / OpenResty)**, **Traefik (YAML & TOML)**, **Docker Compose**, or **Kubernetes**.
 
 > **Shareable Playground URLs**: Click the **Share** button below the path bar to generate a direct link containing your current test path, HTTP method, client IP, custom rules, and response settings. Anyone opening the link will reproduce the exact simulation state.
 
@@ -15,7 +15,7 @@ Use this interactive playground to test RouteWarden's URL path normalization, bu
 
 ## How RouteWarden Evaluates Requests
 
-The simulator follows the evaluation sequence implemented in RouteWarden's Go core:
+The simulator follows the canonical evaluation sequence implemented identically across RouteWarden's Go core and OpenResty Lua modules:
 
 ```
 Incoming Request
@@ -61,4 +61,4 @@ Incoming Request
 - **[Custom Path Regex Guide](/core/custom-patterns)**: Syntax, cheat sheets, and production blueprints for popular frameworks.
 - **[Anti-Evasion Engine](/core/anti-evasion)**: Technical breakdown of defeated evasion attacks.
 - **[Response Modes Engine](/core/response-modes)**: All 13 response behaviors (JSON, Captcha, Gzip Bomb, Tarpit, etc.).
-- **[Traefik Configuration](/traefik/configuration)** & **[Caddyfile Reference](/caddy/caddyfile)**: Gateway-specific syntax.
+- **[Traefik Configuration](/traefik/configuration)**, **[Caddyfile Reference](/caddy/caddyfile)** & **[NGINX Configuration](/nginx/configuration)**: Gateway-specific syntax.

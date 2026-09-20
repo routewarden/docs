@@ -170,7 +170,7 @@ const tarpitMaxDurationSeconds = ref(60)
 const streamSizeMB = ref(50)
 
 // 5. Snippet format
-const snippetFormat = ref<'caddy' | 'traefik_yaml' | 'traefik_toml' | 'docker' | 'k8s_traefik' | 'k8s_caddy' | 'k8s'>('caddy')
+const snippetFormat = ref<'caddy' | 'nginx' | 'traefik_yaml' | 'traefik_toml' | 'docker' | 'k8s_traefik' | 'k8s_caddy' | 'k8s_nginx' | 'k8s'>('caddy')
 const copySuccess = ref(false)
 
 // Presets
@@ -945,6 +945,75 @@ const generatedSnippet = computed(() => {
     return out
   }
 
+  if (snippetFormat.value === 'nginx') {
+    let out = `# /etc/nginx/conf.d/routewarden.conf (OpenResty / NGINX Lua)\n`
+    out += `init_by_lua_block {\n`
+    out += `    local routewarden = require("resty.routewarden")\n`
+    out += `    warden = routewarden.new({\n`
+    if (!enabled.value) out += `        enabled = false,\n`
+    if (debug.value) out += `        debug = true,\n`
+    if (!securityLog.value) out += `        security_log = false,\n`
+    if (!enableDefaultPatterns.value) out += `        enable_default_patterns = false,\n`
+    if (!enableDefaultAllowPatterns.value) out += `        enable_default_allow_patterns = false,\n`
+    if (checkQuery.value) out += `        check_query = true,\n`
+
+    if (blockList.length > 0) {
+      out += `        path_patterns = {\n`
+      for (const p of blockList) out += `            "${p}",\n`
+      out += `        },\n`
+    }
+    if (allowList.length > 0) {
+      out += `        allow_patterns = {\n`
+      for (const p of allowList) out += `            "${p}",\n`
+      out += `        },\n`
+    }
+    if (ipList.length > 0) {
+      out += `        allowed_ips = {\n`
+      for (const ip of ipList) out += `            "${ip}",\n`
+      out += `        },\n`
+    }
+    if (hasCustomMethods) {
+      out += `        methods = { ${methodsList.map(m => `"${m}"`).join(', ')} },\n`
+    }
+    out += `        response = {\n`
+    out += `            mode = "${responseMode.value}",\n`
+    if (statusCode.value !== 403) out += `            status_code = ${statusCode.value},\n`
+    if (customBody.value) out += `            body = '${customBody.value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}',\n`
+    if (responseMode.value === 'redirect') out += `            redirect_url = "${redirectUrl.value}",\n`
+    if (responseMode.value === 'proxy') out += `            proxy_url = "${proxyUrl.value}",\n`
+    if (responseMode.value === 'gzipBomb') out += `            gzip_bomb_mb = ${gzipBombMB.value},\n`
+    if (responseMode.value === 'tarpit') {
+      out += `            tarpit_delay_ms = ${tarpitDelayMs.value},\n`
+      out += `            tarpit_max_duration_seconds = ${tarpitMaxDurationSeconds.value},\n`
+    }
+    if (responseMode.value === 'rateLimitChallenge') out += `            retry_after_seconds = ${retryAfterSeconds.value},\n`
+    if (responseMode.value === 'infiniteStream') out += `            stream_size_mb = ${streamSizeMB.value},\n`
+    if (responseMode.value === 'captcha') {
+      out += `            captcha = {\n`
+      out += `                provider = "${captchaProvider.value}",\n`
+      out += `                site_key = "${captchaSiteKey.value}",\n`
+      out += `            },\n`
+    }
+    out += `        }\n`
+    out += `    })\n`
+    out += `}\n\n`
+    out += `server {\n`
+    out += `    listen 80;\n`
+    out += `    server_name example.com;\n\n`
+    out += `    # Intercept sensitive paths before upstream proxy\n`
+    out += `    access_by_lua_block {\n`
+    out += `        warden:check()\n`
+    out += `    }\n\n`
+    out += `    location / {\n`
+    out += `        proxy_pass http://localhost:8080;\n`
+    out += `        proxy_set_header Host $host;\n`
+    out += `        proxy_set_header X-Real-IP $remote_addr;\n`
+    out += `        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n`
+    out += `    }\n`
+    out += `}`
+    return out
+  }
+
   if (snippetFormat.value === 'traefik_yaml') {
     let out = `http:\n  middlewares:\n    routewarden:\n      plugin:\n        routewarden:\n`
     if (!enabled.value) out += `          enabled: false\n`
@@ -1172,6 +1241,67 @@ const generatedSnippet = computed(() => {
     return out
   }
 
+  if (snippetFormat.value === 'k8s_nginx') {
+    let out = `apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: secured-nginx-ingress\n  namespace: default\n  annotations:\n`
+    out += `    nginx.ingress.kubernetes.io/server-snippet: |\n`
+    out += `      lua_package_path "/etc/nginx/lua/lib/?.lua;/etc/nginx/lua/lib/?/init.lua;;";\n`
+    out += `      init_by_lua_block {\n`
+    out += `        local routewarden = require("resty.routewarden")\n`
+    out += `        warden = routewarden.new({\n`
+    if (!enabled.value) out += `          enabled = false,\n`
+    if (debug.value) out += `          debug = true,\n`
+    if (!securityLog.value) out += `          security_log = false,\n`
+    if (!enableDefaultPatterns.value) out += `          enable_default_patterns = false,\n`
+    if (!enableDefaultAllowPatterns.value) out += `          enable_default_allow_patterns = false,\n`
+    if (checkQuery.value) out += `          check_query = true,\n`
+
+    if (blockList.length > 0) {
+      out += `          path_patterns = {\n`
+      for (const p of blockList) out += `            "${p}",\n`
+      out += `          },\n`
+    }
+    if (allowList.length > 0) {
+      out += `          allow_patterns = {\n`
+      for (const p of allowList) out += `            "${p}",\n`
+      out += `          },\n`
+    }
+    if (ipList.length > 0) {
+      out += `          allowed_ips = {\n`
+      for (const ip of ipList) out += `            "${ip}",\n`
+      out += `          },\n`
+    }
+    if (hasCustomMethods) {
+      out += `          methods = { ${methodsList.map(m => `"${m}"`).join(', ')} },\n`
+    }
+    out += `          response = {\n`
+    out += `            mode = "${responseMode.value}",\n`
+    if (statusCode.value !== 403) out += `            status_code = ${statusCode.value},\n`
+    if (customBody.value) out += `            body = '${customBody.value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}',\n`
+    if (responseMode.value === 'redirect') out += `            redirect_url = "${redirectUrl.value}",\n`
+    if (responseMode.value === 'proxy') out += `            proxy_url = "${proxyUrl.value}",\n`
+    if (responseMode.value === 'gzipBomb') out += `            gzip_bomb_mb = ${gzipBombMB.value},\n`
+    if (responseMode.value === 'tarpit') {
+      out += `            tarpit_delay_ms = ${tarpitDelayMs.value},\n`
+      out += `            tarpit_max_duration_seconds = ${tarpitMaxDurationSeconds.value},\n`
+    }
+    if (responseMode.value === 'rateLimitChallenge') out += `            retry_after_seconds = ${retryAfterSeconds.value},\n`
+    if (responseMode.value === 'infiniteStream') out += `            stream_size_mb = ${streamSizeMB.value},\n`
+    if (responseMode.value === 'captcha') {
+      out += `            captcha = {\n`
+      out += `              provider = "${captchaProvider.value}",\n`
+      out += `              site_key = "${captchaSiteKey.value}",\n`
+      out += `            },\n`
+    }
+    out += `          }\n`
+    out += `        })\n`
+    out += `      }\n`
+    out += `    nginx.ingress.kubernetes.io/configuration-snippet: |\n`
+    out += `      access_by_lua_block {\n`
+    out += `        warden:check()\n`
+    out += `      }\nspec:\n  ingressClassName: nginx\n  rules:\n    - host: production.example.com\n      http:\n        paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: app-service\n                port:\n                  number: 80\n`
+    return out
+  }
+
   return ''
 })
 
@@ -1199,28 +1329,33 @@ async function copyResponse() {
 const formatFilename = computed(() => {
   switch (snippetFormat.value) {
     case 'caddy': return 'Caddyfile'
+    case 'nginx': return 'routewarden.conf'
     case 'traefik_yaml': return 'routewarden.yml'
     case 'traefik_toml': return 'routewarden.toml'
     case 'docker': return 'docker-compose.yml'
     case 'k8s':
     case 'k8s_traefik': return 'traefik-middleware.yaml'
     case 'k8s_caddy': return 'caddy-configmap.yaml'
+    case 'k8s_nginx': return 'nginx-ingress.yaml'
     default: return 'config'
   }
 })
 
 const isCaddyFormat = computed(() => snippetFormat.value === 'caddy' || snippetFormat.value === 'k8s_caddy')
+const isNginxFormat = computed(() => snippetFormat.value === 'nginx' || snippetFormat.value === 'k8s_nginx')
 const isTraefikFormat = computed(() => snippetFormat.value === 'traefik_yaml' || snippetFormat.value === 'traefik_toml' || snippetFormat.value === 'k8s_traefik' || snippetFormat.value === 'k8s')
 const isDockerFormat = computed(() => snippetFormat.value === 'docker')
 
 const gatewayBadgeText = computed(() => {
   if (isCaddyFormat.value) return 'Caddy'
+  if (isNginxFormat.value) return 'NGINX'
   if (isDockerFormat.value) return 'Docker'
   return 'Traefik'
 })
 
 const gatewayBadgeClass = computed(() => {
   if (isCaddyFormat.value) return 'badge-caddy'
+  if (isNginxFormat.value) return 'badge-nginx'
   if (isDockerFormat.value) return 'badge-docker'
   return 'badge-traefik'
 })
@@ -1283,12 +1418,36 @@ function highlightYamlLine(line: string): string {
   return escapeSnippetHtml(line)
 }
 
+function highlightNginxLine(line: string): string {
+  if (/^\s*(#|--)/.test(line)) return `<span class="tok-comment">${escapeSnippetHtml(line)}</span>`
+  const kwMatch = line.match(/^(\s*)(init_by_lua_block|access_by_lua_block|server|location|local|return)(\s*.*)$/)
+  if (kwMatch) {
+    const [, indent, kw, rest] = kwMatch
+    return `${indent}<span class="tok-keyword">${escapeSnippetHtml(kw)}</span>${highlightValueTokens(rest)}`
+  }
+  const kv = line.match(/^(\s*)([a-zA-Z0-9_.-]+)(\s*=\s*)(.*)$/)
+  if (kv) {
+    const [, indent, key, eq, val] = kv
+    return `${indent}<span class="tok-key">${escapeSnippetHtml(key)}</span><span class="tok-punct">${eq}</span>${highlightValueTokens(val)}`
+  }
+  const ngxDirectives = line.match(/^(\s*)(listen|server_name|proxy_pass|proxy_set_header|root|index)(\s+)(.*);$/)
+  if (ngxDirectives) {
+    const [, indent, directive, space, rest] = ngxDirectives
+    return `${indent}<span class="tok-keyword">${escapeSnippetHtml(directive)}</span>${space}${highlightValueTokens(rest)}<span class="tok-punct">;</span>`
+  }
+  return escapeSnippetHtml(line)
+}
+
 function highlightSnippet(code: string, format: string): string {
   if (!code) return ''
   const lines = code.split('\n')
 
   if (format === 'caddy') {
     return lines.map(line => highlightCaddyLine(line)).join('\n')
+  }
+
+  if (format === 'nginx') {
+    return lines.map(line => highlightNginxLine(line)).join('\n')
   }
 
   if (format === 'traefik_yaml' || format === 'k8s_traefik' || format === 'k8s') {
@@ -1304,6 +1463,23 @@ function highlightSnippet(code: string, format: string): string {
       }
       if (inCaddyBlock) {
         return highlightCaddyLine(line)
+      }
+      return highlightYamlLine(line)
+    }).join('\n')
+  }
+
+  if (format === 'k8s_nginx') {
+    let inNginxSnippet = false
+    return lines.map(line => {
+      if (/(server-snippet|configuration-snippet):\s*\|/.test(line)) {
+        inNginxSnippet = true
+        return highlightYamlLine(line)
+      }
+      if (inNginxSnippet && /^\s*(spec|status|metadata):/.test(line)) {
+        inNginxSnippet = false
+      }
+      if (inNginxSnippet) {
+        return highlightNginxLine(line)
       }
       return highlightYamlLine(line)
     }).join('\n')
@@ -1578,7 +1754,7 @@ onMounted(() => {
 
     // 5. Snippet format
     const pFmt = params.get('format')
-    if (pFmt && ['caddy', 'traefik_yaml', 'traefik_toml', 'docker', 'k8s_traefik', 'k8s_caddy', 'k8s'].includes(pFmt)) {
+    if (pFmt && ['caddy', 'nginx', 'traefik_yaml', 'traefik_toml', 'docker', 'k8s_traefik', 'k8s_caddy', 'k8s_nginx', 'k8s'].includes(pFmt)) {
       snippetFormat.value = pFmt as any
     }
   } catch (err) {
@@ -2040,6 +2216,7 @@ onMounted(() => {
       class="rw-block rw-export-block rw-copyable-block"
       :class="{
         'gw-caddy': isCaddyFormat,
+        'gw-nginx': isNginxFormat,
         'gw-traefik': isTraefikFormat,
         'gw-docker': isDockerFormat
       }"
@@ -2051,6 +2228,7 @@ onMounted(() => {
             class="rw-filename-label"
             :class="{
               'fn-caddy': isCaddyFormat,
+              'fn-nginx': isNginxFormat,
               'fn-traefik': isTraefikFormat,
               'fn-docker': isDockerFormat
             }"
@@ -2070,6 +2248,11 @@ onMounted(() => {
               :class="{ act: snippetFormat === 'caddy' }"
               @click="snippetFormat = 'caddy'"
             >Caddyfile</button>
+            <button
+              class="tab-nginx"
+              :class="{ act: snippetFormat === 'nginx' }"
+              @click="snippetFormat = 'nginx'"
+            >NGINX (Lua)</button>
             <button
               class="tab-traefik"
               :class="{ act: snippetFormat === 'traefik_yaml' }"
@@ -2095,6 +2278,11 @@ onMounted(() => {
               :class="{ act: snippetFormat === 'k8s_caddy' }"
               @click="snippetFormat = 'k8s_caddy'"
             >K8s (Caddy)</button>
+            <button
+              class="tab-nginx"
+              :class="{ act: snippetFormat === 'k8s_nginx' }"
+              @click="snippetFormat = 'k8s_nginx'"
+            >K8s (NGINX)</button>
           </div>
         </div>
         <div class="rw-export-header-right">
@@ -2104,6 +2292,7 @@ onMounted(() => {
             :class="{
               copied: copySuccess,
               'btn-copy-caddy': isCaddyFormat,
+              'btn-copy-nginx': isNginxFormat,
               'btn-copy-traefik': isTraefikFormat,
               'btn-copy-docker': isDockerFormat
             }"
@@ -3120,6 +3309,15 @@ onMounted(() => {
   background: rgba(16, 185, 129, 0.05) !important;
 }
 
+.rw-export-block.gw-nginx {
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  background: rgba(5, 150, 105, 0.02) !important;
+}
+.dark .rw-export-block.gw-nginx {
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  background: rgba(16, 185, 129, 0.05) !important;
+}
+
 .rw-export-block.gw-traefik {
   border-color: rgba(37, 99, 235, 0.35) !important;
   background: rgba(37, 99, 235, 0.02) !important;
@@ -3214,6 +3412,17 @@ onMounted(() => {
   border-color: #34d399 !important;
 }
 
+.rw-tabs button.tab-nginx.act {
+  background: rgba(16, 185, 129, 0.14) !important;
+  color: #047857 !important;
+  border-color: #059669 !important;
+}
+.dark .rw-tabs button.tab-nginx.act {
+  background: rgba(16, 185, 129, 0.25) !important;
+  color: #34d399 !important;
+  border-color: #10b981 !important;
+}
+
 .rw-tabs button.tab-traefik.act {
   background: rgba(37, 99, 235, 0.14) !important;
   color: #2563eb !important;
@@ -3267,6 +3476,18 @@ onMounted(() => {
   color: #34d399;
 }
 
+.rw-filename-label.fn-nginx {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(5, 150, 105, 0.3);
+  color: #047857;
+}
+.rw-filename-label.fn-nginx .rw-fn-dot {
+  color: #059669;
+}
+.dark .rw-filename-label.fn-nginx {
+  color: #34d399;
+}
+
 .rw-filename-label.fn-traefik {
   background: rgba(37, 99, 235, 0.08);
   border-color: rgba(37, 99, 235, 0.3);
@@ -3316,6 +3537,15 @@ onMounted(() => {
   border-color: #10b981 !important;
 }
 
+.rw-btn-copy.btn-copy-nginx {
+  background: #047857 !important;
+  border-color: #047857 !important;
+}
+.dark .rw-btn-copy.btn-copy-nginx {
+  background: #059669 !important;
+  border-color: #059669 !important;
+}
+
 .rw-btn-copy.btn-copy-traefik {
   background: #2563eb !important;
   border-color: #2563eb !important;
@@ -3350,6 +3580,10 @@ onMounted(() => {
 }
 
 .rw-export-block.gw-caddy .rw-code-viewport {
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.rw-export-block.gw-nginx .rw-code-viewport {
   border-color: rgba(16, 185, 129, 0.35);
 }
 

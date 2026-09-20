@@ -69,6 +69,46 @@ admin.localhost {
 }
 ```
 
+```nginx [NGINX (OpenResty)]
+# nginx.conf: IP & CIDR Subnet Allowlisting
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        admin_warden = routewarden.new({
+            path_patterns = {
+                "(?i)^/admin(/.*)?$",
+                "(?i)^/metrics(/.*)?$"
+            },
+            allowed_ips = {
+                "10.0.0.0/8",
+                "192.168.1.100"
+            },
+            response = {
+                mode = "json",
+                status_code = 403,
+                body = '{"error":"Forbidden","message":"Restricted to authorized IP/VPN"}'
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name admin.localhost;
+
+        access_by_lua_block {
+            admin_warden:check()
+        }
+
+        location / {
+            proxy_pass http://admin-service:80;
+        }
+    }
+}
+```
+
 ```bash [Traefik (Docker Compose)]
 # Docker Compose Labels / CLI equivalent
 - "traefik.enable=true"
@@ -157,6 +197,22 @@ services:
       - "80:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - admin-service
+
+  admin-service:
+    image: nginx:alpine
+```
+
+```yaml [NGINX / OpenResty (Docker Compose)]
+services:
+  nginx:
+    image: openresty/openresty:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./lib/resty/routewarden:/usr/local/openresty/site/lualib/resty/routewarden:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - admin-service
 

@@ -43,6 +43,37 @@ example.com {
 }
 ```
 
+```nginx [NGINX (OpenResty)]
+# nginx.conf: Silent TCP Connection Drop (HTTP 444)
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        drop_warden = routewarden.new({
+            enable_default_patterns = true,
+            response = {
+                mode = "silentDrop"
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name example.com;
+
+        access_by_lua_block {
+            drop_warden:check()
+        }
+
+        location / {
+            proxy_pass http://backend:8080;
+        }
+    }
+}
+```
+
 ```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.middlewares.scanner-drop.plugin.routewarden]
@@ -101,6 +132,42 @@ example.com {
         }
     }
     reverse_proxy backend:8080
+}
+```
+
+```nginx [NGINX (OpenResty)]
+# nginx.conf: Honeypot Redirection
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        honeypot_warden = routewarden.new({
+            enable_default_patterns = true,
+            response = {
+                mode = "redirect",
+                status_code = 307,
+                redirect_url = "https://honeypot.internal.corp/capture",
+                headers = {
+                    ["X-RouteWarden-Deflected"] = "true"
+                }
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name example.com;
+
+        access_by_lua_block {
+            honeypot_warden:check()
+        }
+
+        location / {
+            proxy_pass http://backend:8080;
+        }
+    }
 }
 ```
 
@@ -177,6 +244,47 @@ pr-142.staging.example.com {
 }
 ```
 
+```nginx [NGINX (OpenResty)]
+# nginx.conf: Staging & Preview Cloaking
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        staging_warden = routewarden.new({
+            enable_default_allow_patterns = false,
+            path_patterns = {
+                "^/.*$"
+            },
+            allowed_ips = {
+                "10.0.0.0/8",
+                "100.64.0.0/10",
+                "203.0.113.50/32"
+            },
+            response = {
+                mode = "json",
+                status_code = 404,
+                body = '{"error":"Not Found"}'
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name pr-142.staging.example.com;
+
+        access_by_lua_block {
+            staging_warden:check()
+        }
+
+        location / {
+            proxy_pass http://preview-app:3000;
+        }
+    }
+}
+```
+
 ```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.middlewares.staging-guard.plugin.routewarden]
@@ -240,6 +348,41 @@ honeypot.example.com {
         }
     }
     reverse_proxy honeypot-sink:80
+}
+```
+
+```nginx [NGINX (OpenResty)]
+# nginx.conf: Gzip Bomb Active Defense
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        bomb_warden = routewarden.new({
+            path_patterns = {
+                "(?i)(^|/)(\\.env.*|\\.git.*|wp-login\\.php|phpmyadmin.*)$"
+            },
+            response = {
+                mode = "gzipBomb",
+                status_code = 200,
+                gzip_bomb_mb = 10
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name honeypot.example.com;
+
+        access_by_lua_block {
+            bomb_warden:check()
+        }
+
+        location / {
+            proxy_pass http://honeypot-sink:80;
+        }
+    }
 }
 ```
 
@@ -316,6 +459,42 @@ honeypot.example.com {
         }
     }
     reverse_proxy honeypot-sink:80
+}
+```
+
+```nginx [NGINX (OpenResty)]
+# nginx.conf: Reverse Slowloris Tarpit
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        tarpit_warden = routewarden.new({
+            path_patterns = {
+                "(?i)^/(phpmyadmin|pma|wp-login\\.php|\\.env|\\.git.*)$"
+            },
+            response = {
+                mode = "tarpit",
+                status_code = 200,
+                tarpit_delay_ms = 1000,
+                tarpit_max_duration_seconds = 120
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name honeypot.example.com;
+
+        access_by_lua_block {
+            tarpit_warden:check()
+        }
+
+        location / {
+            proxy_pass http://honeypot-sink:80;
+        }
+    }
 }
 ```
 

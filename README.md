@@ -3,15 +3,17 @@
 </p>
 
 <p align="center">
-  <strong>Traefik &amp; Caddy Middleware for Sensitive Path Defense and Anti-Evasion</strong>
+  <strong>High-Performance Edge Defense for Traefik, Caddy &amp; NGINX</strong>
 </p>
 
 <p align="center">
   <a href="https://github.com/routewarden/traefik-warden/actions/workflows/ci.yml"><img src="https://github.com/routewarden/traefik-warden/actions/workflows/ci.yml/badge.svg" alt="Traefik CI Status"></a>
   <a href="https://github.com/routewarden/caddy-warden/actions/workflows/ci.yml"><img src="https://github.com/routewarden/caddy-warden/actions/workflows/ci.yml/badge.svg" alt="Caddy CI Status"></a>
+  <a href="https://github.com/routewarden/nginx-warden/actions/workflows/ci.yml"><img src="https://github.com/routewarden/nginx-warden/actions/workflows/ci.yml/badge.svg" alt="NGINX CI Status"></a>
   <a href="https://github.com/routewarden/docs/actions/workflows/deploy-docs.yml"><img src="https://github.com/routewarden/docs/actions/workflows/deploy-docs.yml/badge.svg" alt="Docs Deployment"></a>
   <a href="https://plugins.traefik.io"><img src="https://img.shields.io/badge/Traefik-v2%20%7C%20v3-blue.svg" alt="Traefik v2/v3 Compatible"></a>
   <a href="https://caddyserver.com"><img src="https://img.shields.io/badge/Caddy-v2-22b573.svg" alt="Caddy v2 Compatible"></a>
+  <a href="https://openresty.org"><img src="https://img.shields.io/badge/OpenResty-Lua-009900.svg" alt="OpenResty Lua Compatible"></a>
   <a href="https://routewarden.github.io/docs/?playground=open"><img src="https://img.shields.io/badge/Playground-Simulation-blue.svg" alt="Security Playground"></a>
   <a href="https://routewarden.github.io/docs/"><img src="https://img.shields.io/badge/docs-vitepress-6366f1.svg" alt="Documentation Site"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
@@ -21,7 +23,7 @@
 
 ## RouteWarden Documentation
 
-This repository contains the documentation, deployment guides, examples, and release references for RouteWarden on both **[Traefik](https://github.com/routewarden/traefik-warden)** and **[Caddy](https://github.com/routewarden/caddy-warden)**.
+This repository contains the documentation, deployment guides, examples, and release references for RouteWarden across **[Traefik](https://github.com/routewarden/traefik-warden)**, **[Caddy](https://github.com/routewarden/caddy-warden)**, and **[NGINX & OpenResty](https://github.com/routewarden/nginx-warden)**.
 
 - **Documentation Portal**: [https://routewarden.github.io/docs/](https://routewarden.github.io/docs/)
 - **Interactive Playground**: [https://routewarden.github.io/docs/?playground=open](https://routewarden.github.io/docs/?playground=open)
@@ -33,11 +35,11 @@ This repository contains the documentation, deployment guides, examples, and rel
 | Resource | Link | Description |
 |---|---|---|
 | **Interactive Playground** | [routewarden.github.io/docs/?playground=open](https://routewarden.github.io/docs/?playground=open) | Test URLs against normalization rules and generate gateway configs |
-| **Traefik Plugin (Core)** | [github.com/routewarden/traefik-warden](https://github.com/routewarden/traefik-warden) | Source code, unit tests, benchmarks, and Yaegi compatibility |
+| **Traefik Plugin (traefik-warden)** | [github.com/routewarden/traefik-warden](https://github.com/routewarden/traefik-warden) | Pure Go Traefik plugin with Yaegi compatibility |
 | **Caddy Plugin (caddy-warden)** | [github.com/routewarden/caddy-warden](https://github.com/routewarden/caddy-warden) | Official Caddy v2 security module and Caddyfile directive |
+| **NGINX Plugin (nginx-warden)** | [github.com/routewarden/nginx-warden](https://github.com/routewarden/nginx-warden) | High-performance Lua security module for NGINX & OpenResty |
 | **Traefik Plugin Catalog** | [plugins.traefik.io](https://plugins.traefik.io) | Official Traefik Plugin listing |
 | **Documentation Portal** | [routewarden.github.io/docs](https://routewarden.github.io/docs/) | Installation guides, architecture, and configuration options |
-| **Caddy Integration Guide** | [routewarden.github.io/docs/guide/caddy](https://routewarden.github.io/docs/guide/caddy) | Build instructions with xcaddy and Caddyfile examples |
 | **Examples Cookbook** | [Documentation Examples](https://routewarden.github.io/docs/examples/overview) | Ready-to-use Docker Compose and Kubernetes configurations |
 | **Issue Tracker** | [RouteWarden Issues](https://github.com/routewarden/traefik-warden/issues) | Bug reports and feature discussions |
 
@@ -45,12 +47,12 @@ This repository contains the documentation, deployment guides, examples, and rel
 
 ## What is RouteWarden?
 
-**RouteWarden** is a lightweight, zero-dependency middleware written in Go for **Traefik** and **Caddy v2**. It inspects incoming HTTP requests at the reverse proxy layer and blocks unauthorized attempts to reach sensitive files, hidden directories, or administrative endpoints before requests reach your application containers:
+**RouteWarden** is a lightweight, zero-dependency security middleware for **Traefik**, **Caddy v2**, and **NGINX / OpenResty**. It inspects incoming HTTP requests at the reverse proxy layer and blocks unauthorized attempts to reach sensitive files, hidden directories, or administrative endpoints before requests reach your application containers:
 
 - **Sensitive Path Protection**: Blocks access to `.env`, `.git`, `.aws`, `.ssh`, `.sql`, database dumps, and server configuration files (`enableDefaultPatterns: true` / `enable_default_patterns`).
 - **Anti-Evasion Normalization**: Resolves multi-layer URL encoding (`%252e%252e`), semicolon matrix parameters (`/;param/.env`), backslashes (`\`), and null bytes (`%00`) before evaluating rules.
 - **IP and Subnet Allowlisting**: Lets corporate VPNs, internal networks, or trusted IP addresses bypass checks using `X-Forwarded-For`, `X-Real-IP`, or client socket addresses.
-- **Custom Responses**: Returns custom JSON, static HTML error pages, Cloudflare Turnstile / hCaptcha challenges, immediate TCP resets, or honeypot redirects.
+- **13 Configurable Response Modes**: Returns custom JSON, static HTML error pages, Cloudflare Turnstile / hCaptcha challenges, immediate TCP resets (`silentDrop`), gzip bombs, or honeypot redirects.
 - **Interactive Playground**: Test URL patterns, inspect anti-evasion transformations, and generate gateway configurations directly in your browser.
 
 ### Interactive Playground Deeplinks
@@ -73,7 +75,7 @@ experimental:
   plugins:
     routewarden:
       moduleName: github.com/routewarden/traefik-warden
-      version: v0.3.2
+      version: v1.0.0
 ```
 
 ```yaml
@@ -95,24 +97,59 @@ http:
 
 Build Caddy with `xcaddy`:
 ```bash
-xcaddy build --with github.com/routewarden/caddy-warden@v0.3.2
+xcaddy build --with github.com/routewarden/caddy-warden@v1.0.0
 ```
 
 Configure `Caddyfile`:
 ```caddyfile
 {
-    order routewarden first
+    order route_warden before reverse_proxy
 }
 
 :80 {
-    routewarden {
+    route_warden {
         enable_default_patterns
-        response json {
-            status 404
+        response {
+            mode json
+            status_code 404
             body "{\"error\":\"Not Found\"}"
         }
     }
     reverse_proxy app:8080
+}
+```
+
+#### NGINX & OpenResty
+
+Configure `nginx.conf`:
+```nginx
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+        warden = routewarden.new({
+            enabled = true,
+            enable_default_patterns = true,
+            response = {
+                mode = "json",
+                status_code = 404,
+                body = '{"error":"Not Found"}'
+            }
+        })
+    }
+
+    server {
+        listen 80;
+
+        access_by_lua_block {
+            warden:check()
+        }
+
+        location / {
+            proxy_pass http://app:8080;
+        }
+    }
 }
 ```
 
