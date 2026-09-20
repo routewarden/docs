@@ -11,6 +11,9 @@ export default defineConfig({
     server: {
       host: true
     },
+    define: {
+      __CF_BEACON_TOKEN__: JSON.stringify(process.env.CLOUDFLARE_ANALYTICS_TOKEN || process.env.CF_BEACON_TOKEN || '')
+    },
     plugins: [
       {
         name: 'redirect-root-to-docs',
@@ -113,7 +116,18 @@ export default defineConfig({
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:title', content: 'RouteWarden — Traefik Security Middleware' }],
     ['meta', { name: 'twitter:description', content: 'Ultra-fast sensitive path defense, anti-evasion normalization, IP whitelisting, and multi-action responses for Traefik.' }],
-    ['meta', { name: 'twitter:image', content: 'https://routewarden.github.io/docs/banner.png' }]
+    ['meta', { name: 'twitter:image', content: 'https://routewarden.github.io/docs/banner.png' }],
+    // Cloudflare Web Analytics (Zero-cookie, privacy-first analytics)
+    [
+      'script',
+      {
+        defer: '',
+        src: 'https://static.cloudflareinsights.com/beacon.min.js',
+        'data-cf-beacon': JSON.stringify({
+          token: process.env.CLOUDFLARE_ANALYTICS_TOKEN || process.env.CF_BEACON_TOKEN || 'YOUR_CLOUDFLARE_ANALYTICS_TOKEN'
+        })
+      }
+    ]
   ],
   themeConfig: {
     logo: '/icon.svg',
