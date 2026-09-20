@@ -26,6 +26,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: github-pages   # needed to access environment-scod variables (vars.*)
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -44,6 +45,8 @@ jobs:
       - name: Build VitePress documentation
         run: npm run docs:build
         env:
+          # Injected at build time; baked into the beacon <script> tag by VitePress.
+          # Token is set as a variable under the github-pages environment (Settings → Environments).
           CLOUDFLARE_ANALYTICS_TOKEN: ${{ vars.CLOUDFLARE_ANALYTICS_TOKEN }}
 
       - name: Upload Pages artifact
