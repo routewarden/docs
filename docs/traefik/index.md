@@ -26,25 +26,38 @@
 
 ---
 
-## 30-Second YAML Preview
+## 30-Second Quick Start
 
-```yaml
+::: code-group
+
+```yaml [Traefik (Dynamic YAML)]
 # dynamic_conf.yml
 http:
   middlewares:
-    warden-shield:
+    warden:
       plugin:
         routewarden:
           enabled: true
           enableDefaultPatterns: true
-          pathPatterns:
-            - '(?i)^/admin(/.*)?$'
-            - '(?i)^/api/internal(/.*)?$'
-          allowedIps:
-            - "10.0.0.0/8"
-            - "192.168.1.100"
-          response:
-            mode: json
-            statusCode: 404
-            body: '{"error":"Not Found","message":"Endpoint unavailable"}'
 ```
+
+```json [routewarden.json]
+// Generate Traefik dynamic.yml or labels:
+//   CLI:    rwarden generate --target [traefik|traefik-labels] --config routewarden.json
+//   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target [traefik|traefik-labels] --config /routewarden.json
+{
+  "$schema": "https://routewarden.github.io/cli/schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true
+}
+```
+
+```bash [Traefik (Docker Compose)]
+# docker-compose.yml
+labels:
+  - "traefik.http.middlewares.warden.plugin.routewarden.enabled=true"
+  - "traefik.http.middlewares.warden.plugin.routewarden.enableDefaultPatterns=true"
+```
+
+:::
+

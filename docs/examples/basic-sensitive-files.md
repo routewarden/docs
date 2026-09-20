@@ -8,6 +8,19 @@ This scenario protects a web application against reconnaissance and exposure of 
 
 ::: code-group
 
+```json [JSON Schema (Recommended)]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "response": {
+    "mode": "json",
+    "statusCode": 403,
+    "body": "{\"error\":\"Forbidden\",\"message\":\"Sensitive path blocked by RouteWarden\"}"
+  }
+}
+```
+
 ```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:

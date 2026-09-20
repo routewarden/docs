@@ -8,6 +8,26 @@ Attaching RouteWarden directly to Traefik's entrypoint provides unified, cluster
 
 ::: code-group
 
+```json [routewarden.json]
+// Generate Traefik dynamic.yml:
+//   CLI:    rwarden generate --target traefik --config routewarden.json > dynamic_conf.yml
+//   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target traefik --config /routewarden.json > dynamic_conf.yml
+{
+  "$schema": "https://routewarden.github.io/cli/schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "allowedIps": [
+    "127.0.0.1",
+    "10.0.0.0/8"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 403,
+    "body": "{\"error\":\"Forbidden\",\"scope\":\"global-shield\"}"
+  }
+}
+```
+
 ```yaml [Traefik (File YAML)]
 # traefik.yml (Static EntryPoint Attachment)
 entryPoints:

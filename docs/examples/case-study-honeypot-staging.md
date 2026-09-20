@@ -18,6 +18,17 @@ Rather than allocating memory buffers and sending an HTTP status response, Route
 
 ::: code-group
 
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "response": {
+    "mode": "silentDrop"
+  }
+}
+```
+
 ```yaml [Traefik (YAML)]
 http:
   middlewares:
@@ -104,6 +115,22 @@ http {
 When an attacker accesses any sensitive file pattern, RouteWarden can issue an HTTP `302/307 Redirect` to an external honeypot, a public loopback (`http://127.0.0.1`), or an FBI/IC3 reporting endpoint:
 
 ::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "response": {
+    "mode": "redirect",
+    "statusCode": 307,
+    "redirectUrl": "https://honeypot.internal.corp/capture",
+    "headers": {
+      "X-RouteWarden-Deflected": "true"
+    }
+  }
+}
+```
 
 ```yaml [Traefik (YAML)]
 http:
@@ -204,6 +231,27 @@ http {
 For pull-request preview environments (e.g., `pr-142.staging.example.com`), competitors or automated crawlers shouldn't index unreleased code:
 
 ::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultAllowPatterns": false,
+  "pathPatterns": [
+    "^/.*$"
+  ],
+  "allowedIps": [
+    "10.0.0.0/8",
+    "100.64.0.0/10",
+    "203.0.113.50/32"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 404,
+    "body": "{\"error\":\"Not Found\"}"
+  }
+}
+```
 
 ```yaml [Traefik (YAML)]
 http:
@@ -321,6 +369,21 @@ With RouteWarden's `gzipBomb` mode (alias: `bomb`), the middleware serves a **va
 
 ::: code-group
 
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "pathPatterns": [
+    "(?i)(^|/)(\\.env.*|\\.git.*|wp-login\\.php|phpmyadmin.*)$"
+  ],
+  "response": {
+    "mode": "gzipBomb",
+    "statusCode": 200,
+    "gzipBombMB": 10
+  }
+}
+```
+
 ```yaml [Traefik (YAML)]
 http:
   middlewares:
@@ -430,6 +493,22 @@ Rather than dropping or bombing the connection, RouteWarden's **Reverse Slowlori
 Because automated vulnerability tools (`sqlmap`, `nikto`, `nuclei`) operate with finite worker thread pools (typically 10–50 concurrent workers), tying up sockets on honeypot routes paralyzes their scanning capacity.
 
 ::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "pathPatterns": [
+    "(?i)^/(phpmyadmin|pma|wp-login\\.php|\\.env|\\.git.*)$"
+  ],
+  "response": {
+    "mode": "tarpit",
+    "statusCode": 200,
+    "tarpitDelayMs": 1000,
+    "tarpitMaxDurationSeconds": 120
+  }
+}
+```
 
 ```yaml [Traefik (YAML)]
 http:

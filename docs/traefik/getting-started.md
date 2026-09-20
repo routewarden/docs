@@ -76,12 +76,41 @@ traefik \
 
 ### 2. Dynamic Configuration
 
-Configure the RouteWarden middleware and attach it to your router:
+RouteWarden can be configured using **`routewarden.json`** as your universal security schema, or directly in Traefik dynamic file/label configurations. 
+
+#### How `routewarden.json` Works with Traefik
+
+Because `routewarden.json` adheres to the official RouteWarden JSON Schema, every field in `routewarden.json` maps directly 1-to-1 to Traefik's `plugin.routewarden` configuration keys. You maintain security rules in a single `routewarden.json` file with IDE schema validation, and deploy the corresponding keys into your Traefik router middleware:
 
 ::: code-group
 
-```yaml [File (YAML)]
-# dynamic_conf.yml
+```json [routewarden.json (Source of Truth)]
+// Validate: rwarden validate --config routewarden.json (or via docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest validate --config /routewarden.json)
+// Generate Traefik dynamic.yml:
+//   CLI:    rwarden generate --target traefik --config routewarden.json > dynamic.yml
+//   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target traefik --config /routewarden.json > dynamic.yml
+// Generate Docker Compose labels:
+//   CLI:    rwarden generate --target traefik-labels --config routewarden.json
+//   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target traefik-labels --config /routewarden.json
+{
+  "$schema": "https://routewarden.github.io/cli/schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "enableDefaultAllowPatterns": true,
+  "checkQuery": false,
+  "checkHeaders": ["X-Forwarded-Uri", "X-Rewrite-URL"],
+  "allowedIps": ["127.0.0.1", "10.0.0.0/8"],
+  "methods": ["GET", "POST"],
+  "response": {
+    "mode": "json",
+    "statusCode": 403,
+    "body": "{\"error\":\"Forbidden\",\"message\":\"Sensitive route protected by RouteWarden\"}"
+  }
+}
+```
+
+```yaml [Traefik (Dynamic YAML)]
+# dynamic_conf.yml — Direct 1:1 mapping from routewarden.json
 http:
   middlewares:
     route-shield:
@@ -89,9 +118,17 @@ http:
         routewarden:
           enabled: true
           enableDefaultPatterns: true
+          enableDefaultAllowPatterns: true
+          checkQuery: false
+          checkHeaders:
+            - "X-Forwarded-Uri"
+            - "X-Rewrite-URL"
           allowedIps:
             - "127.0.0.1"
             - "10.0.0.0/8"
+          methods:
+            - "GET"
+            - "POST"
           response:
             mode: json
             statusCode: 403
@@ -107,8 +144,8 @@ http:
       service: app-service
 ```
 
-```toml [File (TOML)]
-# dynamic_conf.toml
+```toml [Traefik (Dynamic TOML)]
+# dynamic_conf.toml — TOML representation of routewarden.json
 [http.routers.app-router]
   rule = "Host(`app.example.com`)"
   entryPoints = ["web"]
@@ -118,7 +155,11 @@ http:
 [http.middlewares.route-shield.plugin.routewarden]
   enabled = true
   enableDefaultPatterns = true
+  enableDefaultAllowPatterns = true
+  checkQuery = false
+  checkHeaders = ["X-Forwarded-Uri", "X-Rewrite-URL"]
   allowedIps = ["127.0.0.1", "10.0.0.0/8"]
+  methods = ["GET", "POST"]
 
 [http.middlewares.route-shield.plugin.routewarden.response]
   mode = "json"
@@ -126,14 +167,35 @@ http:
   body = '{"error":"Forbidden","message":"Sensitive route protected by RouteWarden"}'
 ```
 
-```bash [CLI]
-# Note: Dynamic configurations in Traefik can also be declared via Docker Compose labels or CLI
-traefik \
-  --entrypoints.web.address=:80 \
-  --entrypoints.web.http.middlewares=route-shield@docker
+```bash [Traefik (Docker Compose Labels)]
+# Docker Compose labels representation of routewarden.json
+- "traefik.http.routers.app.rule=Host(`app.example.com`)"
+- "traefik.http.routers.app.middlewares=route-shield"
+- "traefik.http.middlewares.route-shield.plugin.routewarden.enabled=true"
+- "traefik.http.middlewares.route-shield.plugin.routewarden.enableDefaultPatterns=true"
+- "traefik.http.middlewares.route-shield.plugin.routewarden.methods=GET,POST"
+- "traefik.http.middlewares.route-shield.plugin.routewarden.allowedIps=127.0.0.1,10.0.0.0/8"
+- "traefik.http.middlewares.route-shield.plugin.routewarden.response.mode=json"
+- "traefik.http.middlewares.route-shield.plugin.routewarden.response.statusCode=403"
 ```
 
 :::
+
+> **Offline CI/CD Validation with `rwarden`**:
+> Validate your `routewarden.json` schema before deploying to Traefik using the [RouteWarden CLI (`rwarden`)](/core/cli):
+> 
+> ::: code-group
+> 
+> ```bash [CLI]
+> # Validate schema compliance, regex patterns, and CIDRs
+> rwarden validate --config routewarden.json
+> ```
+> 
+> ```bash [Docker]
+> docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest validate --config /routewarden.json
+> ```
+> 
+> :::
 
 ---
 
@@ -141,4 +203,5 @@ traefik \
 
 - Explore [System Architecture](/core/architecture) to understand the request inspection pipeline.
 - View the complete [Configuration Reference](/traefik/configuration).
+- Manage centralized rules with [Using routewarden.json in Production](/core/cli#using-routewarden-json-in-production).
 - Check the [Examples & Wiki Cookbook](/examples/overview) for production Docker Compose & Kubernetes blueprints.

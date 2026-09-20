@@ -120,6 +120,29 @@ Stops XML-RPC amplification attacks, wp-config exposure, and brute-force bot sca
 
 ::: code-group
 
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "pathPatterns": [
+    "(?i)(^|/)(xmlrpc\\.php|wp-config\\.php|install\\.php|license\\.txt|readme\\.html)$"
+  ],
+  "allowPatterns": [
+    "(?i)^/wp-content/uploads/.*",
+    "(?i)^/robots\\.txt$"
+  ],
+  "allowedIps": [
+    "203.0.113.50"
+  ],
+  "response": {
+    "mode": "text",
+    "statusCode": 404,
+    "body": "404 Not Found"
+  }
+}
+```
+
 ```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:
@@ -217,6 +240,26 @@ Protects internal server assets, environment secrets, and build manifests:
 
 ::: code-group
 
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "pathPatterns": [
+    "(?i)(^|/)(next\\.config\\.js|tsconfig\\.json|package\\.json|package-lock\\.json|yarn\\.lock)$"
+  ],
+  "allowPatterns": [
+    "(?i)^/_next/static/.*",
+    "(?i)^/favicon\\.ico$"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 403,
+    "body": "{\"error\":\"Forbidden\"}"
+  }
+}
+```
+
 ```yaml [Traefik (Docker Compose)]
 services:
   nextjs-app:
@@ -260,6 +303,28 @@ app.example.com {
 Guards virtual environment directories, SQLite database files, and Django management endpoints:
 
 ::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "pathPatterns": [
+    "(?i)(^|/)(__pycache__|\\.venv|venv|local_settings\\.py|manage\\.py)$"
+  ],
+  "allowPatterns": [
+    "(?i)^/static/.*",
+    "(?i)^/media/.*"
+  ],
+  "allowedIps": [
+    "10.0.0.0/8"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 403
+  }
+}
+```
 
 ```yaml [Traefik (Docker Compose)]
 services:
@@ -306,6 +371,25 @@ Shields internal Actuator management metrics, trace dumps, and H2 database conso
 
 ::: code-group
 
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "pathPatterns": [
+    "(?i)^/(actuator|metrics|heapdump|trace|env|h2-console)(/.*)?$"
+  ],
+  "allowPatterns": [
+    "(?i)^/actuator/health$"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 403,
+    "body": "{\"error\":\"Forbidden\",\"scope\":\"actuator-protected\"}"
+  }
+}
+```
+
 ```yaml [Traefik (Docker Compose)]
 services:
   spring-service:
@@ -350,6 +434,25 @@ service.internal.example.com {
 Protects `.env`, Artisan CLI files, storage logs, and debug toolbars:
 
 ::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "pathPatterns": [
+    "(?i)(^|/)(artisan|composer\\.json|composer\\.lock|package\\.json|\\.env.*)$"
+  ],
+  "allowPatterns": [
+    "(?i)^/(css|js|images|storage)/.*"
+  ],
+  "response": {
+    "mode": "text",
+    "statusCode": 404,
+    "body": "404 page not found"
+  }
+}
+```
 
 ```yaml [Traefik (Docker Compose)]
 services:
@@ -445,6 +548,26 @@ pathPatterns:
 ## 7. Complete Multi-Gateway Configuration Example
 
 ::: code-group
+
+```json [routewarden.json]
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "pathPatterns": [
+    "(?i)^/api/(internal|admin)(/.*)?$",
+    "(?i).*\\.(sql|dump)$"
+  ],
+  "allowPatterns": [
+    "(?i)^/api/internal/health$"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 403,
+    "body": "{\"error\":\"Forbidden\",\"message\":\"Restricted path pattern\"}"
+  }
+}
+```
 
 ```yaml [Traefik (Docker Compose)]
 services:

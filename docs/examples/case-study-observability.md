@@ -27,6 +27,30 @@ RouteWarden intercepts all requests directed at diagnostic and metrics paths:
 
 ::: code-group
 
+```json [routewarden.json]
+// routewarden.json
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "blockPatterns": [
+    "(?i)^/(metrics|server-metrics|telemetry)(/.*)?$",
+    "(?i)^/actuator(/.*)?$",
+    "(?i)^/debug/(pprof|vars)(/.*)?$"
+  ],
+  "allowedIps": [
+    "10.0.0.50/32",
+    "10.244.0.0/16",
+    "127.0.0.1"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 404,
+    "body": "{\"error\":\"Not Found\",\"message\":\"The requested URL was not found on this server\"}"
+  }
+}
+```
+
 ```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:

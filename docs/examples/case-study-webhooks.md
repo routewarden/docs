@@ -27,6 +27,27 @@ With RouteWarden, you enforce a two-tier gatekeeper at the Traefik edge:
 
 ::: code-group
 
+```json [routewarden.json]
+// routewarden.json
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "blockPatterns": ["(?i)^/webhooks(/.*)?$"],
+  "allowPatterns": ["(?i)^/webhooks/stripe/v1$"],
+  "allowedIps": [
+    "3.18.12.63/32",
+    "3.130.192.231/32",
+    "13.235.14.237/32",
+    "13.235.122.149/32",
+    "35.154.171.200/32"
+  ],
+  "response": {
+    "mode": "silentDrop"
+  }
+}
+```
+
 ```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:

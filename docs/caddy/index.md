@@ -25,9 +25,12 @@
 
 ---
 
-## 30-Second Caddyfile Preview
+## 30-Second Quick Start
 
-```nginx
+::: code-group
+
+```nginx [Caddy (Caddyfile)]
+# Caddyfile
 {
     order route_warden before reverse_proxy
 }
@@ -35,15 +38,30 @@
 example.com {
     route_warden {
         enable_default_patterns true
-        path_patterns "(?i)^/admin(/.*)?$"
-        allowed_ips "10.0.0.0/8" "192.168.1.100"
-        response {
-            mode json
-            status_code 404
-            body "{\"error\":\"Not Found\",\"message\":\"Endpoint unavailable\"}"
-        }
     }
 
     reverse_proxy localhost:8080
 }
 ```
+
+```json [routewarden.json]
+// Generate Caddy directives:
+//   CLI:    rwarden generate --target caddy --config routewarden.json
+//   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target caddy --config /routewarden.json
+{
+  "$schema": "https://routewarden.github.io/cli/schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true
+}
+```
+
+```json [Caddy (JSON API)]
+{
+  "handler": "route_warden",
+  "enabled": true,
+  "enable_default_patterns": true
+}
+```
+
+:::
+

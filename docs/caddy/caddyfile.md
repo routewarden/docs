@@ -32,9 +32,10 @@ route_warden {
     enabled <true|false>                        # Default: true
     debug <true|false>                          # Default: false (verbose diagnostic logs)
     security_log <true|false>                   # Default: true (emit structured JSON audit events on stdout)
-    enable_default_patterns <true|false>        # Default: true (.env, .git, backups, etc.)
+    enable_default_patterns <true|false>        # Default: true (.env, .git, backups, keys, etc.)
     enable_default_allow_patterns <true|false>  # Default: true (/robots.txt, /favicon.ico, etc.)
     check_query <true|false>                    # Default: false (inspect URI query strings)
+    check_headers <headers...>                  # Optional: inspect forwarded headers (e.g. X-Forwarded-Uri X-Rewrite-URL)
 
     # Path Patterns to Block or Challenge (Go RE2 Regular Expressions)
     path_patterns <regex...>

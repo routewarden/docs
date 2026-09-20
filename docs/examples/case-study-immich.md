@@ -81,6 +81,27 @@ Here is how to configure Traefik with RouteWarden to implement this dual-router 
 
 ::: code-group
 
+```json [routewarden.json]
+// routewarden.json
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "blockPatterns": [
+    "(?i)^/api/auth/login.*$",
+    "(?i)^/api/auth/admin-sign-up.*$",
+    "(?i)^/api/users.*$",
+    "(?i)^/api/admin.*$",
+    "(?i)^/api/server-info/stats.*$"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 404,
+    "body": "{\"error\":\"Not Found\",\"message\":\"Endpoint unavailable on public router\"}"
+  }
+}
+```
+
 ```yaml [Traefik (YAML)]
 # dynamic_conf.yml
 http:

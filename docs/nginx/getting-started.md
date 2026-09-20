@@ -73,26 +73,115 @@ services:
 
 ---
 
-## Basic Configuration
+## Configuration
 
-Configure RouteWarden in `nginx.conf`:
+You can configure RouteWarden in OpenResty using either **`routewarden.json` (Recommended JSON Schema)** or inline Lua tables directly in `nginx.conf`.
 
-```nginx
-worker_processes 1;
-error_log /dev/stderr warn;
+### Option 1: `routewarden.json` (Recommended Universal Schema)
 
-events {
-    worker_connections 1024;
+#### How `routewarden.json` Works with NGINX & OpenResty
+
+Rather than hardcoding security rules directly into `nginx.conf`, OpenResty loads your centralized `routewarden.json` file at worker startup via `cjson.decode()` and initializes `routewarden.new(cfg)`. 
+
+This enables you to:
+1. Validate rules offline with `rwarden validate --config /etc/nginx/routewarden.json` before reloading NGINX.
+2. Share the exact same security policy across NGINX, Traefik, and Caddy clusters without rewriting syntax.
+3. Benefit from JSON Schema IDE autocompletion and linting in your repositories.
+
+::: code-group
+
+```json [/etc/nginx/routewarden.json]
+// Validate: rwarden validate --config /etc/nginx/routewarden.json (or via docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest validate --config /routewarden.json)
+// Generate OpenResty Lua table for nginx.conf:
+//   CLI:    rwarden generate --target nginx --config routewarden.json
+//   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target nginx --config /routewarden.json
+{
+  "$schema": "https://routewarden.github.io/cli/schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "enableDefaultAllowPatterns": true,
+  "checkQuery": true,
+  "checkHeaders": ["X-Forwarded-Uri", "X-Rewrite-URL"],
+  "allowedIps": ["127.0.0.1", "10.0.0.0/8"],
+  "methods": ["GET", "POST"],
+  "response": {
+    "mode": "json",
+    "statusCode": 403,
+    "body": "{\"error\":\"Forbidden\",\"message\":\"Blocked by RouteWarden Shield\"}"
+  }
 }
+```
 
+```nginx [/etc/nginx/nginx.conf]
 http {
     include       mime.types;
     default_type  application/octet-stream;
     sendfile      on;
 
-    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;/etc/nginx/lua/lib/?/init.lua;;";
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
 
-    # Step 1: Initialize RouteWarden in the init_by_lua phase
+    # Step 1: Load external routewarden.json on worker init
+    init_by_lua_block {
+        local cjson = require("cjson")
+        local routewarden = require("resty.routewarden")
+
+        local f = io.open("/etc/nginx/routewarden.json", "r")
+        if f then
+            local content = f:read("*all")
+            f:close()
+            local cfg = cjson.decode(content)
+            warden = routewarden.new(cfg)
+        else
+            ngx.log(ngx.ERR, "Failed to load routewarden.json, falling back to defaults")
+            warden = routewarden.new({ enabled = true })
+        end
+    }
+
+    server {
+        listen 80;
+        server_name example.com;
+
+        # Step 2: Hook RouteWarden into request access phase
+        access_by_lua_block {
+            warden:check()
+        }
+
+        location / {
+            proxy_pass http://backend_upstream;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+}
+```
+
+:::
+
+Validate before reloading NGINX:
+
+::: code-group
+
+```bash [CLI]
+rwarden validate --config /etc/nginx/routewarden.json
+```
+
+```bash [Docker]
+docker run --rm -v /etc/nginx:/etc/nginx:ro ghcr.io/routewarden/cli:latest validate --config /etc/nginx/routewarden.json
+```
+
+:::
+
+---
+
+### Option 2: Inline Lua Configuration
+
+If you prefer keeping your configuration entirely in `nginx.conf`:
+
+```nginx
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
     init_by_lua_block {
         local routewarden = require("resty.routewarden")
 
@@ -116,7 +205,6 @@ http {
         listen 80;
         server_name example.com;
 
-        # Step 2: Hook RouteWarden into request access phase
         access_by_lua_block {
             warden:check()
         }
@@ -164,3 +252,11 @@ Exempt trusted IP:
 curl -i -H "X-Forwarded-For: 10.0.1.5" http://localhost/.env
 # Passes through to upstream
 ```
+
+---
+
+## Next Steps
+
+- Explore [Using routewarden.json in Production](/core/cli#using-routewarden-json-in-production).
+- Review [NGINX Configuration Reference](/nginx/configuration) for all directives and options.
+- Read [Production Recipes & Blueprints](/nginx/examples) for Kubernetes Ingress and Docker configurations.

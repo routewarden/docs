@@ -141,40 +141,30 @@ When a path matches a block rule, RouteWarden can respond with:
 
 ## 30-Second Quick Start
 
-Get RouteWarden running on your Traefik instance in under a minute:
+Deploy RouteWarden in under 30 seconds with minimal configuration:
 
 ::: code-group
+
+```json [routewarden.json]
+// Generate gateway configs:
+//   CLI:    rwarden generate --target [traefik|caddy|nginx] --config routewarden.json
+//   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target [traefik|caddy|nginx] --config /routewarden.json
+{
+  "$schema": "https://routewarden.github.io/cli/schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true
+}
+```
 
 ```yaml [Traefik (Dynamic YAML)]
 # dynamic_conf.yml
 http:
   middlewares:
-    global-warden:
+    warden:
       plugin:
         routewarden:
           enabled: true
           enableDefaultPatterns: true
-          # (Optional) HTTP methods to inspect (default: ["GET"])
-          methods:
-            - "GET"
-            - "POST"
-          # (Optional) Custom regex patterns to guard
-          pathPatterns:
-            - '(?i)^/admin(/.*)?$'
-            - '(?i)^/api/internal(/.*)?$'
-          # (Optional) Safe exceptions (always allowed)
-          allowPatterns:
-            - '(?i)^/api/internal/health$'
-            - '(?i)^/robots\.txt$'
-          # (Optional) Whitelisted VPN or office IPs
-          allowedIps:
-            - "10.0.0.0/8"
-            - "192.168.1.100"
-          # Response configuration
-          response:
-            mode: json
-            statusCode: 404
-            body: '{"error":"Not Found","message":"The requested resource does not exist"}'
 
   routers:
     app-router:
@@ -182,7 +172,7 @@ http:
       entryPoints:
         - web
       middlewares:
-        - global-warden
+        - warden
       service: app-service
 ```
 
@@ -194,23 +184,7 @@ http:
 
 example.com {
     route_warden {
-        enabled true
         enable_default_patterns true
-        # (Optional) HTTP methods to inspect (default: GET)
-        methods GET POST
-        # (Optional) Custom regex patterns to guard
-        path_patterns "(?i)^/admin(/.*)?$" "(?i)^/api/internal(/.*)?$"
-        # (Optional) Safe exceptions (always allowed)
-        allow_patterns "(?i)^/api/internal/health$" "(?i)^/robots\.txt$"
-        # (Optional) Whitelisted VPN or office IPs
-        allowed_ips "10.0.0.0/8" "192.168.1.100"
-
-        # Response configuration
-        response {
-            mode json
-            status_code 404
-            body "{\"error\":\"Not Found\",\"message\":\"The requested resource does not exist\"}"
-        }
     }
 
     reverse_proxy localhost:8080
@@ -218,87 +192,40 @@ example.com {
 ```
 
 ```bash [Traefik (Docker Compose)]
-# Docker Compose Labels
-- "traefik.http.middlewares.global-warden.plugin.routewarden.enabled=true"
-- "traefik.http.middlewares.global-warden.plugin.routewarden.enableDefaultPatterns=true"
-# (Optional) HTTP methods to inspect (default: GET)
-- "traefik.http.middlewares.global-warden.plugin.routewarden.methods=GET,POST"
-# (Optional) Custom regex patterns to guard
-- "traefik.http.middlewares.global-warden.plugin.routewarden.pathPatterns=(?i)^/admin(/.*)?$,(?i)^/api/internal(/.*)?$"
-# (Optional) Safe exceptions (always allowed)
-- "traefik.http.middlewares.global-warden.plugin.routewarden.allowPatterns=(?i)^/api/internal/health$,(?i)^/robots\\.txt$"
-# (Optional) Whitelisted VPN or office IPs
-- "traefik.http.middlewares.global-warden.plugin.routewarden.allowedIps=10.0.0.0/8,192.168.1.100"
-# Response configuration
-- "traefik.http.middlewares.global-warden.plugin.routewarden.response.mode=json"
-- "traefik.http.middlewares.global-warden.plugin.routewarden.response.statusCode=404"
-- 'traefik.http.middlewares.global-warden.plugin.routewarden.response.body={"error":"Not Found","message":"The requested resource does not exist"}'
+# docker-compose.yml
+labels:
+  - "traefik.http.middlewares.warden.plugin.routewarden.enabled=true"
+  - "traefik.http.middlewares.warden.plugin.routewarden.enableDefaultPatterns=true"
 ```
 
 ```json [Caddy (JSON API)]
 {
   "handler": "route_warden",
   "enabled": true,
-  "enable_default_patterns": true,
-  "methods": ["GET", "POST"],
-  // (Optional) Custom regex patterns to guard
-  "path_patterns": ["(?i)^/admin(/.*)?$", "(?i)^/api/internal(/.*)?$"],
-  // (Optional) Safe exceptions (always allowed)
-  "allow_patterns": ["(?i)^/api/internal/health$", "(?i)^/robots\\.txt$"],
-  // (Optional) Whitelisted VPN or office IPs
-  "allowed_ips": ["10.0.0.0/8", "192.168.1.100"],
-  // Response configuration
-  "response": {
-    "mode": "json",
-    "status_code": 404,
-    "body": "{\"error\":\"Not Found\",\"message\":\"The requested resource does not exist\"}"
-  }
+  "enable_default_patterns": true
 }
 ```
 
 ```nginx [NGINX (OpenResty)]
 # nginx.conf
-http {
-    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+init_by_lua_block {
+    local routewarden = require("resty.routewarden")
+    warden = routewarden.new({
+        enabled = true,
+        enable_default_patterns = true
+    })
+}
 
-    init_by_lua_block {
-        local routewarden = require("resty.routewarden")
+server {
+    listen 80;
+    server_name example.com;
 
-        warden = routewarden.new({
-            enabled = true,
-            enable_default_patterns = true,
-            methods = { "GET", "POST" },
-            path_patterns = {
-                "(?i)^/admin(/.*)?$",
-                "(?i)^/api/internal(/.*)?$"
-            },
-            allow_patterns = {
-                "(?i)^/api/internal/health$",
-                "(?i)^/robots\\.txt$"
-            },
-            allowed_ips = {
-                "10.0.0.0/8",
-                "192.168.1.100"
-            },
-            response = {
-                mode = "json",
-                status_code = 404,
-                body = '{"error":"Not Found","message":"The requested resource does not exist"}'
-            }
-        })
+    access_by_lua_block {
+        warden:check()
     }
 
-    server {
-        listen 80;
-        server_name example.com;
-
-        access_by_lua_block {
-            warden:check()
-        }
-
-        location / {
-            proxy_pass http://localhost:8080;
-        }
+    location / {
+        proxy_pass http://localhost:8080;
     }
 }
 ```
