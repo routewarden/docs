@@ -118,13 +118,15 @@ export default defineConfig({
     ['meta', { name: 'twitter:description', content: 'Ultra-fast sensitive path defense, anti-evasion normalization, IP whitelisting, and multi-action responses for Traefik.' }],
     ['meta', { name: 'twitter:image', content: 'https://routewarden.github.io/docs/banner.png' }],
     // Cloudflare Web Analytics (Zero-cookie, privacy-first analytics)
+    // Token is injected at build time via CLOUDFLARE_ANALYTICS_TOKEN env var (GitHub Actions secret).
+    // Falls back to empty string in local dev — beacon loads but does not send data.
     [
       'script',
       {
         defer: '',
         src: 'https://static.cloudflareinsights.com/beacon.min.js',
         'data-cf-beacon': JSON.stringify({
-          token: process.env.CLOUDFLARE_ANALYTICS_TOKEN || process.env.CF_BEACON_TOKEN || 'YOUR_CLOUDFLARE_ANALYTICS_TOKEN'
+          token: process.env.CLOUDFLARE_ANALYTICS_TOKEN || ''
         })
       }
     ]

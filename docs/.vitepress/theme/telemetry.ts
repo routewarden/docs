@@ -5,7 +5,6 @@
 
 declare global {
   interface Window {
-    __CF_BEACON_TOKEN__?: string
     __cfBeacon?: any
   }
 }
