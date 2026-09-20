@@ -83,6 +83,49 @@ app.example.com {
 }
 ```
 
+```nginx [NGINX (OpenResty)]
+# nginx.conf: Metrics & Actuator Cloaking
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        metrics_warden = routewarden.new({
+            enable_default_patterns = true,
+            path_patterns = {
+                "(?i)^/(metrics|server-metrics|telemetry)(/.*)?$",
+                "(?i)^/actuator(/.*)?$",
+                "(?i)^/debug/(pprof|vars)(/.*)?$"
+            },
+            allowed_ips = {
+                "10.0.0.50/32",
+                "10.244.0.0/16",
+                "127.0.0.1"
+            },
+            response = {
+                mode = "json",
+                status_code = 404,
+                body = '{"error":"Not Found","message":"The requested URL was not found on this server"}'
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name app.example.com;
+
+        access_by_lua_block {
+            metrics_warden:check()
+        }
+
+        location / {
+            proxy_pass http://app-service:8080;
+        }
+    }
+}
+```
+
 ```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.app-router]

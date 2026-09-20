@@ -1,6 +1,6 @@
 # Response Modes Reference
 
-RouteWarden features a modular response engine that dictates exactly how Traefik handles blocked requests. Rather than only offering a generic static 403 error page, RouteWarden supports **11 deterministic response modes** ranging from standard REST error bodies to interactive bot challenges and offensive honeypot traps.
+RouteWarden features a modular response engine that dictates exactly how reverse proxies (Traefik, Caddy, and NGINX) handle blocked requests. Rather than only offering a generic static 403 error page, RouteWarden supports **13 deterministic response modes** ranging from standard REST error bodies to interactive bot challenges and offensive honeypot traps.
 
 ---
 

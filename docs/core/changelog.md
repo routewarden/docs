@@ -6,7 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [v0.3.x Series] — Latest
+## [v1.0.0] - 2026-09-20 (Latest)
+
+The `v1.0.0` milestone release marks general availability and multi-gateway parity for RouteWarden across **Traefik**, **Caddy**, and **NGINX / OpenResty**.
+
+### Key Highlights
+
+- **RouteWarden for NGINX & OpenResty (`nginx-warden`)**:
+  - Full production-ready Lua implementation running in LuaJIT during the `access_by_lua` phase.
+  - Zero external dependencies: pure OpenResty standard libraries (`ngx.re`, `resty.string`, bit operations).
+  - Complete parity with Go implementations:
+    - Recursive multi-layer URL percent-decoding (`%252e%252e`).
+    - Semicolon matrix parameter stripping (`/;param/.env`).
+    - Windows/IIS backslash normalization (`\..\`).
+    - Null-byte injection scrubbing (`%00`).
+    - Canonical path resolution and dot-segment traversal protection.
+  - Full 13 response modes supported: `json`, `html`, `text`, `xml`, `redirect`, `captcha` (Turnstile/hCaptcha/reCAPTCHA), `silentDrop` (HTTP 444), `gzipBomb`, `tarpit`, `fakeSuccess`, `rateLimitChallenge`, `proxy`, and `infiniteStream`.
+  - IPv4 and IPv6 exact address matching and CIDR subnet evaluation (`10.0.0.0/8`, `2001:db8::/32`).
+  - Native client IP resolution prioritizing `X-Forwarded-For`, `X-Real-IP`, and socket `remote_addr`.
+  - Structured JSON security logging (`security_log`) compatible with CrowdSec parsers and SIEM collectors.
+- **Unified Multi-Gateway Parity (`traefik-warden`, `caddy-warden`, `nginx-warden`)**:
+  - Consistent 30-case validation and multi-port verification suites across all supported gateways.
+  - Unified configuration schema and terminology.
+- **Documentation Overhaul**:
+  - Archived `v0.3.x` documentation preserved under `/v0.3/` with legacy version notices.
+  - Promoted `v1.0.x (Latest)` with NGINX guides, references, and cookbook examples.
+
+---
+
+## [v0.3.x Series] (Archived)
 
 The `v0.3.x` release series introduces granular HTTP method filtering (`methods` / `method` variable) across RouteWarden Core, Traefik, Caddy, Docker Compose, and Kubernetes gateways, alongside an upgraded interactive Pattern Checker & Security Playground.
 

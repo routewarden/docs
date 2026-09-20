@@ -63,6 +63,57 @@ api.localhost {
 }
 ```
 
+```nginx [NGINX (OpenResty)]
+# nginx.conf: Global RouteWarden Shield across all server blocks
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        global_warden = routewarden.new({
+            enable_default_patterns = true,
+            allowed_ips = {
+                "127.0.0.1",
+                "10.0.0.0/8"
+            },
+            response = {
+                mode = "json",
+                status_code = 403,
+                body = '{"error":"Forbidden","scope":"global-shield"}'
+            }
+        })
+    }
+
+    # Applied across multiple server virtual hosts
+    server {
+        listen 80;
+        server_name frontend.localhost;
+
+        access_by_lua_block {
+            global_warden:check()
+        }
+
+        location / {
+            proxy_pass http://frontend:80;
+        }
+    }
+
+    server {
+        listen 80;
+        server_name api.localhost;
+
+        access_by_lua_block {
+            global_warden:check()
+        }
+
+        location / {
+            proxy_pass http://backend:80;
+        }
+    }
+}
+```
+
 ```bash [Traefik (Docker CLI)]
 # CLI / Traefik Arguments
 traefik \
@@ -157,6 +208,26 @@ services:
       - "80:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - service-frontend
+      - service-backend
+
+  service-frontend:
+    image: nginx:alpine
+
+  service-backend:
+    image: nginx:alpine
+```
+
+```yaml [NGINX / OpenResty (Docker Compose)]
+services:
+  nginx:
+    image: openresty/openresty:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./lib/resty/routewarden:/usr/local/openresty/site/lualib/resty/routewarden:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - service-frontend
       - service-backend

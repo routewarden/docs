@@ -66,7 +66,7 @@ export function snapshotVersion(newVersion, options = {}) {
   const targetSnapshotDir = path.join(rootDir, `docs/${minorSnapshotDirName}`)
 
   // 1. Snapshot current documentation sections
-  const dirsToSnapshot = options.dirs || ['traefik', 'caddy', 'core', 'examples', 'guide', 'reference']
+  const dirsToSnapshot = options.dirs || ['traefik', 'caddy', 'nginx', 'core', 'examples', 'guide', 'reference']
   for (const dir of dirsToSnapshot) {
     const srcDir = path.join(rootDir, `docs/${dir}`)
     const destDir = path.join(rootDir, `docs/${minorSnapshotDirName}/${dir}`)

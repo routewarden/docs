@@ -3,7 +3,7 @@ layout: home
 
 hero:
   name: "RouteWarden"
-  text: "High-Performance Edge Defense for Traefik & Caddy"
+  text: "High-Performance Edge Defense for Traefik, Caddy & NGINX"
   tagline: "Stop sensitive file leaks (.env, .git, backups), neutralize path-evasion attacks, whitelist IPs, and challenge threats before requests reach your upstream services."
   image:
     src: /icon.svg
@@ -15,6 +15,9 @@ hero:
     - theme: brand
       text: Caddy Module ➔
       link: /caddy/
+    - theme: brand
+      text: NGINX & OpenResty ➔
+      link: /nginx/
     - theme: alt
       text: Core Security Engine
       link: /core/architecture
@@ -31,15 +34,15 @@ features:
     details: Allows trusted subnets, VPNs, or developer IPs to bypass path checks using socket RemoteAddr, X-Forwarded-For, or X-Real-IP.
   - title: Configurable Responses
     details: Supports custom JSON, HTML error pages, Cloudflare Turnstile or hCaptcha verification, redirects, silent drops, or gzip bombs.
-  - title: Pure Go Architecture
-    details: Built with Go standard library dependencies and verified against Traefik Yaegi execution.
-  - title: Traefik & Caddy Native
-    details: Drop-in support for Traefik dynamic configuration, Docker Compose labels, Kubernetes IngressRoute CRDs, and Caddyfile directives.
+  - title: Pure Go & Lua Engines
+    details: Native pure Go implementations for Traefik and Caddy, alongside high-performance LuaJIT module for NGINX and OpenResty.
+  - title: Multi-Gateway Native
+    details: Drop-in support for Traefik dynamic configs, Docker labels, Kubernetes CRDs, Caddyfile directives, and NGINX Lua blocks.
 ---
 
 ## What is RouteWarden?
 
-**RouteWarden** is a security middleware for **Traefik** and **Caddy**. It runs at your edge router or ingress controller, evaluating inbound requests and blocking reconnaissance scans before they reach backend application containers.
+**RouteWarden** is a security middleware for **Traefik**, **Caddy**, and **NGINX / OpenResty**. It runs at your edge router or ingress controller, evaluating inbound requests and blocking reconnaissance scans before they reach backend application containers.
 
 Internet-connected servers receive continuous automated scans looking for `.env` files, `.git` trees, database dumps, backup archives, and administrative interfaces. RouteWarden matches these attempts at the proxy level and responds according to your configuration.
 
@@ -253,6 +256,53 @@ example.com {
 }
 ```
 
+```nginx [NGINX (OpenResty)]
+# nginx.conf
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        warden = routewarden.new({
+            enabled = true,
+            enable_default_patterns = true,
+            methods = { "GET", "POST" },
+            path_patterns = {
+                "(?i)^/admin(/.*)?$",
+                "(?i)^/api/internal(/.*)?$"
+            },
+            allow_patterns = {
+                "(?i)^/api/internal/health$",
+                "(?i)^/robots\\.txt$"
+            },
+            allowed_ips = {
+                "10.0.0.0/8",
+                "192.168.1.100"
+            },
+            response = {
+                mode = "json",
+                status_code = 404,
+                body = '{"error":"Not Found","message":"The requested resource does not exist"}'
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name example.com;
+
+        access_by_lua_block {
+            warden:check()
+        }
+
+        location / {
+            proxy_pass http://localhost:8080;
+        }
+    }
+}
+```
+
 :::
 
 ---
@@ -298,5 +348,6 @@ Real-world deployment patterns demonstrating how engineering teams and self-host
 
 - Deploy on [Traefik Proxy](/traefik/) with our step-by-step setup guides and Docker Compose templates.
 - Deploy on [Caddy Web Server](/caddy/) with native Caddyfile directives and xcaddy builds.
+- Deploy on [NGINX & OpenResty](/nginx/) with in-memory Lua inspection.
 - Learn about the [Core System Architecture](/core/architecture) and [Anti-Evasion Engine](/core/anti-evasion).
 - Browse real-world recipes in the [Cookbook & Case Studies](/examples/overview).

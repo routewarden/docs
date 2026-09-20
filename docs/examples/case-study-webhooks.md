@@ -83,6 +83,53 @@ api.example.com {
 }
 ```
 
+```nginx [NGINX (OpenResty)]
+# nginx.conf: Zero-Trust Webhook Protection
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        webhook_warden = routewarden.new({
+            enable_default_patterns = true,
+            path_patterns = {
+                "(?i)^/webhooks(/.*)?$"
+            },
+            allow_patterns = {
+                "(?i)^/webhooks/stripe/v1$"
+            },
+            allowed_ips = {
+                "3.18.12.63/32",
+                "3.130.192.231/32",
+                "13.235.14.237/32",
+                "13.235.122.149/32",
+                "35.154.171.200/32"
+            },
+            response = {
+                mode = "silentDrop" -- Drop unauthorized TCP connection immediately
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name api.example.com;
+
+        location /webhooks {
+            access_by_lua_block {
+                webhook_warden:check()
+            }
+            proxy_pass http://webhook-service:8080;
+        }
+
+        location / {
+            proxy_pass http://api-service:8080;
+        }
+    }
+}
+```
+
 ```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.webhook-router]
