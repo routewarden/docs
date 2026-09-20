@@ -74,6 +74,47 @@ vault.example.com {
 }
 ```
 
+```nginx [NGINX (OpenResty)]
+# nginx.conf: Vaultwarden Admin Lockdown
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        vault_warden = routewarden.new({
+            enable_default_patterns = true,
+            path_patterns = {
+                "(?i)^/admin(/.*)?$"
+            },
+            allowed_ips = {
+                "100.64.0.0/10",
+                "10.8.0.0/24",
+                "127.0.0.1"
+            },
+            response = {
+                mode = "json",
+                status_code = 404,
+                body = '{"error":"Not Found","message":"The requested resource was not found"}'
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name vault.example.com;
+
+        access_by_lua_block {
+            vault_warden:check()
+        }
+
+        location / {
+            proxy_pass http://vault-service:80;
+        }
+    }
+}
+```
+
 ```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.vault-router]

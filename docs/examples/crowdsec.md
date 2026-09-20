@@ -288,6 +288,41 @@ example.com {
 }
 ```
 
+```nginx [NGINX (OpenResty)]
+# nginx.conf
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        warden = routewarden.new({
+            enabled = true,
+            # Emits structured JSON events on stdout for CrowdSec
+            security_log = true,
+            enable_default_patterns = true,
+            response = {
+                mode = "fakeSuccess",
+                status_code = 200
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name example.com;
+
+        access_by_lua_block {
+            warden:check()
+        }
+
+        location / {
+            proxy_pass http://app:8080;
+        }
+    }
+}
+```
+
 :::
 
 ---
@@ -296,11 +331,11 @@ example.com {
 
 ## Complete Docker Compose Example
 
-Here is a practical Docker Compose setup running Traefik with RouteWarden, CrowdSec, and a protected web container:
+Here is a practical Docker Compose setup running your preferred gateway with RouteWarden, CrowdSec, and a protected web container:
 
-```yaml
-version: '3.8'
+::: code-group
 
+```yaml [Traefik (Docker Compose)]
 services:
   traefik:
     image: traefik:v3.1
@@ -311,7 +346,7 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden"
-      - "--experimental.plugins.routewarden.version=v0.3.2"
+      - "--experimental.plugins.routewarden.version=v1.0.0"
     ports:
       - "80:80"
       - "8080:8080" # Dashboard
@@ -347,6 +382,80 @@ services:
 volumes:
   crowdsec-db:
 ```
+
+```yaml [Caddy (Docker Compose)]
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM caddy:2-builder AS builder
+        RUN xcaddy build --with github.com/routewarden/caddy-warden@v1.0.0
+        FROM caddy:2-alpine
+        COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    restart: unless-stopped
+
+  crowdsec:
+    image: crowdsecurity/crowdsec:latest
+    container_name: crowdsec
+    environment:
+      COLLECTIONS: "crowdsecurity/caddy crowdsecurity/http-cve"
+    volumes:
+      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
+      - ./crowdsec/parsers:/etc/crowdsec/parsers/s01-parse:ro
+      - ./crowdsec/scenarios:/etc/crowdsec/scenarios:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - crowdsec-db:/var/lib/crowdsec/data/
+    restart: unless-stopped
+
+  web:
+    image: nginx:alpine
+    container_name: web
+
+volumes:
+  crowdsec-db:
+```
+
+```yaml [NGINX / OpenResty (Docker Compose)]
+services:
+  nginx:
+    image: openresty/openresty:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./lib/resty/routewarden:/usr/local/openresty/site/lualib/resty/routewarden:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+
+  crowdsec:
+    image: crowdsecurity/crowdsec:latest
+    container_name: crowdsec
+    environment:
+      COLLECTIONS: "crowdsecurity/nginx crowdsecurity/http-cve"
+    volumes:
+      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
+      - ./crowdsec/parsers:/etc/crowdsec/parsers/s01-parse:ro
+      - ./crowdsec/scenarios:/etc/crowdsec/scenarios:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - crowdsec-db:/var/lib/crowdsec/data/
+    restart: unless-stopped
+
+  web:
+    image: nginx:alpine
+    container_name: web
+
+volumes:
+  crowdsec-db:
+```
+
+:::
 
 ---
 

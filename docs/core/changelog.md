@@ -6,7 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [v0.3.x Series] — Latest
+## [v1.0.0] - 2026-09-20 (Latest)
+
+The `v1.0.0` milestone release marks general availability and multi-gateway parity for RouteWarden across **Traefik**, **Caddy**, and **NGINX / OpenResty**.
+
+### Key Highlights
+
+- **RouteWarden for NGINX & OpenResty (`nginx-warden`)**:
+  - Full production-ready Lua implementation running in LuaJIT during the `access_by_lua` phase.
+  - Zero external dependencies: pure OpenResty standard libraries (`ngx.re`, `resty.string`, bit operations).
+  - Complete parity with Go implementations:
+    - Recursive multi-layer URL percent-decoding (`%252e%252e`).
+    - Semicolon matrix parameter stripping (`/;param/.env`).
+    - Windows/IIS backslash normalization (`\..\`).
+    - Null-byte injection scrubbing (`%00`).
+    - Canonical path resolution and dot-segment traversal protection.
+  - Full 13 response modes supported: `json`, `html`, `text`, `xml`, `redirect`, `captcha` (Turnstile/hCaptcha/reCAPTCHA), `silentDrop` (HTTP 444), `gzipBomb`, `tarpit`, `fakeSuccess`, `rateLimitChallenge`, `proxy`, and `infiniteStream`.
+  - IPv4 and IPv6 exact address matching and CIDR subnet evaluation (`10.0.0.0/8`, `2001:db8::/32`).
+  - Native client IP resolution prioritizing `X-Forwarded-For`, `X-Real-IP`, and socket `remote_addr`.
+  - Structured JSON security logging (`security_log`) compatible with CrowdSec parsers and SIEM collectors.
+- **Unified Multi-Gateway Parity (`traefik-warden`, `caddy-warden`, `nginx-warden`)**:
+  - Consistent 30-case live verification suites across all supported gateways (`samples/`).
+  - Unified configuration schema and parameter naming across reverse proxies.
+- **Interactive Playground Expansion**:
+  - Added dedicated **`NGINX (Lua)`** configuration export tab generating complete `init_by_lua_block` and `access_by_lua_block` snippets.
+  - Added dedicated **`K8s (NGINX)`** export tab generating Kubernetes Ingress manifests with `nginx.ingress.kubernetes.io/server-snippet` and `configuration-snippet`.
+  - Added custom hybrid syntax highlighting for YAML manifests with embedded Lua blocks.
+  - Added URL parameter sharing support for `format=nginx` and `format=k8s_nginx`.
+- **Complete Case Studies & Recipes Coverage**:
+  - Integrated NGINX / OpenResty code tabs across all 7 production case studies (Immich, Webhooks, Observability Metrics, CMS Shield, Vaultwarden Admin Lockdown, Honeypot Strategies, CrowdSec Log Ingestion).
+  - Added `NGINX / OpenResty (Docker Compose)` service definitions across all 6 core recipes.
+- **Documentation Architecture & Versioning**:
+  - Archived `v0.3.x` documentation preserved under `/v0.3/` (`traefik`, `caddy`, `core`, `examples`, `guide`, `reference`) with legacy version notices.
+  - Promoted `v1.0.x (Latest)` with new dedicated NGINX sections (`/nginx/getting-started`, `/nginx/configuration`, `/nginx/examples`).
+  - Updated snapshot automation tooling (`scripts/snapshot-version.mjs`) to include NGINX in version snapshots.
+
+---
+
+## [v0.3.x Series] (Archived)
 
 The `v0.3.x` release series introduces granular HTTP method filtering (`methods` / `method` variable) across RouteWarden Core, Traefik, Caddy, Docker Compose, and Kubernetes gateways, alongside an upgraded interactive Pattern Checker & Security Playground.
 

@@ -68,6 +68,55 @@ example.com {
 }
 ```
 
+```nginx [NGINX (OpenResty)]
+# nginx.conf: Service-Level Custom Rules & Query Inspection
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        service_warden = routewarden.new({
+            enable_default_patterns = true,
+            check_query = true,
+            path_patterns = {
+                "(?i)^/admin(/.*)?$",
+                "(?i)^/api/internal(/.*)?$"
+            },
+            allow_patterns = {
+                "(?i)^/robots\\.txt$",
+                "(?i)^/\\.well-known(/.*)?$"
+            },
+            allowed_ips = {
+                "192.168.1.0/24",
+                "10.10.0.0/16"
+            },
+            response = {
+                mode = "json",
+                status_code = 403,
+                body = '{"error":"access_denied","service":"web"}',
+                headers = {
+                    ["X-Protected-By"] = "RouteWarden"
+                }
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name example.com;
+
+        access_by_lua_block {
+            service_warden:check()
+        }
+
+        location / {
+            proxy_pass http://web:80;
+        }
+    }
+}
+```
+
 ```bash [Traefik (Docker Compose Labels)]
 # Docker Compose Labels / CLI equivalent
 - "traefik.enable=true"
@@ -162,6 +211,22 @@ services:
       - "80:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - web
+
+  web:
+    image: my-web-app:latest
+```
+
+```yaml [NGINX / OpenResty (Docker Compose)]
+services:
+  nginx:
+    image: openresty/openresty:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./lib/resty/routewarden:/usr/local/openresty/site/lualib/resty/routewarden:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - web
 

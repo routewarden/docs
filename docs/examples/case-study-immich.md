@@ -155,6 +155,64 @@ photos-internal.example.com {
 }
 ```
 
+```nginx [NGINX (OpenResty)]
+# nginx.conf: Dual-Site Architecture
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        public_warden = routewarden.new({
+            enable_default_patterns = true,
+            path_patterns = {
+                "(?i)^/api/auth/login.*$",
+                "(?i)^/api/auth/admin-sign-up.*$",
+                "(?i)^/api/users.*$",
+                "(?i)^/api/admin.*$",
+                "(?i)^/api/server-info/stats.*$"
+            },
+            response = {
+                mode = "json",
+                status_code = 404,
+                body = '{"error":"Not Found","message":"Endpoint unavailable on public router"}'
+            }
+        })
+    }
+
+    # 1. PUBLIC SERVER: Shielded from login and administrative probing
+    server {
+        listen 80;
+        server_name photos.example.com;
+
+        access_by_lua_block {
+            public_warden:check()
+        }
+
+        location / {
+            proxy_pass http://immich-server:2283;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+
+    # 2. PRIVATE SERVER: Accessible only via internal VPN / Tailscale / LAN
+    server {
+        listen 80;
+        server_name photos-internal.example.com;
+
+        # Full access: no RouteWarden checks applied
+        location / {
+            proxy_pass http://immich-server:2283;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+    }
+}
+```
+
 ```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.immich-public]

@@ -87,6 +87,51 @@ blog.example.com {
 }
 ```
 
+```nginx [NGINX (OpenResty)]
+# nginx.conf: WordPress & CMS Shield
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+
+        wp_warden = routewarden.new({
+            enable_default_patterns = true,
+            path_patterns = {
+                "(?i)^/(wp-login\\.php|xmlrpc\\.php)$",
+                "(?i)^/wp-admin(/.*)?$"
+            },
+            allowed_ips = {
+                "192.168.1.0/24",
+                "10.0.0.0/8"
+            },
+            response = {
+                mode = "captcha",
+                status_code = 403,
+                captcha = {
+                    provider = "turnstile",
+                    site_key = "0x4AAAAAAtestkey123",
+                    title = "Administrative Verification Required"
+                }
+            }
+        })
+    }
+
+    server {
+        listen 80;
+        server_name blog.example.com;
+
+        access_by_lua_block {
+            wp_warden:check()
+        }
+
+        location / {
+            proxy_pass http://wordpress-service:80;
+        }
+    }
+}
+```
+
 ```toml [Traefik (TOML)]
 # dynamic_conf.toml
 [http.routers.blog-router]

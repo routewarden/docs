@@ -123,6 +123,54 @@ spec:
 
 ---
 
+## NGINX Kubernetes (Ingress-NGINX ConfigMap & Snippets)
+
+When using **ingress-nginx** (or custom OpenResty Ingress), mount the RouteWarden Lua library and inject inspection via the `configuration-snippet` or global server snippets:
+
+### `nginx-ingress-snippet.yaml`
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: secured-nginx-ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/server-snippet: |
+      lua_package_path "/etc/nginx/lua/lib/?.lua;/etc/nginx/lua/lib/?/init.lua;;";
+      init_by_lua_block {
+        local routewarden = require("resty.routewarden")
+        warden = routewarden.new({
+          enable_default_patterns = true,
+          check_query = true,
+          allowed_ips = { "10.0.0.0/8", "172.16.0.0/12" },
+          response = {
+            mode = "json",
+            status_code = 403,
+            body = '{"error":"Forbidden","source":"k8s-nginx-ingress"}'
+          }
+        })
+      }
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      access_by_lua_block {
+        warden:check()
+      }
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: production.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app-service
+                port:
+                  number: 80
+```
+
+---
+
 ## Deployment Commands
 
 ```bash

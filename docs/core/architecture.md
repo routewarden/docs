@@ -66,3 +66,6 @@ RouteWarden is constructed with clean, decoupled Go components adhering to Yaegi
 5. **`routewarden.go` (`RouteWarden`) / `caddywarden.go`**:
    - Implements gateway interface (`http.Handler` for Traefik, `caddyhttp.MiddlewareHandler` for Caddy).
    - Coordinates candidate normalization, allow/block evaluation, and emits structured JSON audit events (`logSecurityEvent`) on blocked requests for [CrowdSec](/examples/crowdsec) and SIEM log shippers.
+6. **`lib/resty/routewarden/init.lua` (`RouteWarden Lua`)**:
+   - Implements the OpenResty / NGINX Lua equivalent of the RouteWarden pipeline.
+   - Runs in LuaJIT during `access_by_lua` with zero external dependencies, providing feature parity (anti-evasion, CIDR allowlists, 13 response modes, and CrowdSec security logging) for NGINX workloads.
