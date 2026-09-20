@@ -2,6 +2,11 @@ import { defineConfig } from 'vitepress'
 import versionData from '../version.json' with { type: 'json' }
 import versionsRegistry from '../versions.json' with { type: 'json' }
 
+// Cloudflare Web Analytics token — only set in CI via GitHub Actions secret.
+// When absent (local dev), the beacon script is NOT injected at all to avoid
+// CORS errors from Cloudflare rejecting requests with an empty/invalid token.
+const CF_ANALYTICS_TOKEN = process.env.CLOUDFLARE_ANALYTICS_TOKEN || ''
+
 export default defineConfig({
   title: 'RouteWarden',
   description: 'High-Performance Traefik Middleware for Sensitive Path Defense',
@@ -10,9 +15,6 @@ export default defineConfig({
   vite: {
     server: {
       host: true
-    },
-    define: {
-      __CF_BEACON_TOKEN__: JSON.stringify(process.env.CLOUDFLARE_ANALYTICS_TOKEN || process.env.CF_BEACON_TOKEN || '')
     },
     plugins: [
       {
@@ -117,19 +119,17 @@ export default defineConfig({
     ['meta', { name: 'twitter:title', content: 'RouteWarden — Traefik Security Middleware' }],
     ['meta', { name: 'twitter:description', content: 'Ultra-fast sensitive path defense, anti-evasion normalization, IP whitelisting, and multi-action responses for Traefik.' }],
     ['meta', { name: 'twitter:image', content: 'https://routewarden.github.io/docs/banner.png' }],
-    // Cloudflare Web Analytics (Zero-cookie, privacy-first analytics)
-    // Token is injected at build time via CLOUDFLARE_ANALYTICS_TOKEN env var (GitHub Actions secret).
-    // Falls back to empty string in local dev — beacon loads but does not send data.
-    [
-      'script',
+    // Cloudflare Web Analytics — only injected when the token secret is available at build time.
+    // Omitting the script entirely when CF_ANALYTICS_TOKEN is empty avoids CORS rejections from
+    // Cloudflare's RUM endpoint, which returns no Access-Control-Allow-Origin on invalid tokens.
+    ...(CF_ANALYTICS_TOKEN ? [[
+      'script' as const,
       {
         defer: '',
         src: 'https://static.cloudflareinsights.com/beacon.min.js',
-        'data-cf-beacon': JSON.stringify({
-          token: process.env.CLOUDFLARE_ANALYTICS_TOKEN || ''
-        })
+        'data-cf-beacon': JSON.stringify({ token: CF_ANALYTICS_TOKEN })
       }
-    ]
+    ] as [string, Record<string, string>]] : [])
   ],
   themeConfig: {
     logo: '/icon.svg',
