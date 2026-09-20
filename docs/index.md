@@ -19,11 +19,8 @@ hero:
       text: NGINX & OpenResty ➔
       link: /nginx/
     - theme: alt
-      text: Core Security Engine
-      link: /core/architecture
-    - theme: alt
-      text: View on GitHub
-      link: https://github.com/routewarden
+      text: CLI Tool (rwarden) ➔
+      link: https://routewarden.github.io/cli/
 
 features:
   - title: Scanner Defense
@@ -34,8 +31,8 @@ features:
     details: Allows trusted subnets, VPNs, or developer IPs to bypass path checks using socket RemoteAddr, X-Forwarded-For, or X-Real-IP.
   - title: Configurable Responses
     details: Supports custom JSON, HTML error pages, Cloudflare Turnstile or hCaptcha verification, redirects, silent drops, or gzip bombs.
-  - title: Pure Go & Lua Engines
-    details: Native pure Go implementations for Traefik and Caddy, alongside high-performance LuaJIT module for NGINX and OpenResty.
+  - title: CLI & Config Generator
+    details: Use rwarden to test rules offline, validate routewarden.json schemas, and compile configs for Traefik, Caddy, or NGINX.
   - title: Multi-Gateway Native
     details: Drop-in support for Traefik dynamic configs, Docker labels, Kubernetes CRDs, Caddyfile directives, and NGINX Lua blocks.
 ---
@@ -276,5 +273,6 @@ Real-world deployment patterns demonstrating how engineering teams and self-host
 - Deploy on [Traefik Proxy](/traefik/) with our step-by-step setup guides and Docker Compose templates.
 - Deploy on [Caddy Web Server](/caddy/) with native Caddyfile directives and xcaddy builds.
 - Deploy on [NGINX & OpenResty](/nginx/) with in-memory Lua inspection.
+- Use the **[RouteWarden CLI (`rwarden`)](https://routewarden.github.io/cli/)** to test paths offline, validate configs, and generate gateway files.
 - Learn about the [Core System Architecture](/core/architecture) and [Anti-Evasion Engine](/core/anti-evasion).
 - Browse real-world recipes in the [Cookbook & Case Studies](/examples/overview).
