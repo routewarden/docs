@@ -66,26 +66,23 @@ description: "Parse RouteWarden security block events from Traefik & Caddy"
 filter: "evt.Line.Raw contains 'routewarden_block'"
 nodes:
   - grok:
-      pattern: '.*\{"type":"routewarden_block",%{GREEDYDATA:json_raw}\}'
+      pattern: '.*(?P<json_raw>\{"type":"routewarden_block".*\})'
       apply_on: Line.Raw
-  - json:
-      target_field: Parsed
-      apply_on: json_raw
 statics:
   - meta: log_type
     value: routewarden_block
   - meta: source_ip
-    expression: "evt.Parsed.client_ip"
+    expression: 'JsonExtract(evt.Parsed.json_raw, "client_ip")'
   - meta: http_path
-    expression: "evt.Parsed.path"
+    expression: 'JsonExtract(evt.Parsed.json_raw, "path")'
   - meta: http_method
-    expression: "evt.Parsed.method"
+    expression: 'JsonExtract(evt.Parsed.json_raw, "method")'
   - meta: http_user_agent
-    expression: "evt.Parsed.user_agent"
+    expression: 'JsonExtract(evt.Parsed.json_raw, "user_agent")'
   - meta: routewarden_pattern
-    expression: "evt.Parsed.pattern"
+    expression: 'JsonExtract(evt.Parsed.json_raw, "pattern")'
   - meta: routewarden_action
-    expression: "evt.Parsed.action"
+    expression: 'JsonExtract(evt.Parsed.json_raw, "action")'
 ```
 
 ---
