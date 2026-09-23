@@ -327,7 +327,7 @@ function handleGatewayChange(newGw: GatewayId) {
 }
 
 .rw-code-viewer-body {
-  overflow-x: auto;
+  min-width: 0;
 }
 
 .rw-raw-pre {
@@ -337,11 +337,12 @@ function handleGatewayChange(newGw: GatewayId) {
   font-family: var(--vp-font-family-mono);
   font-size: 13px !important;
   line-height: 1.5 !important;
+  overflow-x: auto;
 }
 
 /* Snippet HTML rendering — mirrors VitePress code block styles */
 .rw-snippet-html {
-  overflow-x: auto;
+  min-width: 0;
 }
 
 /* Reset all inner markdown blocks & code-groups when placed inside CodeViewer */
@@ -380,7 +381,7 @@ function handleGatewayChange(newGw: GatewayId) {
 /* Snippet HTML — pre block styling */
 .rw-code-viewer-container :deep(.rw-snippet-html pre) {
   margin: 0 !important;
-  padding: 12px 18px !important;
+  padding: 12px 0 !important;
   background: transparent !important;
   font-family: var(--vp-font-family-mono);
   font-size: 13px !important;
@@ -388,14 +389,21 @@ function handleGatewayChange(newGw: GatewayId) {
   overflow-x: auto;
 }
 
-/* Collapse whitespace text-nodes so display:block .line spans sit flush */
+/* Collapse whitespace text-nodes and allow code to expand to full content width */
 .rw-code-viewer-container :deep(.rw-snippet-html pre code) {
+  display: block;
+  width: fit-content;
+  min-width: 100%;
+  box-sizing: border-box;
   line-height: 0;
 }
 
-/* Each line span restores its own line-height — continuous, no gaps */
+/* Each line span restores its own line-height and spans full width of code */
 .rw-code-viewer-container :deep(.rw-snippet-html .line) {
   display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 18px;
   line-height: 1.5;
 }
 
@@ -404,16 +412,15 @@ function handleGatewayChange(newGw: GatewayId) {
   height: 0.75em;
 }
 
-.rw-code-viewer-container :deep(.rw-snippet-html pre.has-diff),
-.rw-code-viewer-container :deep(.rw-snippet-html pre:has(.line.diff)) {
-  padding-left: 28px !important;
+.rw-code-viewer-container :deep(.rw-snippet-html pre.has-diff .line),
+.rw-code-viewer-container :deep(.rw-snippet-html pre:has(.line.diff) .line) {
+  padding: 0 18px 0 28px;
 }
 
 .rw-code-viewer-container :deep(.rw-snippet-html .line.diff.add) {
   background: rgba(16, 185, 129, 0.1);
-  margin: 0 -18px 0 -28px;
-  padding: 0 18px 0 28px;
   border-left: 3px solid #10b981;
+  padding: 0 18px 0 25px;
   position: relative;
 }
 
@@ -441,9 +448,8 @@ function handleGatewayChange(newGw: GatewayId) {
 
 .rw-code-viewer-container :deep(.rw-snippet-html .line.diff.remove) {
   background: rgba(239, 68, 68, 0.08);
-  margin: 0 -18px 0 -28px;
-  padding: 0 18px 0 28px;
   border-left: 3px solid #ef4444;
+  padding: 0 18px 0 25px;
   position: relative;
   opacity: 0.7;
 }
@@ -463,6 +469,13 @@ function handleGatewayChange(newGw: GatewayId) {
 
 /* === Diff hidden state === */
 /* When showDiff is false, suppress all diff styling so code reads as plain text */
+.rw-hide-diff :deep(.rw-snippet-html pre.has-diff .line),
+.rw-hide-diff :deep(.rw-snippet-html pre:has(.line.diff) .line),
+.dark .rw-hide-diff :deep(.rw-snippet-html pre.has-diff .line),
+.dark .rw-hide-diff :deep(.rw-snippet-html pre:has(.line.diff) .line) {
+  padding-left: 18px !important;
+}
+
 .rw-hide-diff :deep(.line.diff.add),
 .rw-hide-diff :deep(.line.diff.remove),
 .dark .rw-hide-diff :deep(.line.diff.add),
@@ -470,8 +483,7 @@ function handleGatewayChange(newGw: GatewayId) {
   background: transparent !important;
   border-left: none !important;
   border-left-color: transparent !important;
-  margin: 0 !important;
-  padding: 0 !important;
+  padding-left: 18px !important;
   opacity: 1 !important;
 }
 
@@ -481,14 +493,6 @@ function handleGatewayChange(newGw: GatewayId) {
 .dark .rw-hide-diff :deep(.line.diff.remove::before) {
   display: none !important;
   content: none !important;
-}
-
-/* Restore normal left padding when diff is hidden */
-.rw-hide-diff :deep(pre.has-diff),
-.rw-hide-diff :deep(pre:has(.line.diff)),
-.dark .rw-hide-diff :deep(pre.has-diff),
-.dark .rw-hide-diff :deep(pre:has(.line.diff)) {
-  padding-left: 18px !important;
 }
 
 @media (max-width: 640px) {
