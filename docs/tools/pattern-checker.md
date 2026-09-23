@@ -58,8 +58,7 @@ Incoming Request
 
 ## Related Documentation
 
-- **[Using routewarden.json](/core/cli#using-routewarden-json-in-production)**: Universal schema configuration and production usage across gateways.
-- **[RouteWarden CLI (`rwarden`)](/core/cli)**: Command-line tool for linting, testing, validating, and converting `routewarden.json`.
+- **[RouteWarden CLI (`rwarden`)](https://routewarden.github.io/cli/)**: Command-line tool for offline path evasion testing, schema validation, and config generation.
 - **[Custom Path Regex Guide](/core/custom-patterns)**: Syntax, cheat sheets, and production blueprints for popular frameworks.
 - **[Anti-Evasion Engine](/core/anti-evasion)**: Technical breakdown of defeated evasion attacks.
 - **[Response Modes Engine](/core/response-modes)**: All 13 response behaviors (JSON, Captcha, Gzip Bomb, Tarpit, etc.).

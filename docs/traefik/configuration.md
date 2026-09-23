@@ -1,3 +1,68 @@
+---
+title: Configuration Reference
+---
+
+<script setup>
+import { computed } from 'vue'
+import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
+
+const ex_yaml = buildSnippet({
+  lang: 'yaml',
+  code: `http:
+  middlewares:
+    routewarden:
+      plugin:
+        routewarden:
+          enabled: true
+          enableDefaultPatterns: true
+          # Inspect GET and POST requests (default: ["GET"])
+          methods:
+            - "GET"
+            - "POST"`,
+})
+
+const ex_toml = buildSnippet({
+  lang: 'toml',
+  code: `[http.middlewares.routewarden.plugin.routewarden]
+enabled = true
+enableDefaultPatterns = true
+methods = ["GET", "POST"]`,
+})
+
+const ex_labels = buildSnippet({
+  lang: 'yaml',
+  code: `services:
+  webapp:
+    labels:
+      - "traefik.http.middlewares.my-warden.plugin.routewarden.enableDefaultPatterns=true"
+      - "traefik.http.middlewares.my-warden.plugin.routewarden.methods=GET,POST"`,
+})
+
+const ex_k8s = buildSnippet({
+  lang: 'yaml',
+  code: `apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: routewarden
+spec:
+  plugin:
+    routewarden:
+      enableDefaultPatterns: true
+      methods:
+        - "GET"
+        - "POST"`,
+})
+
+const configExampleSnippets = computed(() => ({
+  traefik: [
+    { filename: 'traefik.yml', lang: 'yaml', code: ex_yaml.cleanCode, html: ex_yaml.html, hasDiff: false },
+    { filename: 'traefik.toml', lang: 'toml', code: ex_toml.cleanCode, html: ex_toml.html, hasDiff: false },
+    { filename: 'docker-compose.yml', lang: 'docker', code: ex_labels.cleanCode, html: ex_labels.html, hasDiff: false },
+    { filename: 'ingressroute.yaml', lang: 'yaml', code: ex_k8s.cleanCode, html: ex_k8s.html, hasDiff: false },
+  ],
+}))
+</script>
+
 # Configuration Reference
 
 This reference covers all configuration options available in RouteWarden.
@@ -123,58 +188,4 @@ You can configure `methods` to inspect additional HTTP request verbs (e.g. `POST
 
 ### Configuration Examples
 
-::: code-group
-```yaml [Traefik (File / YAML)]
-http:
-  middlewares:
-    routewarden:
-      plugin:
-        routewarden:
-          enabled: true
-          enableDefaultPatterns: true
-          # Inspect GET and POST requests (default: ["GET"])
-          methods:
-            - "GET"
-            - "POST"
-```
-
-```toml [Traefik (TOML)]
-[http.middlewares.routewarden.plugin.routewarden]
-enabled = true
-enableDefaultPatterns = true
-methods = ["GET", "POST"]
-```
-
-```yaml [Docker Compose]
-services:
-  webapp:
-    labels:
-      - "traefik.http.middlewares.my-warden.plugin.routewarden.enableDefaultPatterns=true"
-      - "traefik.http.middlewares.my-warden.plugin.routewarden.methods=GET,POST"
-```
-
-```yaml [Kubernetes IngressRoute]
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: routewarden
-spec:
-  plugin:
-    routewarden:
-      enableDefaultPatterns: true
-      methods:
-        - "GET"
-        - "POST"
-```
-
-```nginx [Caddy (Caddyfile)]
-example.com {
-    route_warden {
-        enable_default_patterns true
-        # Inspect GET and POST verbs (default: GET)
-        methods GET POST
-    }
-    reverse_proxy localhost:8080
-}
-```
-:::
+<CodeViewer :snippets="configExampleSnippets" />

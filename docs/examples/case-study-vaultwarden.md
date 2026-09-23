@@ -1,3 +1,167 @@
+---
+title: Case Study – Self-Hosted Cloud & Vault Protection
+---
+
+<script setup>
+import { computed } from 'vue'
+import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
+
+const s = {
+  traefik_yaml: buildSnippet({ lang: 'yaml', code: `# dynamic_conf.yml
+http:
+  middlewares:
+    vaultwarden-shield: # [!code ++]
+      plugin: # [!code ++]
+        routewarden: # [!code ++]
+          enabled: true # [!code ++]
+          enableDefaultPatterns: true # [!code ++]
+          # Intercept the administrative console
+          pathPatterns: # [!code ++]
+            - '(?i)^/admin(/.*)?$' # [!code ++]
+          # Allow ONLY internal WireGuard & Tailscale VPN addresses
+          allowedIps: # [!code ++]
+            - "100.64.0.0/10"   # Tailscale CGNAT range # [!code ++]
+            - "10.8.0.0/24"     # WireGuard VPN subnet # [!code ++]
+            - "127.0.0.1"       # Localhost # [!code ++]
+          response: # [!code ++]
+            mode: json # [!code ++]
+            statusCode: 404 # [!code ++]
+            body: '{"error":"Not Found","message":"The requested resource was not found"}' # [!code ++]
+
+  routers:
+    vault-router:
+      rule: "Host(\`vault.example.com\`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - vaultwarden-shield # [!code ++]
+      service: vault-service` }),
+
+  traefik_toml: buildSnippet({ lang: 'toml', code: `# dynamic_conf.toml
+[http.routers.vault-router]
+  rule = "Host(\`vault.example.com\`)"
+  entryPoints = ["websecure"]
+  middlewares = ["vaultwarden-shield"]
+  service = "vault-service"
+
+[http.middlewares.vaultwarden-shield.plugin.routewarden] # [!code ++]
+  enabled = true # [!code ++]
+  enableDefaultPatterns = true # [!code ++]
+  pathPatterns = ["(?i)^/admin(/.*)?$"] # [!code ++]
+  allowedIps = ["100.64.0.0/10", "10.8.0.0/24", "127.0.0.1"] # [!code ++]
+
+[http.middlewares.vaultwarden-shield.plugin.routewarden.response] # [!code ++]
+  mode = "json" # [!code ++]
+  statusCode = 404 # [!code ++]
+  body = '{"error":"Not Found","message":"The requested resource was not found"}' # [!code ++]` }),
+
+  traefik_labels: buildSnippet({ lang: 'docker', code: `# Docker Compose Labels
+- "traefik.http.routers.vault.rule=Host(\`vault.example.com\`)"
+- "traefik.http.routers.vault.middlewares=vaultwarden-shield" # [!code ++]
+- "traefik.http.middlewares.vaultwarden-shield.plugin.routewarden.enabled=true" # [!code ++]
+- "traefik.http.middlewares.vaultwarden-shield.plugin.routewarden.pathPatterns=(?i)^/admin(/.*)?$" # [!code ++]
+- "traefik.http.middlewares.vaultwarden-shield.plugin.routewarden.allowedIps=100.64.0.0/10,10.8.0.0/24,127.0.0.1" # [!code ++]
+- "traefik.http.middlewares.vaultwarden-shield.plugin.routewarden.response.mode=json" # [!code ++]
+- "traefik.http.middlewares.vaultwarden-shield.plugin.routewarden.response.statusCode=404" # [!code ++]` }),
+
+  caddy: buildSnippet({ lang: 'caddy', code: `# Caddyfile
+{
+    order route_warden before reverse_proxy # [!code ++]
+}
+
+vault.example.com {
+    route_warden { # [!code ++]
+        enable_default_patterns true # [!code ++]
+        path_patterns "(?i)^/admin(/.*)?$" # [!code ++]
+        allowed_ips "100.64.0.0/10" "10.8.0.0/24" "127.0.0.1" # [!code ++]
+        response { # [!code ++]
+            mode json # [!code ++]
+            status_code 404 # [!code ++]
+            body "{\\"error\\":\\"Not Found\\",\\"message\\":\\"The requested resource was not found\\"}" # [!code ++]
+        } # [!code ++]
+    } # [!code ++]
+
+    reverse_proxy vault-service:80
+}` }),
+
+  nginx: buildSnippet({ lang: 'nginx', code: `# nginx.conf: Vaultwarden Admin Lockdown
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden") # [!code ++]
+
+        vault_warden = routewarden.new({ # [!code ++]
+            enable_default_patterns = true, # [!code ++]
+            path_patterns = { # [!code ++]
+                "(?i)^/admin(/.*)?$" # [!code ++]
+            }, # [!code ++]
+            allowed_ips = { # [!code ++]
+                "100.64.0.0/10", # [!code ++]
+                "10.8.0.0/24", # [!code ++]
+                "127.0.0.1" # [!code ++]
+            }, # [!code ++]
+            response = { # [!code ++]
+                mode = "json", # [!code ++]
+                status_code = 404, # [!code ++]
+                body = '{"error":"Not Found","message":"The requested resource was not found"}' # [!code ++]
+            } # [!code ++]
+        }) # [!code ++]
+    }
+
+    server {
+        listen 80;
+        server_name vault.example.com;
+
+        access_by_lua_block {
+            vault_warden:check() # [!code ++]
+        }
+
+        location / {
+            proxy_pass http://vault-service:80;
+        }
+    }
+}` }),
+
+  cli: buildSnippet({ lang: 'json', code: `// routewarden.json
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "blockPatterns": [
+    "(?i)^/admin(/.*)?$"
+  ],
+  "allowedIps": [
+    "100.64.0.0/10",
+    "10.8.0.0/24",
+    "127.0.0.1"
+  ],
+  "response": {
+    "mode": "json",
+    "statusCode": 404,
+    "body": "{\\"error\\":\\"Not Found\\",\\"message\\":\\"The requested resource was not found\\"}"
+  }
+}` }),
+}
+
+const snippets = computed(() => ({
+  traefik: [
+    { filename: 'traefik.yaml', lang: 'yaml', code: s.traefik_yaml.cleanCode, html: s.traefik_yaml.html, hasDiff: s.traefik_yaml.hasDiff },
+    { filename: 'traefik.toml', lang: 'toml', code: s.traefik_toml.cleanCode, html: s.traefik_toml.html, hasDiff: s.traefik_toml.hasDiff },
+    { filename: 'docker-compose.yaml', lang: 'docker', code: s.traefik_labels.cleanCode, html: s.traefik_labels.html, hasDiff: s.traefik_labels.hasDiff },
+  ],
+  caddy: [
+    { filename: 'Caddyfile', lang: 'caddy', code: s.caddy.cleanCode, html: s.caddy.html, hasDiff: s.caddy.hasDiff },
+  ],
+  nginx: [
+    { filename: 'nginx.conf', lang: 'nginx', code: s.nginx.cleanCode, html: s.nginx.html, hasDiff: s.nginx.hasDiff },
+  ],
+  cli: [
+    { filename: 'routewarden.json', lang: 'json', code: s.cli.cleanCode, html: s.cli.html, hasDiff: s.cli.hasDiff },
+  ],
+}))
+</script>
+
 # Case Study: Self-Hosted Cloud & Vault Protection (Vaultwarden & Nextcloud)
 
 This case study demonstrates how to secure critical self-hosted services like **Vaultwarden** (Bitwarden-compatible password manager) and **Nextcloud** without interfering with day-to-day mobile synchronization or public file sharing.
@@ -16,156 +180,6 @@ However, the `/admin` portal (which allows creating/deleting accounts, viewing s
 
 ---
 
-## Configuration (Traefik & Caddy)
+## Configuration (Traefik, Caddy & NGINX)
 
-::: code-group
-
-```json [routewarden.json]
-// routewarden.json
-{
-  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
-  "enabled": true,
-  "enableDefaultPatterns": true,
-  "blockPatterns": [
-    "(?i)^/admin(/.*)?$"
-  ],
-  "allowedIps": [
-    "100.64.0.0/10",
-    "10.8.0.0/24",
-    "127.0.0.1"
-  ],
-  "response": {
-    "mode": "json",
-    "statusCode": 404,
-    "body": "{\"error\":\"Not Found\",\"message\":\"The requested resource was not found\"}"
-  }
-}
-```
-
-```yaml [Traefik (YAML)]
-# dynamic_conf.yml
-http:
-  middlewares:
-    vaultwarden-shield:
-      plugin:
-        routewarden:
-          enabled: true
-          enableDefaultPatterns: true
-          # Intercept the administrative console
-          pathPatterns:
-            - '(?i)^/admin(/.*)?$'
-          # Allow ONLY internal WireGuard & Tailscale VPN addresses
-          allowedIps:
-            - "100.64.0.0/10"   # Tailscale CGNAT range
-            - "10.8.0.0/24"     # WireGuard VPN subnet
-            - "127.0.0.1"       # Localhost
-          response:
-            mode: json
-            statusCode: 404
-            body: '{"error":"Not Found","message":"The requested resource was not found"}'
-
-  routers:
-    vault-router:
-      rule: "Host(`vault.example.com`)"
-      entryPoints:
-        - websecure
-      middlewares:
-        - vaultwarden-shield
-      service: vault-service
-```
-
-```nginx [Caddy (Caddyfile)]
-# Caddyfile
-{
-    order route_warden before reverse_proxy
-}
-
-vault.example.com {
-    route_warden {
-        enable_default_patterns true
-        path_patterns "(?i)^/admin(/.*)?$"
-        allowed_ips "100.64.0.0/10" "10.8.0.0/24" "127.0.0.1"
-        response {
-            mode json
-            status_code 404
-            body "{\"error\":\"Not Found\",\"message\":\"The requested resource was not found\"}"
-        }
-    }
-
-    reverse_proxy vault-service:80
-}
-```
-
-```nginx [NGINX (OpenResty)]
-# nginx.conf: Vaultwarden Admin Lockdown
-http {
-    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
-
-    init_by_lua_block {
-        local routewarden = require("resty.routewarden")
-
-        vault_warden = routewarden.new({
-            enable_default_patterns = true,
-            path_patterns = {
-                "(?i)^/admin(/.*)?$"
-            },
-            allowed_ips = {
-                "100.64.0.0/10",
-                "10.8.0.0/24",
-                "127.0.0.1"
-            },
-            response = {
-                mode = "json",
-                status_code = 404,
-                body = '{"error":"Not Found","message":"The requested resource was not found"}'
-            }
-        })
-    }
-
-    server {
-        listen 80;
-        server_name vault.example.com;
-
-        access_by_lua_block {
-            vault_warden:check()
-        }
-
-        location / {
-            proxy_pass http://vault-service:80;
-        }
-    }
-}
-```
-
-```toml [Traefik (TOML)]
-# dynamic_conf.toml
-[http.routers.vault-router]
-  rule = "Host(`vault.example.com`)"
-  entryPoints = ["websecure"]
-  middlewares = ["vaultwarden-shield"]
-  service = "vault-service"
-
-[http.middlewares.vaultwarden-shield.plugin.routewarden]
-  enabled = true
-  enableDefaultPatterns = true
-  pathPatterns = ["(?i)^/admin(/.*)?$"]
-  allowedIps = ["100.64.0.0/10", "10.8.0.0/24", "127.0.0.1"]
-
-[http.middlewares.vaultwarden-shield.plugin.routewarden.response]
-  mode = "json"
-  statusCode = 404
-  body = '{"error":"Not Found","message":"The requested resource was not found"}'
-```
-
-```bash [CLI]
-# Docker Compose Labels equivalent
-- "traefik.http.routers.vault.rule=Host(`vault.example.com`)"
-- "traefik.http.routers.vault.middlewares=vaultwarden-shield"
-- "traefik.http.middlewares.vaultwarden-shield.plugin.routewarden.enabled=true"
-- "traefik.http.middlewares.vaultwarden-shield.plugin.routewarden.pathPatterns=(?i)^/admin(/.*)?$"
-- "traefik.http.middlewares.vaultwarden-shield.plugin.routewarden.allowedIps=100.64.0.0/10,10.8.0.0/24,127.0.0.1"
-- "traefik.http.middlewares.vaultwarden-shield.plugin.routewarden.response.mode=json"
-- "traefik.http.middlewares.vaultwarden-shield.plugin.routewarden.response.statusCode=404"
-```
-
-:::
+<CodeViewer :snippets="snippets" />

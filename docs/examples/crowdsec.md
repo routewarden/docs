@@ -1,3 +1,523 @@
+---
+title: CrowdSec Integration & Security Logging
+---
+
+<script setup>
+import { computed } from 'vue'
+import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
+
+// ─── Step 3: Log acquisition sources ─────────────────────────────────────────
+// ─── Step 3: Log acquisition sources ─────────────────────────────────────────
+const acquis = {
+  // Traefik sources
+  traefik_docker: buildSnippet({ lang: 'yaml', code: `# /etc/crowdsec/acquis.yaml
+# Ingest directly from Traefik container stdout/stderr
+source: docker
+container_name:
+  - traefik
+labels:
+  type: routewarden` }),
+  traefik_file: buildSnippet({ lang: 'yaml', code: `# /etc/crowdsec/acquis.yaml
+# Ingest Traefik log file from disk
+filenames:
+  - /var/log/traefik/traefik.log
+labels:
+  type: routewarden` }),
+  traefik_systemd: buildSnippet({ lang: 'yaml', code: `# /etc/crowdsec/acquis.yaml
+# Ingest Traefik running as a systemd unit
+source: journalctl
+journalctl_filter:
+  - _SYSTEMD_UNIT=traefik.service
+labels:
+  type: routewarden` }),
+
+  // Caddy sources
+  caddy_docker: buildSnippet({ lang: 'yaml', code: `# /etc/crowdsec/acquis.yaml
+# Ingest directly from Caddy container stdout/stderr
+source: docker
+container_name:
+  - caddy
+labels:
+  type: routewarden` }),
+  caddy_file: buildSnippet({ lang: 'yaml', code: `# /etc/crowdsec/acquis.yaml
+# Ingest Caddy log file from disk
+filenames:
+  - /var/log/caddy/caddy.log
+labels:
+  type: routewarden` }),
+  caddy_systemd: buildSnippet({ lang: 'yaml', code: `# /etc/crowdsec/acquis.yaml
+# Ingest Caddy running as a systemd unit
+source: journalctl
+journalctl_filter:
+  - _SYSTEMD_UNIT=caddy.service
+labels:
+  type: routewarden` }),
+
+  // NGINX sources
+  nginx_docker: buildSnippet({ lang: 'yaml', code: `# /etc/crowdsec/acquis.yaml
+# Ingest directly from NGINX / OpenResty container stdout/stderr
+source: docker
+container_name:
+  - nginx
+labels:
+  type: routewarden` }),
+  nginx_file: buildSnippet({ lang: 'yaml', code: `# /etc/crowdsec/acquis.yaml
+# Ingest NGINX error log from disk
+filenames:
+  - /var/log/nginx/error.log
+labels:
+  type: routewarden` }),
+  nginx_systemd: buildSnippet({ lang: 'yaml', code: `# /etc/crowdsec/acquis.yaml
+# Ingest NGINX running as a systemd unit
+source: journalctl
+journalctl_filter:
+  - _SYSTEMD_UNIT=nginx.service
+labels:
+  type: routewarden` }),
+}
+
+const acquisSnippets = computed(() => ({
+  traefik: [
+    { filename: 'Docker Logs', lang: 'yaml', code: acquis.traefik_docker.cleanCode, html: acquis.traefik_docker.html, hasDiff: acquis.traefik_docker.hasDiff },
+    { filename: 'File (/var/log)', lang: 'yaml', code: acquis.traefik_file.cleanCode, html: acquis.traefik_file.html, hasDiff: acquis.traefik_file.hasDiff },
+    { filename: 'Systemd Journal', lang: 'yaml', code: acquis.traefik_systemd.cleanCode, html: acquis.traefik_systemd.html, hasDiff: acquis.traefik_systemd.hasDiff },
+  ],
+  caddy: [
+    { filename: 'Docker Logs', lang: 'yaml', code: acquis.caddy_docker.cleanCode, html: acquis.caddy_docker.html, hasDiff: acquis.caddy_docker.hasDiff },
+    { filename: 'File (/var/log)', lang: 'yaml', code: acquis.caddy_file.cleanCode, html: acquis.caddy_file.html, hasDiff: acquis.caddy_file.hasDiff },
+    { filename: 'Systemd Journal', lang: 'yaml', code: acquis.caddy_systemd.cleanCode, html: acquis.caddy_systemd.html, hasDiff: acquis.caddy_systemd.hasDiff },
+  ],
+  nginx: [
+    { filename: 'Docker Logs', lang: 'yaml', code: acquis.nginx_docker.cleanCode, html: acquis.nginx_docker.html, hasDiff: acquis.nginx_docker.hasDiff },
+    { filename: 'File (/var/log)', lang: 'yaml', code: acquis.nginx_file.cleanCode, html: acquis.nginx_file.html, hasDiff: acquis.nginx_file.hasDiff },
+    { filename: 'Systemd Journal', lang: 'yaml', code: acquis.nginx_systemd.cleanCode, html: acquis.nginx_systemd.html, hasDiff: acquis.nginx_systemd.hasDiff },
+  ],
+}))
+
+// ─── Step 3b: Gateway log file config ────────────────────────────────────────
+const logfile_traefik_yaml = buildSnippet({ lang: 'yaml', code: `# Static Traefik Configuration (traefik.yml)
+log:
+  level: INFO
+  filePath: "/var/log/traefik/traefik.log"
+  format: common` })
+
+const logfile_traefik_docker = buildSnippet({ lang: 'yaml', code: `services:
+  traefik:
+    image: traefik:v3.1
+    volumes:
+      - /var/log/traefik:/var/log/traefik
+    command:
+      - "--log.filePath=/var/log/traefik/traefik.log"` })
+
+const logfile_caddy = buildSnippet({ lang: 'caddy', code: `{
+    order route_warden before reverse_proxy
+    log {
+        output file /var/log/caddy/caddy.log {
+            roll_size 50mb
+            roll_keep 5
+        }
+        format console
+    }
+}` })
+
+const logfile_caddy_docker = buildSnippet({ lang: 'yaml', code: `services:
+  caddy:
+    image: caddy:2-alpine
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - /var/log/caddy:/var/log/caddy` })
+
+const logfile_nginx = buildSnippet({ lang: 'nginx', code: `# nginx.conf
+http {
+    # Direct error_log containing OpenResty ngx.log output to disk
+    error_log /var/log/nginx/error.log notice;
+}` })
+
+const logfile_nginx_docker = buildSnippet({ lang: 'yaml', code: `services:
+  nginx:
+    image: openresty/openresty:alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /var/log/nginx:/var/log/nginx` })
+
+const logfileSnippets = computed(() => ({
+  traefik: [
+    { filename: 'traefik.yml', lang: 'yaml', code: logfile_traefik_yaml.cleanCode, html: logfile_traefik_yaml.html, hasDiff: logfile_traefik_yaml.hasDiff },
+    { filename: 'docker-compose.yaml', lang: 'yaml', code: logfile_traefik_docker.cleanCode, html: logfile_traefik_docker.html, hasDiff: logfile_traefik_docker.hasDiff },
+  ],
+  caddy: [
+    { filename: 'Caddyfile', lang: 'caddy', code: logfile_caddy.cleanCode, html: logfile_caddy.html, hasDiff: logfile_caddy.hasDiff },
+    { filename: 'docker-compose.yaml', lang: 'yaml', code: logfile_caddy_docker.cleanCode, html: logfile_caddy_docker.html, hasDiff: logfile_caddy_docker.hasDiff },
+  ],
+  nginx: [
+    { filename: 'nginx.conf', lang: 'nginx', code: logfile_nginx.cleanCode, html: logfile_nginx.html, hasDiff: logfile_nginx.hasDiff },
+    { filename: 'docker-compose.yaml', lang: 'yaml', code: logfile_nginx_docker.cleanCode, html: logfile_nginx_docker.html, hasDiff: logfile_nginx_docker.hasDiff },
+  ],
+}))
+
+// ─── Step 3c: Docker Volume Sharing Snippets ─────────────────────────────────
+const volume_traefik = buildSnippet({ lang: 'yaml', code: `volumes:
+  - /var/log/traefik:/var/log/traefik:ro` })
+
+const volume_caddy = buildSnippet({ lang: 'yaml', code: `volumes:
+  - /var/log/caddy:/var/log/caddy:ro` })
+
+const volume_nginx = buildSnippet({ lang: 'yaml', code: `volumes:
+  - /var/log/nginx:/var/log/nginx:ro` })
+
+const volumeSharingSnippets = computed(() => ({
+  traefik: [{ filename: 'docker-compose.yaml', lang: 'yaml', code: volume_traefik.cleanCode, html: volume_traefik.html, hasDiff: false }],
+  caddy:   [{ filename: 'docker-compose.yaml', lang: 'yaml', code: volume_caddy.cleanCode,   html: volume_caddy.html,   hasDiff: false }],
+  nginx:   [{ filename: 'docker-compose.yaml', lang: 'yaml', code: volume_nginx.cleanCode,   html: volume_nginx.html,   hasDiff: false }],
+}))
+
+// ─── Step 4: Gateway configuration ───────────────────────────────────────────
+const s = {
+  json: buildSnippet({ lang: 'json', code: `{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true, # [!code ++]
+  "securityLog": true, # [!code ++]
+  "enableDefaultPatterns": true, # [!code ++]
+  "response": { # [!code ++]
+    "mode": "fakeSuccess", # [!code ++]
+    "statusCode": 200 # [!code ++]
+  } # [!code ++]
+}` }),
+  traefik_yaml: buildSnippet({ lang: 'yaml', code: `http:
+  middlewares:
+    routewarden-shield: # [!code ++]
+      plugin: # [!code ++]
+        routewarden: # [!code ++]
+          enabled: true # [!code ++]
+          # Emits structured JSON events on stdout for CrowdSec
+          securityLog: true # [!code ++]
+          enableDefaultPatterns: true # [!code ++]
+          # Deceive attackers with convincing dummy credentials
+          response: # [!code ++]
+            mode: fakeSuccess # [!code ++]
+            statusCode: 200 # [!code ++]` }),
+  traefik_toml: buildSnippet({ lang: 'toml', code: `# dynamic_conf.toml
+[http.middlewares.routewarden-shield.plugin.routewarden] # [!code ++]
+  enabled = true # [!code ++]
+  securityLog = true # [!code ++]
+  enableDefaultPatterns = true # [!code ++]
+ # [!code ++]
+[http.middlewares.routewarden-shield.plugin.routewarden.response] # [!code ++]
+  mode = "fakeSuccess" # [!code ++]
+  statusCode = 200 # [!code ++]` }),
+  traefik_labels: buildSnippet({ lang: 'yaml', code: `services:
+  app:
+    image: my-app:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(\`example.com\`)"
+      - "traefik.http.routers.app.middlewares=routewarden-shield"
+      - "traefik.http.middlewares.routewarden-shield.plugin.routewarden.enabled=true" # [!code ++]
+      - "traefik.http.middlewares.routewarden-shield.plugin.routewarden.securityLog=true" # [!code ++]
+      - "traefik.http.middlewares.routewarden-shield.plugin.routewarden.response.mode=fakeSuccess" # [!code ++]` }),
+  caddy: buildSnippet({ lang: 'caddy', code: `{
+    order route_warden before reverse_proxy # [!code ++]
+}
+
+example.com {
+    route_warden { # [!code ++]
+        enabled true # [!code ++]
+        # Emits structured JSON events on stdout for CrowdSec
+        security_log true # [!code ++]
+        enable_default_patterns true # [!code ++]
+        response { # [!code ++]
+            mode fake_success # [!code ++]
+            status_code 200 # [!code ++]
+        } # [!code ++]
+    } # [!code ++]
+    reverse_proxy app:8080
+}` }),
+  nginx: buildSnippet({ lang: 'nginx', code: `# nginx.conf
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden") # [!code ++]
+
+        warden = routewarden.new({ # [!code ++]
+            enabled = true, # [!code ++]
+            -- Emits structured JSON events on stdout for CrowdSec
+            security_log = true, # [!code ++]
+            enable_default_patterns = true, # [!code ++]
+            response = { # [!code ++]
+                mode = "fakeSuccess", # [!code ++]
+                status_code = 200 # [!code ++]
+            } # [!code ++]
+        }) # [!code ++]
+    }
+
+    server {
+        listen 80;
+        server_name example.com;
+
+        access_by_lua_block {
+            warden:check() # [!code ++]
+        }
+
+        location / {
+            proxy_pass http://app:8080;
+        }
+    }
+}` }),
+
+  docker_traefik: buildSnippet({ lang: 'yaml', code: `services:
+  traefik:
+    image: traefik:v3.1
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden" # [!code ++]
+      - "--experimental.plugins.routewarden.version=v1.1.0" # [!code ++]
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
+  crowdsec:
+    image: crowdsecurity/crowdsec:latest
+    container_name: crowdsec
+    environment:
+      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve"
+    volumes:
+      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
+      - ./crowdsec/parsers:/etc/crowdsec/parsers/s01-parse:ro
+      - ./crowdsec/scenarios:/etc/crowdsec/scenarios:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - crowdsec-db:/var/lib/crowdsec/data/
+    restart: unless-stopped
+
+  web:
+    image: nginx:alpine
+    container_name: web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=PathPrefix(\`/\`)"
+      - "traefik.http.routers.web.middlewares=sec-shield" # [!code ++]
+      - "traefik.http.middlewares.sec-shield.plugin.routewarden.enabled=true" # [!code ++]
+      - "traefik.http.middlewares.sec-shield.plugin.routewarden.securityLog=true" # [!code ++]
+      - "traefik.http.middlewares.sec-shield.plugin.routewarden.response.mode=json" # [!code ++]
+
+volumes:
+  crowdsec-db:` }),
+
+  docker_caddy: buildSnippet({ lang: 'yaml', code: `services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    build: # [!code ++]
+      context: . # [!code ++]
+      dockerfile_inline: | # [!code ++]
+        FROM caddy:2-builder AS builder # [!code ++]
+        RUN xcaddy build --with github.com/routewarden/caddy-warden@v1.1.0 # [!code ++]
+        FROM caddy:2-alpine # [!code ++]
+        COPY --from=builder /usr/bin/caddy /usr/bin/caddy # [!code ++]
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    restart: unless-stopped
+
+  crowdsec:
+    image: crowdsecurity/crowdsec:latest
+    container_name: crowdsec
+    environment:
+      COLLECTIONS: "crowdsecurity/caddy crowdsecurity/http-cve"
+    volumes:
+      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
+      - ./crowdsec/parsers:/etc/crowdsec/parsers/s01-parse:ro
+      - ./crowdsec/scenarios:/etc/crowdsec/scenarios:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - crowdsec-db:/var/lib/crowdsec/data/
+    restart: unless-stopped
+
+  web:
+    image: nginx:alpine
+    container_name: web
+
+volumes:
+  crowdsec-db:` }),
+
+  docker_nginx: buildSnippet({ lang: 'yaml', code: `services:
+  nginx:
+    image: openresty/openresty:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./lib/resty/routewarden:/usr/local/openresty/site/lualib/resty/routewarden:ro # [!code ++]
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped
+
+  crowdsec:
+    image: crowdsecurity/crowdsec:latest
+    container_name: crowdsec
+    environment:
+      COLLECTIONS: "crowdsecurity/nginx crowdsecurity/http-cve"
+    volumes:
+      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
+      - ./crowdsec/parsers:/etc/crowdsec/parsers/s01-parse:ro
+      - ./crowdsec/scenarios:/etc/crowdsec/scenarios:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - crowdsec-db:/var/lib/crowdsec/data/
+    restart: unless-stopped
+
+  web:
+    image: nginx:alpine
+    container_name: web
+
+volumes:
+  crowdsec-db:` }),
+}
+
+const gatewaySnippets = computed(() => ({
+  traefik: [
+    { filename: 'traefik.yaml', lang: 'yaml', code: s.traefik_yaml.cleanCode, html: s.traefik_yaml.html, hasDiff: s.traefik_yaml.hasDiff },
+    { filename: 'traefik.toml', lang: 'toml', code: s.traefik_toml.cleanCode, html: s.traefik_toml.html, hasDiff: s.traefik_toml.hasDiff },
+    { filename: 'docker-compose.yaml', lang: 'yaml', code: s.traefik_labels.cleanCode, html: s.traefik_labels.html, hasDiff: s.traefik_labels.hasDiff },
+  ],
+  caddy: [{ filename: 'Caddyfile', lang: 'caddy', code: s.caddy.cleanCode, html: s.caddy.html, hasDiff: s.caddy.hasDiff }],
+  nginx: [{ filename: 'nginx.conf', lang: 'nginx', code: s.nginx.cleanCode, html: s.nginx.html, hasDiff: s.nginx.hasDiff }],
+  cli:   [{ filename: 'routewarden.json', lang: 'json', code: s.json.cleanCode, html: s.json.html, hasDiff: s.json.hasDiff }],
+}))
+
+// ─── Docker Compose Example ───────────────────────────────────────────────────
+const dockerSnippets = computed(() => ({
+  traefik: [{ filename: 'docker-compose.yaml', lang: 'yaml', code: s.docker_traefik.cleanCode, html: s.docker_traefik.html, hasDiff: s.docker_traefik.hasDiff }],
+  caddy:   [{ filename: 'docker-compose.yaml', lang: 'yaml', code: s.docker_caddy.cleanCode,   html: s.docker_caddy.html,   hasDiff: s.docker_caddy.hasDiff }],
+  nginx:   [{ filename: 'docker-compose.yaml', lang: 'yaml', code: s.docker_nginx.cleanCode,   html: s.docker_nginx.html,   hasDiff: s.docker_nginx.hasDiff }],
+}))
+
+// ─── Step 1 & 2: CrowdSec Parser & Scenario ────────────────────────────────────
+const crowdsecParser = buildSnippet({
+  lang: 'yaml',
+  code: `# /etc/crowdsec/parsers/s01-parse/routewarden-logs.yaml
+onsuccess: next_stage
+name: routewarden/parser
+description: "Parse RouteWarden security block events from Traefik & Caddy"
+filter: "evt.Line.Raw contains 'routewarden_block'"
+nodes:
+  - grok:
+      pattern: '.*(?P<json_raw>\\{"type":"routewarden_block".*\\})'
+      apply_on: Line.Raw
+statics:
+  - meta: log_type
+    value: routewarden_block
+  - meta: source_ip
+    expression: 'JsonExtract(evt.Parsed.json_raw, "client_ip")'
+  - meta: http_path
+    expression: 'JsonExtract(evt.Parsed.json_raw, "path")'
+  - meta: http_method
+    expression: 'JsonExtract(evt.Parsed.json_raw, "method")'
+  - meta: http_user_agent
+    expression: 'JsonExtract(evt.Parsed.json_raw, "user_agent")'
+  - meta: routewarden_pattern
+    expression: 'JsonExtract(evt.Parsed.json_raw, "pattern")'
+  - meta: routewarden_action
+    expression: 'JsonExtract(evt.Parsed.json_raw, "action")'`,
+})
+
+const crowdsecScenario = buildSnippet({
+  lang: 'yaml',
+  code: `# /etc/crowdsec/scenarios/routewarden-threat.yaml
+type: trigger
+name: routewarden/sensitive-endpoint-scan
+description: "Ban IPs probing sensitive paths intercepted by RouteWarden"
+filter: "evt.Meta.log_type == 'routewarden_block'"
+blackhole: 1h
+labels:
+  type: scan
+  remediation: true
+  service: http
+  confidence: 3
+  spoofable: 0
+  behavior: "http:probing"
+scope:
+  type: ip
+  expression: evt.Meta.source_ip`,
+})
+
+const parserSnippets = computed(() => ({
+  traefik: [{ filename: 'routewarden-logs.yaml', lang: 'yaml', code: crowdsecParser.cleanCode, html: crowdsecParser.html, hasDiff: false }],
+}))
+
+const scenarioSnippets = computed(() => ({
+  traefik: [{ filename: 'routewarden-threat.yaml', lang: 'yaml', code: crowdsecScenario.cleanCode, html: crowdsecScenario.html, hasDiff: false }],
+}))
+
+// ─── Testing & Verification Commands ───────────────────────────────────────────
+const testProbeCmd = buildSnippet({
+  lang: 'bash',
+  code: `curl -i -H "User-Agent: Nuclei/v3.1.0" http://localhost/.env`,
+})
+
+const verifyLogCmd = buildSnippet({
+  lang: 'bash',
+  code: `docker logs traefik | grep routewarden_block`,
+})
+
+const crowdsecCheckCmd = buildSnippet({
+  lang: 'bash',
+  code: `# View trigger alerts
+docker exec -t crowdsec cscli alerts list
+
+# View active firewall remediation decisions
+docker exec -t crowdsec cscli decisions list`,
+})
+
+const testProbeSnippets = computed(() => ({
+  traefik: [{ filename: 'Shell(Bash)', lang: 'bash', code: testProbeCmd.cleanCode, html: testProbeCmd.html, hasDiff: false }],
+}))
+
+const verifyLogSnippets = computed(() => ({
+  traefik: [{ filename: 'Shell(Bash)', lang: 'bash', code: verifyLogCmd.cleanCode, html: verifyLogCmd.html, hasDiff: false }],
+}))
+
+const crowdsecCheckSnippets = computed(() => ({
+  traefik: [{ filename: 'Shell(Bash)', lang: 'bash', code: crowdsecCheckCmd.cleanCode, html: crowdsecCheckCmd.html, hasDiff: false }],
+}))
+
+// ─── JSON Log Snippets ────────────────────────────────────────────────────────
+const structuredAuditEvent = buildSnippet({
+  lang: 'json',
+  code: `{
+  "type": "routewarden_block",
+  "timestamp": "2026-09-19T15:20:00Z",
+  "plugin": "routewarden",
+  "client_ip": "198.51.100.42",
+  "method": "GET",
+  "path": "/.env",
+  "request_uri": "/.env",
+  "pattern": "(?i)(^|/)(\\.env.*)$",
+  "action": "fakeSuccess",
+  "reason": "path_blocked",
+  "user_agent": "Mozilla/5.0 (compatible; Nuclei/v3.1.0)"
+}`,
+})
+
+const structuredAuditSnippets = computed(() => ({
+  traefik: [{ filename: 'routewarden_block.json', lang: 'json', code: structuredAuditEvent.cleanCode, html: structuredAuditEvent.html, hasDiff: false }],
+}))
+
+const exampleLogOutput = buildSnippet({
+  lang: 'json',
+  code: `{"action":"json","client_ip":"172.18.0.1","method":"GET","path":"/.env","pattern":"(?i)(^|/)(\\.env.*|.*\\.(txt|log|bak|backup|sql|conf|config|ini|yaml|yml))$","plugin":"routewarden","reason":"path_blocked","request_uri":"/.env","timestamp":"2026-09-19T15:30:12Z","type":"routewarden_block","user_agent":"Nuclei/v3.1.0"}`,
+})
+
+const exampleLogSnippets = computed(() => ({
+  traefik: [{ filename: 'routewarden_block.json', lang: 'json', code: exampleLogOutput.cleanCode, html: exampleLogOutput.html, hasDiff: false }],
+}))
+</script>
+
 # CrowdSec Integration & Security Logging
 
 Connect RouteWarden to [CrowdSec](https://crowdsec.net/) to automatically turn blocked reconnaissance scans into immediate firewall bans across your entire infrastructure.
@@ -28,21 +548,9 @@ Pairing RouteWarden directly with CrowdSec changes this dynamic:
 
 1. **Interception**: When a client requests a protected endpoint (such as `/.env`, `/.git/config`, or `/dump.sql`) or sends a blocked query string, RouteWarden intercepts the request according to your configured response mode (`json`, `html`, `fakeSuccess`, `silentDrop`, etc.).
 2. **Structured Event Emission**: Along with the client response, RouteWarden emits a single-line JSON audit event to `stdout`:
-   ```json
-   {
-     "type": "routewarden_block",
-     "timestamp": "2026-09-19T15:20:00Z",
-     "plugin": "routewarden",
-     "client_ip": "198.51.100.42",
-     "method": "GET",
-     "path": "/.env",
-     "request_uri": "/.env",
-     "pattern": "(?i)(^|/)(\\.env.*)$",
-     "action": "fakeSuccess",
-     "reason": "path_blocked",
-     "user_agent": "Mozilla/5.0 (compatible; Nuclei/v3.1.0)"
-   }
-   ```
+
+<CodeViewer :snippets="structuredAuditSnippets" />
+
 3. **CrowdSec Parsing**: The custom RouteWarden parser ingests this structured event and extracts the client IP, probed path, HTTP method, and matched pattern.
 4. **Instant Remediation**: The scenario flags the probe as high-confidence reconnaissance and immediately instructs your CrowdSec bouncers (firewall, iptables, Cloudflare) to ban the offending IP.
 
@@ -54,32 +562,7 @@ Pairing RouteWarden directly with CrowdSec changes this dynamic:
 
 Create `/etc/crowdsec/parsers/s01-parse/routewarden-logs.yaml`:
 
-```yaml
-# /etc/crowdsec/parsers/s01-parse/routewarden-logs.yaml
-onsuccess: next_stage
-name: routewarden/parser
-description: "Parse RouteWarden security block events from Traefik & Caddy"
-filter: "evt.Line.Raw contains 'routewarden_block'"
-nodes:
-  - grok:
-      pattern: '.*(?P<json_raw>\{"type":"routewarden_block".*\})'
-      apply_on: Line.Raw
-statics:
-  - meta: log_type
-    value: routewarden_block
-  - meta: source_ip
-    expression: 'JsonExtract(evt.Parsed.json_raw, "client_ip")'
-  - meta: http_path
-    expression: 'JsonExtract(evt.Parsed.json_raw, "path")'
-  - meta: http_method
-    expression: 'JsonExtract(evt.Parsed.json_raw, "method")'
-  - meta: http_user_agent
-    expression: 'JsonExtract(evt.Parsed.json_raw, "user_agent")'
-  - meta: routewarden_pattern
-    expression: 'JsonExtract(evt.Parsed.json_raw, "pattern")'
-  - meta: routewarden_action
-    expression: 'JsonExtract(evt.Parsed.json_raw, "action")'
-```
+<CodeViewer :snippets="parserSnippets" />
 
 ---
 
@@ -87,24 +570,7 @@ statics:
 
 Create `/etc/crowdsec/scenarios/routewarden-threat.yaml`:
 
-```yaml
-# /etc/crowdsec/scenarios/routewarden-threat.yaml
-type: trigger
-name: routewarden/sensitive-endpoint-scan
-description: "Ban IPs probing sensitive paths intercepted by RouteWarden"
-filter: "evt.Meta.log_type == 'routewarden_block'"
-blackhole: 1h
-labels:
-  type: scan
-  remediation: true
-  service: http
-  confidence: 3
-  spoofable: 0
-  behavior: "http:probing"
-scope:
-  type: ip
-  expression: evt.Meta.source_ip
-```
+<CodeViewer :snippets="scenarioSnippets" />
 
 ---
 
@@ -112,230 +578,26 @@ scope:
 
 CrowdSec reads logs through an acquisition datasource configured in `/etc/crowdsec/acquis.yaml`. You can ingest RouteWarden logs via **Docker container logs** or directly from **local log files** on disk.
 
-::: code-group
-
-```yaml [Docker Container Logs]
-# /etc/crowdsec/acquis.yaml
-# Ingest directly from container stdout/stderr
-source: docker
-container_name:
-  - traefik
-  - caddy
-labels:
-  type: routewarden
-```
-
-```yaml [File-Based: Traefik Log File]
-# /etc/crowdsec/acquis.yaml
-# Ingest Traefik output written to a file
-filenames:
-  - /var/log/traefik/traefik.log
-labels:
-  type: routewarden
-```
-
-```yaml [File-Based: Caddy Log File]
-# /etc/crowdsec/acquis.yaml
-# Ingest Caddy stdout or custom logfile
-filenames:
-  - /var/log/caddy/caddy.log
-labels:
-  type: routewarden
-```
-
-```yaml [File-Based: Shared Directory Wildcard]
-# /etc/crowdsec/acquis.yaml
-# Matches any active or rotated proxy log files
-filenames:
-  - /var/log/proxies/*.log
-labels:
-  type: routewarden
-```
-
-```yaml [Systemd Journal Ingestion]
-# /etc/crowdsec/acquis.yaml
-# Ingest Traefik or Caddy running as a systemd unit
-source: journalctl
-journalctl_filter:
-  - _SYSTEMD_UNIT=traefik.service
-  - _SYSTEMD_UNIT=caddy.service
-labels:
-  type: routewarden
-```
-
-:::
+<CodeViewer :snippets="acquisSnippets" />
 
 #### How to direct Gateway output to a log file
 
 If you choose file-based acquisition, configure your gateway to write logs to disk:
 
-::: code-group
-
-```yaml [Traefik File Logging (traefik.yml)]
-# Static Traefik Configuration
-log:
-  level: INFO
-  filePath: "/var/log/traefik/traefik.log"
-  format: common
-```
-
-```bash [Traefik CLI / Docker Compose]
-# Redirect stdout into a shared volume on host
-services:
-  traefik:
-    image: traefik:v3.1
-    # ...
-    volumes:
-      - /var/log/traefik:/var/log/traefik
-    # When Traefik writes to /var/log/traefik/traefik.log:
-    command:
-      - "--log.filePath=/var/log/traefik/traefik.log"
-```
-
-```nginx [Caddy File Logging (Caddyfile)]
-# Caddyfile global block redirecting standard output to a file
-{
-    order route_warden before reverse_proxy
-    log {
-        output file /var/log/caddy/caddy.log {
-            roll_size 50mb
-            roll_keep 5
-        }
-        format console
-    }
-}
-```
-
-:::
+<CodeViewer :snippets="logfileSnippets" />
 
 > [!TIP]
 > **Docker Volume Sharing for File-Based Acquisition**: If CrowdSec runs inside a Docker container while reading a file from the host, ensure the log directory is mounted in both containers:
-> ```yaml
-> volumes:
->   - /var/log/traefik:/var/log/traefik:ro
-> ```
+
+<CodeViewer :snippets="volumeSharingSnippets" />
 
 ---
 
-### Step 4: Configure the Gateway (Traefik or Caddy)
+### Step 4: Configure the Gateway (Traefik, Caddy & NGINX)
 
 Security logging is **enabled by default** (`securityLog: true` / `security_log true`).
 
-::: code-group
-
-```json [routewarden.json]
-{
-  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
-  "enabled": true,
-  "securityLog": true,
-  "enableDefaultPatterns": true,
-  "response": {
-    "mode": "fakeSuccess",
-    "statusCode": 200
-  }
-}
-```
-
-```yaml [Traefik (File / Dynamic YAML)]
-http:
-  middlewares:
-    routewarden-shield:
-      plugin:
-        routewarden:
-          enabled: true
-          # Emits structured JSON events on stdout for CrowdSec
-          securityLog: true
-          enableDefaultPatterns: true
-          # Deceive attackers with convincing dummy credentials
-          response:
-            mode: fakeSuccess
-            statusCode: 200
-```
-
-```yaml [Traefik (Docker Compose Labels)]
-services:
-  app:
-    image: my-app:latest
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=Host(`example.com`)"
-      - "traefik.http.routers.app.middlewares=routewarden-shield"
-      - "traefik.http.middlewares.routewarden-shield.plugin.routewarden.enabled=true"
-      - "traefik.http.middlewares.routewarden-shield.plugin.routewarden.securityLog=true"
-      - "traefik.http.middlewares.routewarden-shield.plugin.routewarden.response.mode=fakeSuccess"
-```
-
-```nginx [Caddy (Caddyfile)]
-{
-    order route_warden before reverse_proxy
-}
-
-example.com {
-    route_warden {
-        enabled true
-        # Emits structured JSON events on stdout for CrowdSec
-        security_log true
-        enable_default_patterns true
-        response {
-            mode fake_success
-            status_code 200
-        }
-    }
-    reverse_proxy app:8080
-}
-```
-
-```json [Caddy (JSON API)]
-{
-  "handler": "route_warden",
-  "enabled": true,
-  "security_log": true,
-  "enable_default_patterns": true,
-  "response": {
-    "mode": "fakeSuccess",
-    "status_code": 200
-  }
-}
-```
-
-```nginx [NGINX (OpenResty)]
-# nginx.conf
-http {
-    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
-
-    init_by_lua_block {
-        local routewarden = require("resty.routewarden")
-
-        warden = routewarden.new({
-            enabled = true,
-            # Emits structured JSON events on stdout for CrowdSec
-            security_log = true,
-            enable_default_patterns = true,
-            response = {
-                mode = "fakeSuccess",
-                status_code = 200
-            }
-        })
-    }
-
-    server {
-        listen 80;
-        server_name example.com;
-
-        access_by_lua_block {
-            warden:check()
-        }
-
-        location / {
-            proxy_pass http://app:8080;
-        }
-    }
-}
-```
-
-:::
-
----
+<CodeViewer :snippets="gatewaySnippets" />
 
 ---
 
@@ -343,129 +605,7 @@ http {
 
 Here is a practical Docker Compose setup running your preferred gateway with RouteWarden, CrowdSec, and a protected web container:
 
-::: code-group
-
-```yaml [Traefik (Docker Compose)]
-services:
-  traefik:
-    image: traefik:v3.1
-    container_name: traefik
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden"
-      - "--experimental.plugins.routewarden.version=v1.1.0"
-    ports:
-      - "80:80"
-      - "8080:8080" # Dashboard
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    restart: unless-stopped
-
-  crowdsec:
-    image: crowdsecurity/crowdsec:latest
-    container_name: crowdsec
-    environment:
-      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve"
-    volumes:
-      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
-      - ./crowdsec/parsers:/etc/crowdsec/parsers/s01-parse:ro
-      - ./crowdsec/scenarios:/etc/crowdsec/scenarios:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - crowdsec-db:/var/lib/crowdsec/data/
-    restart: unless-stopped
-
-  web:
-    image: nginx:alpine
-    container_name: web
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.web.rule=PathPrefix(`/`)"
-      - "traefik.http.routers.web.entrypoints=web"
-      - "traefik.http.routers.web.middlewares=sec-shield"
-      - "traefik.http.middlewares.sec-shield.plugin.routewarden.enabled=true"
-      - "traefik.http.middlewares.sec-shield.plugin.routewarden.securityLog=true"
-      - "traefik.http.middlewares.sec-shield.plugin.routewarden.response.mode=json"
-
-volumes:
-  crowdsec-db:
-```
-
-```yaml [Caddy (Docker Compose)]
-services:
-  caddy:
-    image: caddy:2-alpine
-    container_name: caddy
-    build:
-      context: .
-      dockerfile_inline: |
-        FROM caddy:2-builder AS builder
-        RUN xcaddy build --with github.com/routewarden/caddy-warden@v1.1.0
-        FROM caddy:2-alpine
-        COPY --from=builder /usr/bin/caddy /usr/bin/caddy
-    ports:
-      - "80:80"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-    restart: unless-stopped
-
-  crowdsec:
-    image: crowdsecurity/crowdsec:latest
-    container_name: crowdsec
-    environment:
-      COLLECTIONS: "crowdsecurity/caddy crowdsecurity/http-cve"
-    volumes:
-      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
-      - ./crowdsec/parsers:/etc/crowdsec/parsers/s01-parse:ro
-      - ./crowdsec/scenarios:/etc/crowdsec/scenarios:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - crowdsec-db:/var/lib/crowdsec/data/
-    restart: unless-stopped
-
-  web:
-    image: nginx:alpine
-    container_name: web
-
-volumes:
-  crowdsec-db:
-```
-
-```yaml [NGINX / OpenResty (Docker Compose)]
-services:
-  nginx:
-    image: openresty/openresty:alpine
-    container_name: nginx
-    ports:
-      - "80:80"
-    volumes:
-      - ./lib/resty/routewarden:/usr/local/openresty/site/lualib/resty/routewarden:ro
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    restart: unless-stopped
-
-  crowdsec:
-    image: crowdsecurity/crowdsec:latest
-    container_name: crowdsec
-    environment:
-      COLLECTIONS: "crowdsecurity/nginx crowdsecurity/http-cve"
-    volumes:
-      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
-      - ./crowdsec/parsers:/etc/crowdsec/parsers/s01-parse:ro
-      - ./crowdsec/scenarios:/etc/crowdsec/scenarios:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - crowdsec-db:/var/lib/crowdsec/data/
-    restart: unless-stopped
-
-  web:
-    image: nginx:alpine
-    container_name: web
-
-volumes:
-  crowdsec-db:
-```
-
-:::
+<CodeViewer :snippets="dockerSnippets" />
 
 ---
 
@@ -475,43 +615,23 @@ volumes:
 
 Simulate a vulnerability scanner probing for exposed configuration files:
 
-```bash
-curl -i -H "User-Agent: Nuclei/v3.1.0" http://localhost/.env
-```
+<CodeViewer :snippets="testProbeSnippets" />
 
 ### 2. Verify Structured Security Log Emission
 
 Check Traefik or Caddy output for the security block record:
 
-```bash
-docker logs traefik | grep routewarden_block
-```
+<CodeViewer :snippets="verifyLogSnippets" />
 
 Example JSON output:
-```json
-{"action":"json","client_ip":"172.18.0.1","method":"GET","path":"/.env","pattern":"(?i)(^|/)(\\.env.*|.*\\.(txt|log|bak|backup|sql|conf|config|ini|yaml|yml))$","plugin":"routewarden","reason":"path_blocked","request_uri":"/.env","timestamp":"2026-09-19T15:30:12Z","type":"routewarden_block","user_agent":"Nuclei/v3.1.0"}
-```
+
+<CodeViewer :snippets="exampleLogSnippets" />
 
 ### 3. Check Active CrowdSec Decisions
 
 Verify that CrowdSec parsed the event and issued a ban:
 
-```bash
-# View trigger alerts
-docker exec -t crowdsec cscli alerts list
-
-# View active firewall remediation decisions
-docker exec -t crowdsec cscli decisions list
-```
-
-Output:
-```text
-+----+--------------------------------+-----------------+--------------------------------------+--------+---------+----+--------+--------------------+----------+
-| ID |             SOURCE             |   SCOPE:VALUE   |                REASON                | ACTION | COUNTRY | AS | EVENTS |     EXPIRATION     | ALERT ID |
-+----+--------------------------------+-----------------+--------------------------------------+--------+---------+----+--------+--------------------+----------+
-|  1 | crowdsec                       | Ip:172.18.0.1   | routewarden/sensitive-endpoint-scan  | ban    |         |    |      1 | 3h59m58s           |        1 |
-+----+--------------------------------+-----------------+--------------------------------------+--------+---------+----+--------+--------------------+----------+
-```
+<CodeViewer :snippets="crowdsecCheckSnippets" />
 
 The client IP is now banned by CrowdSec across all attached bouncers.
 

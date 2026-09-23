@@ -27,18 +27,7 @@ export function syncVersion(options = {}) {
   const seriesTag = `v${versionParts[0]}.${versionParts[1]}.x`
   const updatedFiles = []
 
-  // 1. Ensure package.json version matches (without leading 'v')
-  const pkgPath = path.join(rootDir, 'package.json')
-  if (fs.existsSync(pkgPath)) {
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
-    if (pkg.version !== semver) {
-      pkg.version = semver
-      fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8')
-      updatedFiles.push('package.json')
-    }
-  }
-
-  // 2. Synchronize docs/versions.json current series and latest entry
+  // 1. Synchronize docs/versions.json current series and latest entry
   const versionsJsonPath = path.join(rootDir, 'docs/versions.json')
   if (fs.existsSync(versionsJsonPath)) {
     const registry = JSON.parse(fs.readFileSync(versionsJsonPath, 'utf8'))
@@ -65,7 +54,7 @@ export function syncVersion(options = {}) {
     }
   }
 
-  // 3. Synchronize README.md, docs, and any static examples
+  // 2. Synchronize README.md, docs, and any static examples
   const filesToSync = [
     'README.md',
     'VERSIONING.md',
@@ -145,6 +134,15 @@ export function syncVersion(options = {}) {
 // Auto-run when executed directly via CLI
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname)) {
   const { updatedFiles, targetVersion } = syncVersion()
-  console.log(`🔄 Synced RouteWarden version: ${targetVersion}`)
-  console.log(`✨ Successfully synced version to ${updatedFiles.length} file(s)!`)
+  console.log(`Synced RouteWarden version: ${targetVersion}`)
+  console.log(`Successfully synced version to ${updatedFiles.length} file(s)!`)
+
+  try {
+    const { generateSetupSnippets } = await import('./generate-snippets.mjs')
+    await generateSetupSnippets()
+    console.log(`Regenerated QuickSetup code snippets`)
+  } catch (err) {
+    console.warn(`Could not regenerate setup snippets: ${err.message}`)
+  }
 }
+

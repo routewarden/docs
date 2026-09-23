@@ -1,40 +1,14 @@
-# Example 5: Captcha Challenge (Turnstile / hCaptcha / reCAPTCHA)
-
-Instead of dropping connections or returning static error codes, RouteWarden can serve interactive Captcha challenges on sensitive paths using **Cloudflare Turnstile**, **hCaptcha**, or **Google reCAPTCHA**.
-
+---
+title: Example 5 – Captcha Challenge
 ---
 
-## Is a `captcha.html` File Required?
+<script setup>
+import { computed } from 'vue'
+import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
 
-> [!TIP]
-> **No external `captcha.html` file is required!**  
-> RouteWarden has a **built-in, mobile-responsive dark-mode HTML template** embedded directly into the Go binary. When `mode: captcha` is enabled, RouteWarden automatically:
-> 1. Injects the official provider JavaScript SDK (`https://js.hcaptcha.com/1/api.js` for hCaptcha or Cloudflare/Google equivalent).
-> 2. Renders the appropriate widget container (`<div class="h-captcha" data-sitekey="..."></div>`).
-> 3. Populates your custom title and site key.
->
-> *(Optional: If you ever want to override the design with your own custom layout, you can pass an HTML template string into `response.captcha.template`).*
-
----
-
-## Supported Providers
-
-| Provider | `response.captcha.provider` | Injected SDK Script | Widget Class |
-|---|---|---|---|
-| **hCaptcha** | `hcaptcha` | `https://js.hcaptcha.com/1/api.js` | `<div class="h-captcha">` |
-| **Cloudflare Turnstile** | `turnstile` | `https://challenges.cloudflare.com/turnstile/v0/api.js` | `<div class="cf-turnstile">` |
-| **Google reCAPTCHA v2** | `recaptcha` | `https://www.google.com/recaptcha/api.js` | `<div class="g-recaptcha">` |
-
----
-
-## 1. hCaptcha Configuration Example
-
-This example protects `/admin` and `/login` with **hCaptcha** (using the official hCaptcha test site key `10000000-ffff-ffff-ffff-000000000001`):
-
-::: code-group
-
-```json [routewarden.json]
-{
+// ─── hCaptcha ────────────────────────────────────────────────────────────────
+const hcaptcha = {
+  json: buildSnippet({ lang: 'json', code: `{
   "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
   "enabled": true,
   "pathPatterns": [
@@ -49,11 +23,8 @@ This example protects `/admin` and `/login` with **hCaptcha** (using the officia
       "title": "Human Verification (hCaptcha)"
     }
   }
-}
-```
-
-```yaml [Traefik (YAML)]
-# dynamic_conf.yml
+}` }),
+  traefik_yaml: buildSnippet({ lang: 'yaml', code: `# dynamic_conf.yml
 http:
   middlewares:
     hcaptcha-barrier:
@@ -72,16 +43,43 @@ http:
 
   routers:
     app-router:
-      rule: "Host(`app.example.com`)"
+      rule: "Host(\`app.example.com\`)"
       entryPoints:
         - web
       middlewares:
         - hcaptcha-barrier
-      service: app-service
-```
+      service: app-service` }),
+  traefik_toml: buildSnippet({ lang: 'toml', code: `# dynamic_conf.toml
+[http.routers.app-router]
+  rule = "Host(\`app.example.com\`)"
+  entryPoints = ["web"]
+  middlewares = ["hcaptcha-barrier"]
+  service = "app-service"
 
-```nginx [Caddy (Caddyfile)]
-# Caddyfile
+[http.middlewares.hcaptcha-barrier.plugin.routewarden]
+  enabled = true
+  pathPatterns = ["(?i)^/(admin|login)(/.*)?$"]
+
+[http.middlewares.hcaptcha-barrier.plugin.routewarden.response]
+  mode = "captcha"
+  statusCode = 403
+
+[http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha]
+  provider = "hcaptcha"
+  siteKey = "10000000-ffff-ffff-ffff-000000000001"
+  title = "Human Verification (hCaptcha)"` }),
+  traefik_labels: buildSnippet({ lang: 'docker', code: `# Docker Compose Labels
+- "traefik.enable=true"
+- "traefik.http.routers.app.rule=Host(\`app.example.com\`)"
+- "traefik.http.routers.app.middlewares=hcaptcha-barrier"
+- "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.enabled=true"
+- "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.pathPatterns=(?i)^/(admin|login)(/.*)?$"
+- "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.mode=captcha"
+- "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.statusCode=403"
+- "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha.provider=hcaptcha"
+- "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha.siteKey=10000000-ffff-ffff-ffff-000000000001"
+- "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha.title=Human Verification (hCaptcha)"` }),
+  caddy: buildSnippet({ lang: 'caddy', code: `# Caddyfile
 {
     order route_warden before reverse_proxy
 }
@@ -100,11 +98,8 @@ app.example.com {
     }
 
     reverse_proxy app-service:80
-}
-```
-
-```nginx [NGINX (OpenResty)]
-# nginx.conf: hCaptcha Verification Barrier
+}` }),
+  nginx: buildSnippet({ lang: 'nginx', code: `# nginx.conf: hCaptcha Verification Barrier
 http {
     lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
 
@@ -139,55 +134,12 @@ http {
             proxy_pass http://app-service:80;
         }
     }
+}` }),
 }
-```
 
-```toml [Traefik (TOML)]
-# dynamic_conf.toml
-[http.routers.app-router]
-  rule = "Host(`app.example.com`)"
-  entryPoints = ["web"]
-  middlewares = ["hcaptcha-barrier"]
-  service = "app-service"
-
-[http.middlewares.hcaptcha-barrier.plugin.routewarden]
-  enabled = true
-  pathPatterns = ["(?i)^/(admin|login)(/.*)?$"]
-
-[http.middlewares.hcaptcha-barrier.plugin.routewarden.response]
-  mode = "captcha"
-  statusCode = 403
-
-[http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha]
-  provider = "hcaptcha"
-  siteKey = "10000000-ffff-ffff-ffff-000000000001"
-  title = "Human Verification (hCaptcha)"
-```
-
-```bash [CLI]
-# Docker Compose Labels / CLI equivalent
-- "traefik.enable=true"
-- "traefik.http.routers.app.rule=Host(`app.example.com`)"
-- "traefik.http.routers.app.middlewares=hcaptcha-barrier"
-- "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.enabled=true"
-- "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.pathPatterns=(?i)^/(admin|login)(/.*)?$"
-- "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.mode=captcha"
-- "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.statusCode=403"
-- "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha.provider=hcaptcha"
-- "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha.siteKey=10000000-ffff-ffff-ffff-000000000001"
-- "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha.title=Human Verification (hCaptcha)"
-```
-
-:::
-
----
-
-## 2. Cloudflare Turnstile Configuration Example
-
-::: code-group
-
-```json [routewarden.json]
-{
+// ─── Turnstile ───────────────────────────────────────────────────────────────
+const turnstile = {
+  json: buildSnippet({ lang: 'json', code: `{
   "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
   "enabled": true,
   "pathPatterns": [
@@ -203,11 +155,8 @@ http {
       "title": "Security Verification Required"
     }
   }
-}
-```
-
-```yaml [File (YAML)]
-# dynamic_conf.yml
+}` }),
+  traefik_yaml: buildSnippet({ lang: 'yaml', code: `# dynamic_conf.yml
 http:
   middlewares:
     turnstile-barrier:
@@ -227,16 +176,43 @@ http:
 
   routers:
     login-router:
-      rule: "Host(`login.example.com`)"
+      rule: "Host(\`login.example.com\`)"
       entryPoints:
         - web
       middlewares:
         - turnstile-barrier
-      service: login-service
-```
+      service: login-service` }),
+  traefik_toml: buildSnippet({ lang: 'toml', code: `# dynamic_conf.toml
+[http.routers.login-router]
+  rule = "Host(\`login.example.com\`)"
+  entryPoints = ["web"]
+  middlewares = ["turnstile-barrier"]
+  service = "login-service"
 
-```nginx [Caddy (Caddyfile)]
-# Caddyfile
+[http.middlewares.turnstile-barrier.plugin.routewarden]
+  enabled = true
+  pathPatterns = ["(?i)^/login(/.*)?$", "(?i)^/reset-password(/.*)?$"]
+
+[http.middlewares.turnstile-barrier.plugin.routewarden.response]
+  mode = "captcha"
+  statusCode = 403
+
+[http.middlewares.turnstile-barrier.plugin.routewarden.response.captcha]
+  provider = "turnstile"
+  siteKey = "1x00000000000000000000AA"
+  title = "Security Verification Required"` }),
+  traefik_labels: buildSnippet({ lang: 'docker', code: `# Docker Compose Labels
+- "traefik.enable=true"
+- "traefik.http.routers.login.rule=Host(\`login.example.com\`)"
+- "traefik.http.routers.login.middlewares=turnstile-barrier"
+- "traefik.http.middlewares.turnstile-barrier.plugin.routewarden.enabled=true"
+- "traefik.http.middlewares.turnstile-barrier.plugin.routewarden.pathPatterns=(?i)^/login(/.*)?$,(?i)^/reset-password(/.*)?$"
+- "traefik.http.middlewares.turnstile-barrier.plugin.routewarden.response.mode=captcha"
+- "traefik.http.middlewares.turnstile-barrier.plugin.routewarden.response.statusCode=403"
+- "traefik.http.middlewares.turnstile-barrier.plugin.routewarden.response.captcha.provider=turnstile"
+- "traefik.http.middlewares.turnstile-barrier.plugin.routewarden.response.captcha.siteKey=1x00000000000000000000AA"
+- "traefik.http.middlewares.turnstile-barrier.plugin.routewarden.response.captcha.title=Security Verification Required"` }),
+  caddy: buildSnippet({ lang: 'caddy', code: `# Caddyfile
 {
     order route_warden before reverse_proxy
 }
@@ -255,11 +231,8 @@ login.example.com {
     }
 
     reverse_proxy login-service:80
-}
-```
-
-```nginx [NGINX (OpenResty)]
-# nginx.conf: Cloudflare Turnstile Verification
+}` }),
+  nginx: buildSnippet({ lang: 'nginx', code: `# nginx.conf: Cloudflare Turnstile Verification
 http {
     lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
 
@@ -295,66 +268,17 @@ http {
             proxy_pass http://login-service:80;
         }
     }
-}
-```
-
-```toml [Traefik (TOML)]
-# dynamic_conf.toml
-[http.routers.login-router]
-  rule = "Host(`login.example.com`)"
-  entryPoints = ["web"]
-  middlewares = ["turnstile-barrier"]
-  service = "login-service"
-
-[http.middlewares.turnstile-barrier.plugin.routewarden]
-  enabled = true
-  pathPatterns = ["(?i)^/login(/.*)?$", "(?i)^/reset-password(/.*)?$"]
-
-[http.middlewares.turnstile-barrier.plugin.routewarden.response]
-  mode = "captcha"
-  statusCode = 403
-
-[http.middlewares.turnstile-barrier.plugin.routewarden.response.captcha]
-  provider = "turnstile"
-  siteKey = "1x00000000000000000000AA"
-  title = "Security Verification Required"
-```
-
-```bash [Traefik (Docker Compose Labels)]
-# Docker Compose Labels / CLI equivalent
-- "traefik.enable=true"
-- "traefik.http.routers.login.rule=Host(`login.example.com`)"
-- "traefik.http.routers.login.middlewares=turnstile-barrier"
-- "traefik.http.middlewares.turnstile-barrier.plugin.routewarden.enabled=true"
-- "traefik.http.middlewares.turnstile-barrier.plugin.routewarden.pathPatterns=(?i)^/login(/.*)?$,(?i)^/reset-password(/.*)?$"
-- "traefik.http.middlewares.turnstile-barrier.plugin.routewarden.response.mode=captcha"
-- "traefik.http.middlewares.turnstile-barrier.plugin.routewarden.response.statusCode=403"
-- "traefik.http.middlewares.turnstile-barrier.plugin.routewarden.response.captcha.provider=turnstile"
-- "traefik.http.middlewares.turnstile-barrier.plugin.routewarden.response.captcha.siteKey=1x00000000000000000000AA"
-- "traefik.http.middlewares.turnstile-barrier.plugin.routewarden.response.captcha.title=Security Verification Required"
-```
-
-:::
-
----
-
-## 3. Docker Compose Example
-
-::: code-group
-
-```yaml [Traefik (Docker Compose)]
-services:
+}` }),
+  docker_traefik: buildSnippet({ lang: 'yaml', code: `services:
   traefik:
     image: traefik:v3.1
     command:
-      - "--api.insecure=true"
       - "--providers.docker=true"
       - "--entrypoints.web.address=:80"
-      - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden"
-      - "--experimental.plugins.routewarden.version={{version}}"
+      - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden" # [!code ++]
+      - "--experimental.plugins.routewarden.version={{version}}" # [!code ++]
     ports:
       - "80:80"
-      - "8080:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
@@ -362,30 +286,24 @@ services:
     image: nginx:alpine
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=Host(`app.localhost`)"
-      - "traefik.http.routers.app.entrypoints=web"
-      - "traefik.http.routers.app.middlewares=hcaptcha-barrier"
+      - "traefik.http.routers.app.rule=Host(\`app.localhost\`)"
+      - "traefik.http.routers.app.middlewares=hcaptcha-barrier" # [!code ++]
+      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.enabled=true" # [!code ++]
+      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.pathPatterns=(?i)^/(admin|login)(/.*)?$" # [!code ++]
+      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.mode=captcha" # [!code ++]
+      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha.provider=hcaptcha" # [!code ++]
+      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha.siteKey=10000000-ffff-ffff-ffff-000000000001" # [!code ++]` }),
 
-      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.enabled=true"
-      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.pathPatterns=(?i)^/(admin|login)(/.*)?$"
-      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.mode=captcha"
-      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.statusCode=403"
-      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha.provider=hcaptcha"
-      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha.siteKey=10000000-ffff-ffff-ffff-000000000001"
-      - "traefik.http.middlewares.hcaptcha-barrier.plugin.routewarden.response.captcha.title=Human Verification (hCaptcha)"
-```
-
-```yaml [Caddy (Docker Compose)]
-services:
+  docker_caddy: buildSnippet({ lang: 'yaml', code: `services:
   caddy:
     image: caddy:2-alpine
-    build:
-      context: .
-      dockerfile_inline: |
-        FROM caddy:2-builder AS builder
-        RUN xcaddy build --with github.com/routewarden/caddy-warden@{{version}}
-        FROM caddy:2-alpine
-        COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+    build: # [!code ++]
+      context: . # [!code ++]
+      dockerfile_inline: | # [!code ++]
+        FROM caddy:2-builder AS builder # [!code ++]
+        RUN xcaddy build --with github.com/routewarden/caddy-warden@{{version}} # [!code ++]
+        FROM caddy:2-alpine # [!code ++]
+        COPY --from=builder /usr/bin/caddy /usr/bin/caddy # [!code ++]
     ports:
       - "80:80"
     volumes:
@@ -394,24 +312,89 @@ services:
       - app
 
   app:
-    image: nginx:alpine
-```
+    image: nginx:alpine` }),
 
-```yaml [NGINX / OpenResty (Docker Compose)]
-services:
+  docker_nginx: buildSnippet({ lang: 'yaml', code: `services:
   nginx:
     image: openresty/openresty:alpine
     ports:
       - "80:80"
     volumes:
-      - ./lib/resty/routewarden:/usr/local/openresty/site/lualib/resty/routewarden:ro
+      - ./lib/resty/routewarden:/usr/local/openresty/site/lualib/resty/routewarden:ro # [!code ++]
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - app
 
   app:
-    image: nginx:alpine
-```
+    image: nginx:alpine` }),
+}
 
-:::
+function toSnippets(s) {
+  return {
+    traefik: [
+      { filename: 'traefik.yaml', lang: 'yaml', code: s.traefik_yaml.cleanCode, html: s.traefik_yaml.html, hasDiff: s.traefik_yaml.hasDiff },
+      { filename: 'traefik.toml', lang: 'toml', code: s.traefik_toml.cleanCode, html: s.traefik_toml.html, hasDiff: s.traefik_toml.hasDiff },
+      { filename: 'docker-compose.yaml', lang: 'docker', code: s.traefik_labels.cleanCode, html: s.traefik_labels.html, hasDiff: s.traefik_labels.hasDiff },
+    ],
+    caddy: [{ filename: 'Caddyfile', lang: 'caddy', code: s.caddy.cleanCode, html: s.caddy.html, hasDiff: s.caddy.hasDiff }],
+    nginx: [{ filename: 'nginx.conf', lang: 'nginx', code: s.nginx.cleanCode, html: s.nginx.html, hasDiff: s.nginx.hasDiff }],
+    cli: [{ filename: 'routewarden.json', lang: 'json', code: s.json.cleanCode, html: s.json.html, hasDiff: s.json.hasDiff }],
+  }
+}
 
+const hcaptchaSnippets = computed(() => toSnippets(hcaptcha))
+const turnstileSnippets = computed(() => toSnippets(turnstile))
+
+const dockerSnippets = computed(() => ({
+  traefik: [{ filename: 'docker-compose.yaml', lang: 'yaml', code: turnstile.docker_traefik.cleanCode, html: turnstile.docker_traefik.html, hasDiff: turnstile.docker_traefik.hasDiff }],
+  caddy:   [{ filename: 'docker-compose.yaml', lang: 'yaml', code: turnstile.docker_caddy.cleanCode,   html: turnstile.docker_caddy.html,   hasDiff: turnstile.docker_caddy.hasDiff }],
+  nginx:   [{ filename: 'docker-compose.yaml', lang: 'yaml', code: turnstile.docker_nginx.cleanCode,   html: turnstile.docker_nginx.html,   hasDiff: turnstile.docker_nginx.hasDiff }],
+}))
+</script>
+
+# Example 5: Captcha Challenge (Turnstile / hCaptcha / reCAPTCHA)
+
+Instead of dropping connections or returning static error codes, RouteWarden can serve interactive Captcha challenges on sensitive paths using **Cloudflare Turnstile**, **hCaptcha**, or **Google reCAPTCHA**.
+
+---
+
+## Is a `captcha.html` File Required?
+
+> [!TIP]
+> **No external `captcha.html` file is required!**  
+> RouteWarden has a **built-in, mobile-responsive dark-mode HTML template** embedded directly into the Go binary. When `mode: captcha` is enabled, RouteWarden automatically:
+> 1. Injects the official provider JavaScript SDK.
+> 2. Renders the appropriate widget container.
+> 3. Populates your custom title and site key.
+>
+> *(Optional: Pass an HTML template string into `response.captcha.template` to override the design.)*
+
+---
+
+## Supported Providers
+
+| Provider | `response.captcha.provider` | Injected SDK Script | Widget Class |
+|---|---|---|---|
+| **hCaptcha** | `hcaptcha` | `https://js.hcaptcha.com/1/api.js` | `<div class="h-captcha">` |
+| **Cloudflare Turnstile** | `turnstile` | `https://challenges.cloudflare.com/turnstile/v0/api.js` | `<div class="cf-turnstile">` |
+| **Google reCAPTCHA v2** | `recaptcha` | `https://www.google.com/recaptcha/api.js` | `<div class="g-recaptcha">` |
+
+---
+
+## 1. hCaptcha Configuration Example
+
+This example protects `/admin` and `/login` with **hCaptcha** (using the official hCaptcha test site key `10000000-ffff-ffff-ffff-000000000001`):
+
+<CodeViewer :snippets="hcaptchaSnippets" />
+
+---
+
+## 2. Cloudflare Turnstile Configuration Example
+
+<CodeViewer :snippets="turnstileSnippets" />
+
+---
+
+## 3. Docker Compose Example
+
+<CodeViewer :snippets="dockerSnippets" />

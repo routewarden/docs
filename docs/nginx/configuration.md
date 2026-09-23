@@ -1,46 +1,50 @@
-# NGINX Configuration Reference
-
-Configuration schema, options, and parameters for **RouteWarden for NGINX & OpenResty** (`github.com/routewarden/nginx-warden`).
-
+---
+title: NGINX Configuration Reference
 ---
 
-## 1. Lua Module Initialization
+<script setup>
+import { computed } from 'vue'
+import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
 
-Initialize RouteWarden using `routewarden.new(config)` within NGINX's `init_by_lua_block` or `init_worker_by_lua_block`. The returned instance is re-entrant and shared across request worker threads:
-
-```nginx
-http {
+// ─── 1. Lua Module Initialization ─────────────────────────────────────────────
+const init_http = buildSnippet({
+  lang: 'nginx',
+  code: `http {
     lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;/etc/nginx/lua/lib/?/init.lua;;";
 
-    init_by_lua_block {
-        local routewarden = require("resty.routewarden")
-        warden = routewarden.new({
-            -- Configuration options go here
-        })
-    }
-}
-```
+    init_by_lua_block { # [!code ++]
+        local routewarden = require("resty.routewarden") # [!code ++]
+        warden = routewarden.new({ # [!code ++]
+            -- Configuration options go here # [!code ++]
+        }) # [!code ++]
+    } # [!code ++]
+}`,
+})
 
-Invoke inspection inside `access_by_lua_block` at either the `server` level (protecting all routes) or individual `location` blocks:
-
-```nginx
-server {
+const init_access = buildSnippet({
+  lang: 'nginx',
+  code: `server {
     listen 80;
 
-    access_by_lua_block {
-        warden:check()
-    }
+    access_by_lua_block { # [!code ++]
+        warden:check() # [!code ++]
+    } # [!code ++]
     
-    ...
-}
-```
+    # ...
+}`,
+})
 
----
+const initSnippets = computed(() => ({
+  nginx: [
+    { filename: 'init_by_lua_block (Worker Init)', lang: 'nginx', code: init_http.cleanCode, html: init_http.html, hasDiff: init_http.hasDiff },
+    { filename: 'access_by_lua_block (Request Filter)', lang: 'nginx', code: init_access.cleanCode, html: init_access.html, hasDiff: init_access.hasDiff },
+  ],
+}))
 
-## 2. Complete Configuration Options
-
-```lua
-warden = routewarden.new({
+// ─── 2. Complete Configuration Options ────────────────────────────────────────
+const full_config = buildSnippet({
+  lang: 'lua',
+  code: `warden = routewarden.new({
     -- Master toggle
     enabled = true,                        -- Default: true
     debug = false,                         -- Default: false (outputs trace logs via ngx.log)
@@ -102,8 +106,49 @@ warden = routewarden.new({
             title = "Security Verification"
         }
     }
+})`,
 })
-```
+
+const fullConfigSnippets = computed(() => ({
+  nginx: [
+    { filename: 'routewarden-config.lua', lang: 'lua', code: full_config.cleanCode, html: full_config.html, hasDiff: false },
+  ],
+}))
+
+// ─── 5. Client IP Resolution ──────────────────────────────────────────────────
+const ip_resolution = buildSnippet({
+  lang: 'nginx',
+  code: `set_real_ip_from 10.0.0.0/8;
+set_real_ip_from 172.16.0.0/12;
+set_real_ip_from 192.168.0.0/16;
+real_ip_header X-Forwarded-For;
+real_ip_recursive on;`,
+})
+
+const ipSnippets = computed(() => ({
+  nginx: [
+    { filename: 'real_ip.conf', lang: 'nginx', code: ip_resolution.cleanCode, html: ip_resolution.html, hasDiff: false },
+  ],
+}))
+</script>
+
+# NGINX Configuration Reference
+
+Configuration schema, options, and parameters for **RouteWarden for NGINX & OpenResty** (`github.com/routewarden/nginx-warden`).
+
+---
+
+## 1. Lua Module Initialization
+
+Initialize RouteWarden using `routewarden.new(config)` within NGINX's `init_by_lua_block` or `init_worker_by_lua_block`. The returned instance is re-entrant and shared across request worker threads:
+
+<CodeViewer :snippets="initSnippets" />
+
+---
+
+## 2. Complete Configuration Options
+
+<CodeViewer :snippets="fullConfigSnippets" />
 
 ---
 
@@ -156,10 +201,4 @@ RouteWarden evaluates client addresses using the following priority:
 
 When deploying behind Cloudflare, AWS ALB, or an outer proxy, set standard NGINX real-ip directives:
 
-```nginx
-set_real_ip_from 10.0.0.0/8;
-set_real_ip_from 172.16.0.0/12;
-set_real_ip_from 192.168.0.0/16;
-real_ip_header X-Forwarded-For;
-real_ip_recursive on;
-```
+<CodeViewer :snippets="ipSnippets" />

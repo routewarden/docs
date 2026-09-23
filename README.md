@@ -11,7 +11,7 @@
   <a href="https://github.com/routewarden/caddy-warden/actions/workflows/ci.yml"><img src="https://github.com/routewarden/caddy-warden/actions/workflows/ci.yml/badge.svg" alt="Caddy CI Status"></a>
   <a href="https://github.com/routewarden/nginx-warden/actions/workflows/ci.yml"><img src="https://github.com/routewarden/nginx-warden/actions/workflows/ci.yml/badge.svg" alt="NGINX CI Status"></a>
   <a href="https://github.com/routewarden/docs/actions/workflows/deploy-docs.yml"><img src="https://github.com/routewarden/docs/actions/workflows/deploy-docs.yml/badge.svg" alt="Docs Deployment"></a>
-  <a href="https://plugins.traefik.io"><img src="https://img.shields.io/badge/Traefik-v2%20%7C%20v3-blue.svg" alt="Traefik v2/v3 Compatible"></a>
+  <a href="https://plugins.traefik.io/plugins/6aae41dd5b5ee35d8bd24ca5/route-warden"><img src="https://img.shields.io/badge/Traefik-v2%20%7C%20v3-blue.svg" alt="Traefik v2/v3 Compatible"></a>
   <a href="https://caddyserver.com"><img src="https://img.shields.io/badge/Caddy-v2-22b573.svg" alt="Caddy v2 Compatible"></a>
   <a href="https://openresty.org"><img src="https://img.shields.io/badge/OpenResty-Lua-009900.svg" alt="OpenResty Lua Compatible"></a>
   <a href="https://routewarden.github.io/docs/?playground=open"><img src="https://img.shields.io/badge/Playground-Simulation-blue.svg" alt="Security Playground"></a>
@@ -38,7 +38,7 @@ This repository contains the documentation, deployment guides, examples, and rel
 | **Traefik Plugin (traefik-warden)** | [github.com/routewarden/traefik-warden](https://github.com/routewarden/traefik-warden) | Pure Go Traefik plugin with Yaegi compatibility |
 | **Caddy Plugin (caddy-warden)** | [github.com/routewarden/caddy-warden](https://github.com/routewarden/caddy-warden) | Official Caddy v2 security module and Caddyfile directive |
 | **NGINX Plugin (nginx-warden)** | [github.com/routewarden/nginx-warden](https://github.com/routewarden/nginx-warden) | High-performance Lua security module for NGINX & OpenResty |
-| **Traefik Plugin Catalog** | [plugins.traefik.io](https://plugins.traefik.io) | Official Traefik Plugin listing |
+| **Traefik Plugin Catalog** | [plugins.traefik.io](https://plugins.traefik.io/plugins/6aae41dd5b5ee35d8bd24ca5/route-warden) | Official Traefik Plugin listing |
 | **Documentation Portal** | [routewarden.github.io/docs](https://routewarden.github.io/docs/) | Installation guides, architecture, and configuration options |
 | **Examples Cookbook** | [Documentation Examples](https://routewarden.github.io/docs/examples/overview) | Ready-to-use Docker Compose and Kubernetes configurations |
 | **Issue Tracker** | [RouteWarden Issues](https://github.com/routewarden/traefik-warden/issues) | Bug reports and feature discussions |
