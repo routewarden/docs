@@ -77,14 +77,10 @@ test('syncVersion updates versions in files when target version changes', (t) =>
   const result = syncVersion({ rootDir: ws })
 
   assert.equal(result.targetVersion, 'v0.3.0')
-  assert.ok(result.updatedFiles.includes('package.json'))
+  assert.ok(!result.updatedFiles.includes('package.json'))
   assert.ok(result.updatedFiles.includes('docs/versions.json'))
   assert.ok(result.updatedFiles.includes('README.md'))
   assert.ok(result.updatedFiles.includes('examples/01-basic-sensitive-files/docker-compose.yml'))
-
-  // Verify package.json
-  const pkg = JSON.parse(fs.readFileSync(path.join(ws, 'package.json'), 'utf8'))
-  assert.equal(pkg.version, '0.3.0')
 
   // Verify docs/versions.json
   const registry = JSON.parse(fs.readFileSync(path.join(ws, 'docs/versions.json'), 'utf8'))
@@ -139,10 +135,6 @@ test('snapshotVersion archives previous minor version and updates registry and f
   // Verify docs/version.json updated
   const versionData = JSON.parse(fs.readFileSync(path.join(ws, 'docs/version.json'), 'utf8'))
   assert.equal(versionData.version, 'v0.3.0')
-
-  // Verify package.json was updated through sync
-  const pkg = JSON.parse(fs.readFileSync(path.join(ws, 'package.json'), 'utf8'))
-  assert.equal(pkg.version, '0.3.0')
 })
 
 test('snapshotVersion skips when target version matches current version', (t) => {

@@ -1,0 +1,169 @@
+/* ============================================================
+   Homepage & Documentation Custom Layouts
+   ============================================================ */
+
+/* Homepage Pipeline Grid */
+.home-pipeline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 28px 0;
+}
+
+.pipeline-step {
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  padding: 18px 20px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.pipeline-step:hover {
+  transform: translateY(-2px);
+  border-color: var(--vp-c-brand-1);
+}
+
+.pipeline-num {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--vp-c-brand-1);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.pipeline-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--vp-c-text-1);
+}
+
+.pipeline-desc {
+  font-size: 13px;
+  color: var(--vp-c-text-2);
+  line-height: 1.5;
+}
+
+/* Attack Cards Grid */
+.attack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.attack-card {
+  background: var(--vp-c-bg-alt);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.attack-card h4 {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.attack-card p {
+  font-size: 13px;
+  color: var(--vp-c-text-2);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Active Defense Gzip Bomb Banner */
+.bomb-callout {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(249, 115, 22, 0.08) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 24px 0 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.bomb-callout-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.bomb-badge {
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+
+.bomb-callout-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--vp-c-text-1);
+  margin: 0;
+}
+
+.bomb-callout-body {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+  margin: 0 0 12px 0;
+}
+
+.bomb-callout-code {
+  background: var(--vp-c-bg-alt);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: var(--vp-font-family-mono);
+  font-size: 12.5px;
+  color: var(--vp-c-brand-1);
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+
+.bomb-callout-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--vp-c-text-1);
+}
+
+.bomb-callout-warning strong {
+  color: #eab308;
+}
+
+/* RouteWarden Syntax Highlighting Tokens (Light & Dark) */
+.tok-comment { color: #94a3b8; font-style: italic; }
+.dark .tok-comment { color: #64748b; }
+.tok-keyword { color: #7c3aed; font-weight: 600; }
+.dark .tok-keyword { color: #c084fc; }
+.tok-section { color: #6d28d9; font-weight: 700; }
+.dark .tok-section { color: #d8b4fe; }
+.tok-key { color: #0284c7; font-weight: 600; }
+.dark .tok-key { color: #38bdf8; }
+.tok-str { color: #059669; }
+.dark .tok-str { color: #34d399; }
+.tok-num { color: #d97706; font-weight: 600; }
+.dark .tok-num { color: #fbbf24; }
+.tok-bool { color: #db2777; font-weight: 600; }
+.dark .tok-bool { color: #f472b6; }
+.tok-verb { color: #2563eb; font-weight: 700; }
+.dark .tok-verb { color: #60a5fa; }
+.tok-punct { color: var(--vp-c-text-3); }
+.tok-val { color: var(--vp-c-text-1); }

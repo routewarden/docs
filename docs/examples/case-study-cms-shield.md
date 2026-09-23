@@ -1,3 +1,186 @@
+---
+title: Case Study – CMS Admin & Brute-Force Shielding
+---
+
+<script setup>
+import { computed } from 'vue'
+import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
+
+const s = {
+  traefik_yaml: buildSnippet({ lang: 'yaml', code: `# dynamic_conf.yml
+http:
+  middlewares:
+    wordpress-shield: # [!code ++]
+      plugin: # [!code ++]
+        routewarden: # [!code ++]
+          enabled: true # [!code ++]
+          enableDefaultPatterns: true # Blocks wp-config.php.bak, .sql, .env # [!code ++]
+          pathPatterns: # [!code ++]
+            - '(?i)^/(wp-login\\.php|xmlrpc\\.php)$' # [!code ++]
+            - '(?i)^/wp-admin(/.*)?$' # [!code ++]
+          # Office IP bypasses captcha challenge automatically
+          allowedIps: # [!code ++]
+            - "192.168.1.0/24" # [!code ++]
+            - "10.0.0.0/8" # [!code ++]
+          # Challenge all other external visitors
+          response: # [!code ++]
+            mode: captcha # [!code ++]
+            statusCode: 403 # [!code ++]
+            captcha: # [!code ++]
+              provider: turnstile # [!code ++]
+              siteKey: "0x4AAAAAAtestkey123" # [!code ++]
+              title: "Administrative Verification Required" # [!code ++]
+
+  routers:
+    blog-router:
+      rule: "Host(\`blog.example.com\`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - wordpress-shield # [!code ++]
+      service: wordpress-service` }),
+
+  traefik_toml: buildSnippet({ lang: 'toml', code: `# dynamic_conf.toml
+[http.routers.blog-router]
+  rule = "Host(\`blog.example.com\`)"
+  entryPoints = ["websecure"]
+  middlewares = ["wordpress-shield"]
+  service = "wordpress-service"
+
+[http.middlewares.wordpress-shield.plugin.routewarden] # [!code ++]
+  enabled = true # [!code ++]
+  enableDefaultPatterns = true # [!code ++]
+  pathPatterns = [ # [!code ++]
+    "(?i)^/(wp-login\\\\.php|xmlrpc\\\\.php)$", # [!code ++]
+    "(?i)^/wp-admin(/.*)?$" # [!code ++]
+  ] # [!code ++]
+  allowedIps = ["192.168.1.0/24", "10.0.0.0/8"] # [!code ++]
+
+[http.middlewares.wordpress-shield.plugin.routewarden.response] # [!code ++]
+  mode = "captcha" # [!code ++]
+  statusCode = 403 # [!code ++]
+
+[http.middlewares.wordpress-shield.plugin.routewarden.response.captcha] # [!code ++]
+  provider = "turnstile" # [!code ++]
+  siteKey = "0x4AAAAAAtestkey123" # [!code ++]
+  title = "Administrative Verification Required" # [!code ++]` }),
+
+  traefik_labels: buildSnippet({ lang: 'docker', code: `# Docker Compose Labels
+- "traefik.http.routers.blog.rule=Host(\`blog.example.com\`)"
+- "traefik.http.routers.blog.middlewares=wordpress-shield" # [!code ++]
+- "traefik.http.middlewares.wordpress-shield.plugin.routewarden.enabled=true" # [!code ++]
+- "traefik.http.middlewares.wordpress-shield.plugin.routewarden.pathPatterns=(?i)^/(wp-login\\\\.php|xmlrpc\\\\.php)$,(?i)^/wp-admin(/.*)?$" # [!code ++]
+- "traefik.http.middlewares.wordpress-shield.plugin.routewarden.allowedIps=192.168.1.0/24,10.0.0.0/8" # [!code ++]
+- "traefik.http.middlewares.wordpress-shield.plugin.routewarden.response.mode=captcha" # [!code ++]
+- "traefik.http.middlewares.wordpress-shield.plugin.routewarden.response.captcha.provider=turnstile" # [!code ++]
+- "traefik.http.middlewares.wordpress-shield.plugin.routewarden.response.captcha.siteKey=0x4AAAAAAtestkey123" # [!code ++]` }),
+
+  caddy: buildSnippet({ lang: 'caddy', code: `# Caddyfile
+{
+    order route_warden before reverse_proxy # [!code ++]
+}
+
+blog.example.com {
+    route_warden { # [!code ++]
+        enable_default_patterns true # [!code ++]
+        path_patterns "(?i)^/(wp-login\\.php|xmlrpc\\.php)$" "(?i)^/wp-admin(/.*)?$" # [!code ++]
+        allowed_ips "192.168.1.0/24" "10.0.0.0/8" # [!code ++]
+        response { # [!code ++]
+            mode captcha # [!code ++]
+            status_code 403 # [!code ++]
+            captcha { # [!code ++]
+                provider turnstile # [!code ++]
+                site_key "0x4AAAAAAtestkey123" # [!code ++]
+            } # [!code ++]
+        } # [!code ++]
+    } # [!code ++]
+
+    reverse_proxy wordpress-service:80
+}` }),
+
+  nginx: buildSnippet({ lang: 'nginx', code: `# nginx.conf: WordPress & CMS Shield
+http {
+    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
+
+    init_by_lua_block {
+        local routewarden = require("resty.routewarden") # [!code ++]
+
+        wp_warden = routewarden.new({ # [!code ++]
+            enable_default_patterns = true, # [!code ++]
+            path_patterns = { # [!code ++]
+                "(?i)^/(wp-login\\\\.php|xmlrpc\\\\.php)$", # [!code ++]
+                "(?i)^/wp-admin(/.*)?$" # [!code ++]
+            }, # [!code ++]
+            allowed_ips = { # [!code ++]
+                "192.168.1.0/24", # [!code ++]
+                "10.0.0.0/8" # [!code ++]
+            }, # [!code ++]
+            response = { # [!code ++]
+                mode = "captcha", # [!code ++]
+                status_code = 403, # [!code ++]
+                captcha = { # [!code ++]
+                    provider = "turnstile", # [!code ++]
+                    site_key = "0x4AAAAAAtestkey123", # [!code ++]
+                    title = "Administrative Verification Required" # [!code ++]
+                } # [!code ++]
+            } # [!code ++]
+        }) # [!code ++]
+    }
+
+    server {
+        listen 80;
+        server_name blog.example.com;
+
+        access_by_lua_block {
+            wp_warden:check() # [!code ++]
+        }
+
+        location / {
+            proxy_pass http://wordpress-service:80;
+        }
+    }
+}` }),
+
+  cli: buildSnippet({ lang: 'json', code: `// routewarden.json
+{
+  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "blockPatterns": [
+    "(?i)^/(wp-login\\\\.php|xmlrpc\\\\.php)$",
+    "(?i)^/wp-admin(/.*)?$"
+  ],
+  "allowedIps": ["192.168.1.0/24", "10.0.0.0/8"],
+  "response": {
+    "mode": "captcha",
+    "statusCode": 403,
+    "captcha": {
+      "provider": "turnstile",
+      "siteKey": "0x4AAAAAAtestkey123",
+      "title": "Administrative Verification Required"
+    }
+  }
+}` }),
+}
+
+const snippets = computed(() => ({
+  traefik: [
+    { filename: 'traefik.yaml', lang: 'yaml', code: s.traefik_yaml.cleanCode, html: s.traefik_yaml.html, hasDiff: s.traefik_yaml.hasDiff },
+    { filename: 'traefik.toml', lang: 'toml', code: s.traefik_toml.cleanCode, html: s.traefik_toml.html, hasDiff: s.traefik_toml.hasDiff },
+    { filename: 'docker-compose.yaml', lang: 'docker', code: s.traefik_labels.cleanCode, html: s.traefik_labels.html, hasDiff: s.traefik_labels.hasDiff },
+  ],
+  caddy: [
+    { filename: 'Caddyfile', lang: 'caddy', code: s.caddy.cleanCode, html: s.caddy.html, hasDiff: s.caddy.hasDiff },
+  ],
+  nginx: [
+    { filename: 'nginx.conf', lang: 'nginx', code: s.nginx.cleanCode, html: s.nginx.html, hasDiff: s.nginx.hasDiff },
+  ],
+  cli: [
+    { filename: 'routewarden.json', lang: 'json', code: s.cli.cleanCode, html: s.cli.html, hasDiff: s.cli.hasDiff },
+  ],
+}))
+</script>
+
 # Case Study: CMS Admin & Brute-Force Shielding (WordPress & Ghost)
 
 This case study demonstrates how to protect content management systems (WordPress, Ghost, Strapi, Drupal) against automated credential-stuffing bots, brute-force login attempts, and XML-RPC amplification attacks.
@@ -25,173 +208,4 @@ If content creators always connect via a corporate VPN or office IP, RouteWarden
 
 ## Middleware Configuration (Captcha Challenge Mode)
 
-::: code-group
-
-```json [routewarden.json]
-// routewarden.json
-{
-  "$schema": "https://raw.githubusercontent.com/routewarden/cli/main/config.schema.json",
-  "enabled": true,
-  "enableDefaultPatterns": true,
-  "blockPatterns": [
-    "(?i)^/(wp-login\\.php|xmlrpc\\.php)$",
-    "(?i)^/wp-admin(/.*)?$"
-  ],
-  "allowedIps": ["192.168.1.0/24", "10.0.0.0/8"],
-  "response": {
-    "mode": "captcha",
-    "statusCode": 403,
-    "captcha": {
-      "provider": "turnstile",
-      "siteKey": "0x4AAAAAAtestkey123",
-      "title": "Administrative Verification Required"
-    }
-  }
-}
-```
-
-```yaml [Traefik (YAML)]
-# dynamic_conf.yml
-http:
-  middlewares:
-    wordpress-shield:
-      plugin:
-        routewarden:
-          enabled: true
-          enableDefaultPatterns: true # Blocks wp-config.php.bak, .sql, .env
-          pathPatterns:
-            - '(?i)^/(wp-login\.php|xmlrpc\.php)$'
-            - '(?i)^/wp-admin(/.*)?$'
-          # Office IP bypasses captcha challenge automatically
-          allowedIps:
-            - "192.168.1.0/24"
-            - "10.0.0.0/8"
-          # Challenge all other external visitors
-          response:
-            mode: captcha
-            statusCode: 403
-            captcha:
-              provider: turnstile
-              siteKey: "0x4AAAAAAtestkey123"
-              title: "Administrative Verification Required"
-
-  routers:
-    blog-router:
-      rule: "Host(`blog.example.com`)"
-      entryPoints:
-        - websecure
-      middlewares:
-        - wordpress-shield
-      service: wordpress-service
-```
-
-```nginx [Caddy (Caddyfile)]
-# Caddyfile
-{
-    order route_warden before reverse_proxy
-}
-
-blog.example.com {
-    route_warden {
-        enable_default_patterns true
-        path_patterns "(?i)^/(wp-login\.php|xmlrpc\.php)$" "(?i)^/wp-admin(/.*)?$"
-        allowed_ips "192.168.1.0/24" "10.0.0.0/8"
-        response {
-            mode captcha
-            status_code 403
-            captcha {
-                provider turnstile
-                site_key "0x4AAAAAAtestkey123"
-            }
-        }
-    }
-
-    reverse_proxy wordpress-service:80
-}
-```
-
-```nginx [NGINX (OpenResty)]
-# nginx.conf: WordPress & CMS Shield
-http {
-    lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
-
-    init_by_lua_block {
-        local routewarden = require("resty.routewarden")
-
-        wp_warden = routewarden.new({
-            enable_default_patterns = true,
-            path_patterns = {
-                "(?i)^/(wp-login\\.php|xmlrpc\\.php)$",
-                "(?i)^/wp-admin(/.*)?$"
-            },
-            allowed_ips = {
-                "192.168.1.0/24",
-                "10.0.0.0/8"
-            },
-            response = {
-                mode = "captcha",
-                status_code = 403,
-                captcha = {
-                    provider = "turnstile",
-                    site_key = "0x4AAAAAAtestkey123",
-                    title = "Administrative Verification Required"
-                }
-            }
-        })
-    }
-
-    server {
-        listen 80;
-        server_name blog.example.com;
-
-        access_by_lua_block {
-            wp_warden:check()
-        }
-
-        location / {
-            proxy_pass http://wordpress-service:80;
-        }
-    }
-}
-```
-
-```toml [Traefik (TOML)]
-# dynamic_conf.toml
-[http.routers.blog-router]
-  rule = "Host(`blog.example.com`)"
-  entryPoints = ["websecure"]
-  middlewares = ["wordpress-shield"]
-  service = "wordpress-service"
-
-[http.middlewares.wordpress-shield.plugin.routewarden]
-  enabled = true
-  enableDefaultPatterns = true
-  pathPatterns = [
-    "(?i)^/(wp-login\\.php|xmlrpc\\.php)$",
-    "(?i)^/wp-admin(/.*)?$"
-  ]
-  allowedIps = ["192.168.1.0/24", "10.0.0.0/8"]
-
-[http.middlewares.wordpress-shield.plugin.routewarden.response]
-  mode = "captcha"
-  statusCode = 403
-
-[http.middlewares.wordpress-shield.plugin.routewarden.response.captcha]
-  provider = "turnstile"
-  siteKey = "0x4AAAAAAtestkey123"
-  title = "Administrative Verification Required"
-```
-
-```bash [CLI]
-# Docker Compose Labels equivalent
-- "traefik.http.routers.blog.rule=Host(`blog.example.com`)"
-- "traefik.http.routers.blog.middlewares=wordpress-shield"
-- "traefik.http.middlewares.wordpress-shield.plugin.routewarden.enabled=true"
-- "traefik.http.middlewares.wordpress-shield.plugin.routewarden.pathPatterns=(?i)^/(wp-login\\.php|xmlrpc\\.php)$,(?i)^/wp-admin(/.*)?$"
-- "traefik.http.middlewares.wordpress-shield.plugin.routewarden.allowedIps=192.168.1.0/24,10.0.0.0/8"
-- "traefik.http.middlewares.wordpress-shield.plugin.routewarden.response.mode=captcha"
-- "traefik.http.middlewares.wordpress-shield.plugin.routewarden.response.captcha.provider=turnstile"
-- "traefik.http.middlewares.wordpress-shield.plugin.routewarden.response.captcha.siteKey=0x4AAAAAAtestkey123"
-```
-
-:::
+<CodeViewer :snippets="snippets" />

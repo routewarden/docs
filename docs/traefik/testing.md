@@ -1,3 +1,39 @@
+<script setup>
+import { computed } from 'vue'
+import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
+
+const test_race = buildSnippet({
+  lang: 'bash',
+  code: `go test -v -race ./...`,
+})
+
+const test_coverage = buildSnippet({
+  lang: 'bash',
+  code: `go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out`,
+})
+
+const test_suites = buildSnippet({
+  lang: 'bash',
+  code: `# Run only security evasion tests
+go test -v -run TestRouteWarden_SecurityEvasionVectors ./...
+
+# Run only IP / CIDR whitelist evaluation tests
+go test -v -run TestIPFilter ./...
+
+# Run only multi-middleware integration pipeline tests
+go test -v -run TestPipeline ./...`,
+})
+
+const testSnippets = computed(() => ({
+  traefik: [
+    { filename: 'Race Detector', lang: 'bash', code: test_race.cleanCode, html: test_race.html, hasDiff: false },
+    { filename: 'Code Coverage', lang: 'bash', code: test_coverage.cleanCode, html: test_coverage.html, hasDiff: false },
+    { filename: 'Test Suites', lang: 'bash', code: test_suites.cleanCode, html: test_suites.html, hasDiff: false },
+  ],
+}))
+</script>
+
 # Testing & Verification
 
 RouteWarden contains a comprehensive, multi-layer testing architecture designed to guarantee correctness, concurrency safety, and total compliance with Traefik's Yaegi interpreter constraints.
@@ -6,42 +42,9 @@ RouteWarden contains a comprehensive, multi-layer testing architecture designed 
 
 ## Running Automated Tests
 
-### 1. Run All Tests with Race Detector
-RouteWarden handles concurrent web requests under load. Always execute tests with the Go race detector enabled:
-
-```bash
-go test -v -race ./...
-```
-
-### 2. Check Statement Code Coverage
-Measure statement coverage across the codebase:
-
-```bash
-go test -cover ./...
-```
-
-To generate and view an interactive HTML coverage heatmap in your browser:
-
-```bash
-go test -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out
-```
+<CodeViewer :snippets="testSnippets" />
 
 *(Current statement coverage stands at **>92%** across all modules).*
-
-### 3. Run Specific Test Suites
-You can target individual component suites directly:
-
-```bash
-# Run only security evasion tests
-go test -v -run TestRouteWarden_SecurityEvasionVectors ./...
-
-# Run only IP / CIDR whitelist evaluation tests
-go test -v -run TestIPFilter ./...
-
-# Run only multi-middleware integration pipeline tests
-go test -v -run TestPipeline ./...
-```
 
 ---
 

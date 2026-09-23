@@ -156,10 +156,13 @@ export default defineConfig({
       },
       {
         text: 'Solutions',
-        activeMatch: '^/examples/',
+        activeMatch: '^/(examples|reference)/',
         items: [
           { text: 'Production Case Studies', link: '/examples/case-study-immich' },
-          { text: 'Common Recipes & Compose', link: '/examples/basic-sensitive-files' }
+          { text: 'Common Recipes & Compose', link: '/examples/basic-sensitive-files' },
+          { text: 'Custom Paths & Regex Guide', link: '/reference/custom-paths' },
+          { text: 'Response Modes Reference', link: '/reference/response-modes' },
+          { text: 'Anti-Evasion Engine', link: '/reference/anti-evasion' }
         ]
       },
       {
@@ -176,53 +179,11 @@ export default defineConfig({
         items: [
           ...versionsRegistry.versions.map(v => ({ text: v.text, link: v.link })),
           { text: 'Changelog & Migrations', link: '/core/changelog' },
-          { text: 'Traefik Plugin Catalog', link: 'https://plugins.traefik.io' }
+          { text: 'Traefik Plugin Catalog', link: 'https://plugins.traefik.io/plugins/6aae41dd5b5ee35d8bd24ca5/route-warden' }
         ]
       }
     ],
     sidebar: {
-      '/v0.3/': [
-        {
-          text: 'RouteWarden v0.3.x',
-          collapsed: false,
-          items: [
-            { text: 'Traefik Gateway (v0.3.x)', link: '/v0.3/traefik/getting-started' },
-            { text: 'Traefik Config (v0.3.x)', link: '/v0.3/traefik/configuration' },
-            { text: 'Caddy Gateway (v0.3.x)', link: '/v0.3/caddy/getting-started' },
-            { text: 'Caddyfile Reference (v0.3.x)', link: '/v0.3/caddy/caddyfile' },
-            { text: 'Core Architecture (v0.3.x)', link: '/v0.3/core/architecture' },
-            { text: 'Response Modes (v0.3.x)', link: '/v0.3/core/response-modes' },
-            { text: 'Custom Patterns (v0.3.x)', link: '/v0.3/core/custom-patterns' },
-            { text: 'Switch to Latest (v1.0.x) ➔', link: '/traefik/getting-started' }
-          ]
-        }
-      ],
-      '/v0.2/': [
-        {
-          text: 'RouteWarden v0.2.x',
-          collapsed: false,
-          items: [
-            { text: 'Traefik Gateway (v0.2.x)', link: '/v0.2/traefik/getting-started' },
-            { text: 'Traefik Config (v0.2.x)', link: '/v0.2/traefik/configuration' },
-            { text: 'Caddy Gateway (v0.2.x)', link: '/v0.2/caddy/getting-started' },
-            { text: 'Caddyfile Reference (v0.2.x)', link: '/v0.2/caddy/caddyfile' },
-            { text: 'Core Architecture (v0.2.x)', link: '/v0.2/core/architecture' },
-            { text: 'Response Modes (v0.2.x)', link: '/v0.2/core/response-modes' },
-            { text: 'Switch to Latest (v1.0.x) ➔', link: '/traefik/getting-started' }
-          ]
-        }
-      ],
-      '/v0.1/': [
-        {
-          text: 'RouteWarden v0.1.x',
-          collapsed: false,
-          items: [
-            { text: 'Overview & Setup (v0.1.x)', link: '/v0.1/guide/getting-started' },
-            { text: 'Configuration (v0.1.x)', link: '/v0.1/reference/configuration' },
-            { text: 'Switch to Latest (v1.0.x) ➔', link: '/traefik/getting-started' }
-          ]
-        }
-      ],
       '/traefik/': [
         {
           text: 'Traefik Gateway',
@@ -234,6 +195,15 @@ export default defineConfig({
             { text: 'Local Deployment', link: '/traefik/local-deployment' },
             { text: 'Testing & Verification', link: '/traefik/testing' },
             { text: 'Recipes & Blueprints', link: '/traefik/examples' }
+          ]
+        },
+        {
+          text: 'References',
+          collapsed: false,
+          items: [
+            { text: 'Custom Paths & Regex Guide', link: '/reference/custom-paths' },
+            { text: 'Response Modes Reference', link: '/reference/response-modes' },
+            { text: 'Anti-Evasion Engine', link: '/reference/anti-evasion' }
           ]
         },
         {
@@ -249,7 +219,6 @@ export default defineConfig({
             { text: '7. CrowdSec Auto-Ban Shield', link: '/examples/crowdsec' }
           ]
         },
-
         {
           text: 'Core Engine',
           collapsed: false,
@@ -274,6 +243,15 @@ export default defineConfig({
           ]
         },
         {
+          text: 'References',
+          collapsed: false,
+          items: [
+            { text: 'Custom Paths & Regex Guide', link: '/reference/custom-paths' },
+            { text: 'Response Modes Reference', link: '/reference/response-modes' },
+            { text: 'Anti-Evasion Engine', link: '/reference/anti-evasion' }
+          ]
+        },
+        {
           text: 'Production Case Studies',
           collapsed: false,
           items: [
@@ -286,7 +264,6 @@ export default defineConfig({
             { text: '7. CrowdSec Auto-Ban Shield', link: '/examples/crowdsec' }
           ]
         },
-
         {
           text: 'Core Engine',
           collapsed: false,
@@ -307,6 +284,15 @@ export default defineConfig({
             { text: 'Getting Started (Docker/Lua)', link: '/nginx/getting-started' },
             { text: 'Configuration Reference', link: '/nginx/configuration' },
             { text: 'Recipes & Blueprints', link: '/nginx/examples' }
+          ]
+        },
+        {
+          text: 'References',
+          collapsed: false,
+          items: [
+            { text: 'Custom Paths & Regex Guide', link: '/reference/custom-paths' },
+            { text: 'Response Modes Reference', link: '/reference/response-modes' },
+            { text: 'Anti-Evasion Engine', link: '/reference/anti-evasion' }
           ]
         },
         {
@@ -342,11 +328,19 @@ export default defineConfig({
             { text: 'Anti-Evasion Normalization', link: '/core/anti-evasion' },
             { text: 'Response Modes (13 Actions)', link: '/core/response-modes' },
             { text: 'Custom Regex Patterns', link: '/core/custom-patterns' },
-            { text: 'CLI & JSON Schema', link: '/core/cli' },
+            { text: 'RouteWarden CLI Portal ↗', link: 'https://routewarden.github.io/cli/' },
             { text: 'Changelog & Migrations', link: '/core/changelog' }
           ]
         },
-
+        {
+          text: 'References',
+          collapsed: false,
+          items: [
+            { text: 'Custom Paths & Regex Guide', link: '/reference/custom-paths' },
+            { text: 'Response Modes Reference', link: '/reference/response-modes' },
+            { text: 'Anti-Evasion Engine', link: '/reference/anti-evasion' }
+          ]
+        },
         {
           text: 'Production Case Studies',
           collapsed: false,
@@ -372,6 +366,15 @@ export default defineConfig({
       ],
       '/examples/': [
         {
+          text: 'References',
+          collapsed: false,
+          items: [
+            { text: 'Custom Paths & Regex Guide', link: '/reference/custom-paths' },
+            { text: 'Response Modes Reference', link: '/reference/response-modes' },
+            { text: 'Anti-Evasion Engine', link: '/reference/anti-evasion' }
+          ]
+        },
+        {
           text: 'Production Case Studies',
           collapsed: false,
           items: [
@@ -395,6 +398,41 @@ export default defineConfig({
             { text: '4. IP Whitelisting', link: '/examples/ip-whitelisting' },
             { text: '5. Captcha Challenge', link: '/examples/captcha' },
             { text: '6. Kubernetes IngressRoute', link: '/examples/kubernetes' }
+          ]
+        },
+        {
+          text: 'Gateways & Core',
+          collapsed: false,
+          items: [
+            { text: 'Traefik Plugin ➔', link: '/traefik/' },
+            { text: 'Caddy Module ➔', link: '/caddy/' },
+            { text: 'NGINX Module ➔', link: '/nginx/' },
+            { text: 'Core Architecture ➔', link: '/core/architecture' }
+          ]
+        }
+      ],
+      '/reference/': [
+        {
+          text: 'References',
+          collapsed: false,
+          items: [
+            { text: 'Custom Paths & Regex Guide', link: '/reference/custom-paths' },
+            { text: 'Response Modes Reference', link: '/reference/response-modes' },
+            { text: 'Anti-Evasion Engine', link: '/reference/anti-evasion' }
+          ]
+        },
+        {
+          text: 'Production Case Studies',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/examples/overview' },
+            { text: '1. Immich Dual-Router Shield', link: '/examples/case-study-immich' },
+            { text: '2. Zero-Trust Webhooks', link: '/examples/case-study-webhooks' },
+            { text: '3. Observability Cloaking', link: '/examples/case-study-observability' },
+            { text: '4. CMS & WordPress Shield', link: '/examples/case-study-cms-shield' },
+            { text: '5. Password Vaults (Vaultwarden)', link: '/examples/case-study-vaultwarden' },
+            { text: '6. Honeypots & Gzip Bombs', link: '/examples/case-study-honeypot-staging' },
+            { text: '7. CrowdSec Auto-Ban Shield', link: '/examples/crowdsec' }
           ]
         },
         {
@@ -439,6 +477,15 @@ export default defineConfig({
           ]
         },
         {
+          text: 'References',
+          collapsed: false,
+          items: [
+            { text: 'Custom Paths & Regex Guide', link: '/reference/custom-paths' },
+            { text: 'Response Modes Reference', link: '/reference/response-modes' },
+            { text: 'Anti-Evasion Engine', link: '/reference/anti-evasion' }
+          ]
+        },
+        {
           text: 'Core Defense Engine',
           collapsed: false,
           items: [
@@ -449,7 +496,6 @@ export default defineConfig({
             { text: 'Changelog & Migrations', link: '/core/changelog' }
           ]
         },
-
         {
           text: 'Production Case Studies',
           collapsed: false,

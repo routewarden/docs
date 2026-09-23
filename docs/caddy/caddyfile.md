@@ -1,33 +1,36 @@
-# Caddyfile Directive & JSON Reference
-
-Comprehensive syntax and configuration options for **Caddy-Warden** (`github.com/routewarden/caddy-warden`).
-
 ---
-
-## 1. Directive Ordering
-
-Caddy evaluates HTTP handler directives strictly according to order. Because RouteWarden acts as an edge security boundary to neutralize attacks before backend processing or authentication, configure directive ordering in global options:
-
-```nginx
-{
-    order route_warden before basicauth
-}
-```
-
-Or before `reverse_proxy` if you do not use Caddy's built-in `basicauth`:
-
-```nginx
-{
-    order route_warden before reverse_proxy
-}
-```
-
+title: Caddyfile Directive & JSON Reference
 ---
+<script setup>
+import { computed } from 'vue'
+import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
 
-## 2. Complete Caddyfile Schema
+// ─── 1. Directive Ordering ──────────────────────────────────────────────────
+const order_basicauth = buildSnippet({
+  lang: 'caddy',
+  code: `{
+    order route_warden before basicauth # [!code ++]
+}`,
+})
 
-```nginx
-route_warden {
+const order_reverse_proxy = buildSnippet({
+  lang: 'caddy',
+  code: `{
+    order route_warden before reverse_proxy # [!code ++]
+}`,
+})
+
+const orderingSnippets = computed(() => ({
+  caddy: [
+    { filename: 'Before Basicauth', lang: 'caddy', code: order_basicauth.cleanCode, html: order_basicauth.html, hasDiff: order_basicauth.hasDiff },
+    { filename: 'Before Reverse Proxy', lang: 'caddy', code: order_reverse_proxy.cleanCode, html: order_reverse_proxy.html, hasDiff: order_reverse_proxy.hasDiff },
+  ],
+}))
+
+// ─── 2. Complete Caddyfile Schema ───────────────────────────────────────────
+const schema_code = buildSnippet({
+  lang: 'caddy',
+  code: `route_warden {
     # Boolean Flags
     enabled <true|false>                        # Default: true
     debug <true|false>                          # Default: false (verbose diagnostic logs)
@@ -66,8 +69,58 @@ route_warden {
             site_key <key>
         }
     }
-}
-```
+}`,
+})
+
+const schemaSnippets = computed(() => ({
+  caddy: [
+    { filename: 'Caddyfile Schema', lang: 'caddy', code: schema_code.cleanCode, html: schema_code.html, hasDiff: false },
+  ],
+}))
+
+// ─── 5. JSON Configuration (Caddy REST API) ─────────────────────────────────
+const api_code = buildSnippet({
+  lang: 'json',
+  code: `{
+  "handler": "route_warden", // [!code ++]
+  "enabled": true, // [!code ++]
+  "enable_default_patterns": true, // [!code ++]
+  "allowed_ips": ["10.0.0.0/8", "192.168.1.50"], // [!code ++]
+  "methods": ["GET", "POST"], // [!code ++]
+  "path_patterns": ["(?i)^/admin(/.*)?$"], // [!code ++]
+  "allow_patterns": ["(?i)^/admin/health$"], // [!code ++]
+  "response": { // [!code ++]
+    "mode": "json", // [!code ++]
+    "status_code": 403, // [!code ++]
+    "body": "{\\"error\\":\\"Forbidden: Authorized Access Only\\"}" // [!code ++]
+  } // [!code ++]
+}`,
+})
+
+const apiSnippets = computed(() => ({
+  caddy: [
+    { filename: 'caddy-api.json', lang: 'json', code: api_code.cleanCode, html: api_code.html, hasDiff: api_code.hasDiff },
+  ],
+}))
+</script>
+
+# Caddyfile Directive & JSON Reference
+
+Comprehensive syntax and configuration options for **Caddy-Warden** (`github.com/routewarden/caddy-warden`).
+
+---
+
+## 1. Directive Ordering
+
+Caddy evaluates HTTP handler directives strictly according to order. Because RouteWarden acts as an edge security boundary to neutralize attacks before backend processing or authentication, configure directive ordering in global options:
+
+<CodeViewer :snippets="orderingSnippets" />
+
+---
+
+## 2. Complete Caddyfile Schema
+
+<CodeViewer :snippets="schemaSnippets" />
 
 ---
 
@@ -113,19 +166,4 @@ route_warden {
 
 For zero-downtime environments configured via Caddy's dynamic API:
 
-```json
-{
-  "handler": "route_warden",
-  "enabled": true,
-  "enable_default_patterns": true,
-  "allowed_ips": ["10.0.0.0/8", "192.168.1.50"],
-  "methods": ["GET", "POST"],
-  "path_patterns": ["(?i)^/admin(/.*)?$"],
-  "allow_patterns": ["(?i)^/admin/health$"],
-  "response": {
-    "mode": "json",
-    "status_code": 403,
-    "body": "{\"error\":\"Forbidden: Authorized Access Only\"}"
-  }
-}
-```
+<CodeViewer :snippets="apiSnippets" />

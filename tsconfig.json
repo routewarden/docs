@@ -9,11 +9,13 @@
     "isolatedModules": true,
     "esModuleInterop": true,
     "lib": ["ESNext", "DOM"],
+    "types": ["node"],
     "skipLibCheck": true,
     "noEmit": true
   },
   "include": [
     "docs/.vitepress/**/*.ts",
+    "docs/.vitepress/**/*.mts",
     "docs/.vitepress/**/*.d.ts",
     "docs/.vitepress/**/*.vue"
   ]

@@ -1,59 +1,52 @@
-# Caddy-Warden: Caddy Security Module
+<script setup>
+import { computed } from 'vue'
+import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
 
-**Caddy-Warden** (`github.com/routewarden/caddy-warden`) is the official **Caddy v2** security module from RouteWarden. It brings high-performance sensitive path defense, anti-evasion normalization, IP allowlisting, and active deception defenses to Caddy web servers.
-
----
-
-## Key Capabilities
-
-- **Zero-Config Sensitive File Shielding**: Blocks `.env`, `.git`, `.aws`, `.ssh`, `.sql`, database dumps, and server manifests out-of-the-box (`enable_default_patterns`).
-- **Anti-Evasion Engine**: Normalizes multiple URL encodings (`%252e%252e`), semicolon matrix parameters (`/;param/.env`), Windows backslashes (`\`), and null bytes (`%00`) before pattern matching.
-- **IP & CIDR Allowlisting**: Exempt trusted corporate subnets, office IPs, or VPNs (`allowed_ips`) using client IP detection or upstream proxy headers (`X-Forwarded-For`, `X-Real-IP`).
-- **Multi-Action Defense Engine**: Respond with JSON errors, branded HTML, Cloudflare Turnstile/hCaptcha verification challenges, silent TCP resets (`silent_drop`), or bot-neutralizing **Gzip Bombs** (`gzip_bomb`).
-
----
-
-## Installation & Building Caddy
-
-Caddy uses [xcaddy](https://github.com/caddyserver/xcaddy) to compile custom builds with plugins:
-
-### Using xcaddy (Recommended)
-
-```bash
-# Install xcaddy if you haven't already
+// ─── Installation: xcaddy ───────────────────────────────────────────────────
+const xcaddy_code = buildSnippet({
+  lang: 'bash',
+  code: `# Install xcaddy if you haven't already
 go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
 # Build Caddy with caddy-warden
-xcaddy build \
-  --with github.com/routewarden/caddy-warden@{{version}}
-```
+xcaddy build \\
+  --with github.com/routewarden/caddy-warden@{{version}}`,
+})
 
-### Using Dockerfile
+const xcaddySnippets = computed(() => ({
+  caddy: [
+    { filename: 'Terminal', lang: 'bash', code: xcaddy_code.cleanCode, html: xcaddy_code.html, hasDiff: false },
+  ],
+}))
 
-```dockerfile
-# Dockerfile
+// ─── Installation: Dockerfile ───────────────────────────────────────────────
+const dockerfile_code = buildSnippet({
+  lang: 'dockerfile',
+  code: `# Dockerfile
 FROM caddy:2-builder AS builder
 
-RUN xcaddy build \
-    --with github.com/routewarden/caddy-warden@{{version}}
+RUN xcaddy build \\ # [!code ++]
+    --with github.com/routewarden/caddy-warden@{{version}} # [!code ++]
 
 FROM caddy:2-alpine
 
-COPY --from=builder /usr/bin/caddy /usr/bin/caddy
-```
+COPY --from=builder /usr/bin/caddy /usr/bin/caddy # [!code ++]`,
+})
 
-### Using Docker Compose
+const dockerfileSnippets = computed(() => ({
+  caddy: [
+    { filename: 'Dockerfile', lang: 'dockerfile', code: dockerfile_code.cleanCode, html: dockerfile_code.html, hasDiff: dockerfile_code.hasDiff },
+  ],
+}))
 
-Run Caddy with RouteWarden alongside your upstream web services using a dedicated `Dockerfile`:
-
-::: code-group
-
-```yaml [docker-compose.yml]
-services:
+// ─── Installation: Docker Compose ──────────────────────────────────────────
+const compose_yaml = buildSnippet({
+  lang: 'yaml',
+  code: `services:
   caddy:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: # [!code ++]
+      context: . # [!code ++]
+      dockerfile: Dockerfile # [!code ++]
     ports:
       - "80:80"
       - "443:443"
@@ -71,71 +64,59 @@ services:
 
 volumes:
   caddy_data:
-  caddy_config:
-```
+  caddy_config:`,
+})
 
-```dockerfile [Dockerfile]
-FROM caddy:2-builder AS builder
+const compose_dockerfile = buildSnippet({
+  lang: 'dockerfile',
+  code: `FROM caddy:2-builder AS builder
 
-RUN xcaddy build \
-    --with github.com/routewarden/caddy-warden@{{version}}
+RUN xcaddy build \\ # [!code ++]
+    --with github.com/routewarden/caddy-warden@{{version}} # [!code ++]
 
 FROM caddy:2-alpine
 
-COPY --from=builder /usr/bin/caddy /usr/bin/caddy
-```
+COPY --from=builder /usr/bin/caddy /usr/bin/caddy # [!code ++]`,
+})
 
-```nginx [Caddyfile]
-{
-    order route_warden before reverse_proxy
+const compose_caddyfile = buildSnippet({
+  lang: 'caddy',
+  code: `{
+    order route_warden before reverse_proxy # [!code ++]
 }
 
 example.com {
-    route_warden {
-        enable_default_patterns true
-        response {
-            mode json
-            status_code 404
-            body "{\"error\":\"Not Found\"}"
-        }
-    }
+    route_warden { # [!code ++]
+        enable_default_patterns true # [!code ++]
+        response { # [!code ++]
+            mode json # [!code ++]
+            status_code 404 # [!code ++]
+            body "{\\"error\\":\\"Not Found\\"}" # [!code ++]
+        } # [!code ++]
+    } # [!code ++]
 
     reverse_proxy webapp:80
-}
-```
+}`,
+})
 
-:::
+const compose_up = buildSnippet({
+  lang: 'bash',
+  code: `docker compose up -d --build`,
+})
 
-Run the stack:
+const composeSnippets = computed(() => ({
+  caddy: [
+    { filename: 'docker-compose.yml', lang: 'yaml', code: compose_yaml.cleanCode, html: compose_yaml.html, hasDiff: compose_yaml.hasDiff },
+    { filename: 'Dockerfile', lang: 'dockerfile', code: compose_dockerfile.cleanCode, html: compose_dockerfile.html, hasDiff: compose_dockerfile.hasDiff },
+    { filename: 'Caddyfile', lang: 'caddy', code: compose_caddyfile.cleanCode, html: compose_caddyfile.html, hasDiff: compose_caddyfile.hasDiff },
+    { filename: 'Terminal', lang: 'bash', code: compose_up.cleanCode, html: compose_up.html, hasDiff: false },
+  ],
+}))
 
-```bash
-docker compose up -d --build
-```
-
----
-
-## Configuration
-
-You can define RouteWarden security rules using **`routewarden.json` (Recommended Universal Schema)** as your single source of truth, directly in your **Caddyfile**, or via Caddy's dynamic **JSON API**.
-
-### Option 1: `routewarden.json` (Recommended Universal Schema)
-
-#### How `routewarden.json` Works with Caddy
-
-`routewarden.json` acts as a portable security policy with IDE autocompletion and CI/CD validation. Its properties correspond directly to Caddy's directive blocks and JSON handler objects:
-- `"methods"` ➔ Caddyfile `methods GET POST` / JSON `"methods": ["GET", "POST"]`
-- `"allowedIps"` ➔ Caddyfile `allowed_ips ...` / JSON `"allowed_ips": [...]`
-- `"pathPatterns"` ➔ Caddyfile `path_patterns ...` / JSON `"path_patterns": [...]`
-- `"response"` ➔ Caddyfile `response { mode ... }` / JSON `"response": { ... }`
-
-::: code-group
-
-```json [routewarden.json (Source of Truth)]
-// Validate: rwarden validate --config routewarden.json (or via docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest validate --config /routewarden.json)
-// Generate Caddy directives:
-//   CLI:    rwarden generate --target caddy --config routewarden.json
-//   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target caddy --config /routewarden.json
-{
+// ─── Configuration: Option 1 (routewarden.json vs Caddyfile vs JSON API) ───
+const config_opt1_json = buildSnippet({
+  lang: 'json',
+  code: `{
   "$schema": "https://routewarden.github.io/cli/schema.json",
   "enabled": true,
   "enableDefaultPatterns": true,
@@ -145,36 +126,38 @@ You can define RouteWarden security rules using **`routewarden.json` (Recommende
   "response": {
     "mode": "json",
     "statusCode": 403,
-    "body": "{\"error\":\"Access Denied\",\"security\":\"RouteWarden Shield\"}"
+    "body": "{\\"error\\":\\"Access Denied\\",\\"security\\":\\"RouteWarden Shield\\"}"
   }
-}
-```
+}`,
+})
 
-```nginx [Equivalent Caddyfile]
-# Caddyfile mapping from routewarden.json
+const config_opt1_caddyfile = buildSnippet({
+  lang: 'caddy',
+  code: `# Caddyfile mapping from routewarden.json
 {
-    order route_warden before reverse_proxy
+    order route_warden before reverse_proxy # [!code ++]
 }
 
 example.com {
-    route_warden {
-        enabled true
-        enable_default_patterns true
-        methods GET POST
-        allowed_ips "10.0.0.0/8" "192.168.1.0/24"
-        response {
-            mode json
-            status_code 403
-            body "{\"error\":\"Access Denied\",\"security\":\"RouteWarden Shield\"}"
-        }
-    }
+    route_warden { # [!code ++]
+        enabled true # [!code ++]
+        enable_default_patterns true # [!code ++]
+        methods GET POST # [!code ++]
+        allowed_ips "10.0.0.0/8" "192.168.1.0/24" # [!code ++]
+        response { # [!code ++]
+            mode json # [!code ++]
+            status_code 403 # [!code ++]
+            body "{\\"error\\":\\"Access Denied\\",\\"security\\":\\"RouteWarden Shield\\"}" # [!code ++]
+        } # [!code ++]
+    } # [!code ++]
 
     reverse_proxy localhost:8080
-}
-```
+}`,
+})
 
-```json [Equivalent Caddy JSON API]
-// POST /load or /config/apps/http/servers/srv0/routes
+const config_opt1_api = buildSnippet({
+  lang: 'json',
+  code: `// POST /load or /config/apps/http/servers/srv0/routes
 {
   "handler": "route_warden",
   "enabled": true,
@@ -184,47 +167,37 @@ example.com {
   "response": {
     "mode": "json",
     "status_code": 403,
-    "body": "{\"error\":\"Access Denied\",\"security\":\"RouteWarden Shield\"}"
+    "body": "{\\"error\\":\\"Access Denied\\",\\"security\\":\\"RouteWarden Shield\\"}"
   }
-}
-```
+}`,
+})
 
-:::
+const configOpt1Snippets = computed(() => ({
+  caddy: [
+    { filename: 'Caddyfile', lang: 'caddy', code: config_opt1_caddyfile.cleanCode, html: config_opt1_caddyfile.html, hasDiff: config_opt1_caddyfile.hasDiff },
+    { filename: 'routewarden.json', lang: 'json', code: config_opt1_json.cleanCode, html: config_opt1_json.html, hasDiff: false },
+    { filename: 'caddy-api.json', lang: 'json', code: config_opt1_api.cleanCode, html: config_opt1_api.html, hasDiff: false },
+  ],
+}))
 
-Validate and verify your rules with `rwarden` before deploying:
+// ─── Directive Ordering ─────────────────────────────────────────────────────
+const ordering_code = buildSnippet({
+  lang: 'caddy',
+  code: `{
+    order route_warden before basicauth # [!code ++]
+}`,
+})
 
-::: code-group
+const orderingSnippets = computed(() => ({
+  caddy: [
+    { filename: 'Caddyfile', lang: 'caddy', code: ordering_code.cleanCode, html: ordering_code.html, hasDiff: ordering_code.hasDiff },
+  ],
+}))
 
-```bash [CLI]
-# Verify syntax, regex compilation, and CIDR blocks offline
-rwarden validate --config routewarden.json
-```
-
-```bash [Docker]
-# Mount configuration file and validate
-docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest validate --config /routewarden.json
-```
-
-:::
-
----
-
-## Directive Ordering
-
-In Caddy, custom HTTP handler modules must be ordered in the middleware chain. Add `order route_warden before basicauth` or `order route_warden before reverse_proxy` inside your Caddyfile global options block:
-
-```nginx
-{
-    order route_warden before basicauth
-}
-```
-
----
-
-## Option 2: Caddyfile Syntax
-
-```nginx
-route_warden {
+// ─── Option 2: Caddyfile Syntax ─────────────────────────────────────────────
+const caddyfile_syntax = buildSnippet({
+  lang: 'caddy',
+  code: `route_warden {
     enabled <true|false>
     enable_default_patterns <true|false>
     enable_default_allow_patterns <true|false>
@@ -249,119 +222,133 @@ route_warden {
             site_key <key>
         }
     }
-}
-```
+}`,
+})
 
----
+const caddyfileSyntaxSnippets = computed(() => ({
+  caddy: [
+    { filename: 'Caddyfile Syntax', lang: 'caddy', code: caddyfile_syntax.cleanCode, html: caddyfile_syntax.html, hasDiff: false },
+  ],
+}))
 
-## Examples
-
-### 1. Basic Production Shield (JSON 404)
-
-Shield all sensitive paths and return a sterile JSON 404 response:
-
-```nginx
-{
-    order route_warden before reverse_proxy
+// ─── Examples: 1. Basic Production Shield ───────────────────────────────────
+const ex1_code = buildSnippet({
+  lang: 'caddy',
+  code: `{
+    order route_warden before reverse_proxy # [!code ++]
 }
 
 example.com {
-    route_warden {
-        enable_default_patterns true
-        response {
-            mode json
-            status_code 404
-            body "{\"error\":\"Not Found\"}"
-        }
-    }
+    route_warden { # [!code ++]
+        enable_default_patterns true # [!code ++]
+        response { # [!code ++]
+            mode json # [!code ++]
+            status_code 404 # [!code ++]
+            body "{\\"error\\":\\"Not Found\\"}" # [!code ++]
+        } # [!code ++]
+    } # [!code ++]
 
     reverse_proxy localhost:8080
-}
-```
+}`,
+})
 
-### 2. IP Whitelisting with Safe Admin Exceptions
+const ex1Snippets = computed(() => ({
+  caddy: [
+    { filename: 'Caddyfile', lang: 'caddy', code: ex1_code.cleanCode, html: ex1_code.html, hasDiff: ex1_code.hasDiff },
+  ],
+}))
 
-Allow corporate VPN (`10.0.0.0/8`) and office IP (`192.168.1.100`) to access administrative endpoints while blocking external crawlers:
-
-```nginx
-{
-    order route_warden before reverse_proxy
+// ─── Examples: 2. IP Whitelisting ───────────────────────────────────────────
+const ex2_code = buildSnippet({
+  lang: 'caddy',
+  code: `{
+    order route_warden before reverse_proxy # [!code ++]
 }
 
 app.example.com {
-    route_warden {
-        enable_default_patterns true
-        path_patterns "(?i)^/admin(/.*)?$" "(?i)^/metrics$"
-        allow_patterns "(?i)^/admin/health$"
-        allowed_ips "10.0.0.0/8" "192.168.1.100"
-        response {
-            mode json
-            status_code 403
-            body "{\"error\":\"Access Denied: Internal Network Only\"}"
-        }
-    }
+    route_warden { # [!code ++]
+        enable_default_patterns true # [!code ++]
+        path_patterns "(?i)^/admin(/.*)?$" "(?i)^/metrics$" # [!code ++]
+        allow_patterns "(?i)^/admin/health$" # [!code ++]
+        allowed_ips "10.0.0.0/8" "192.168.1.100" # [!code ++]
+        response { # [!code ++]
+            mode json # [!code ++]
+            status_code 403 # [!code ++]
+            body "{\\"error\\":\\"Access Denied: Internal Network Only\\"}" # [!code ++]
+        } # [!code ++]
+    } # [!code ++]
 
     reverse_proxy backend:3000
-}
-```
+}`,
+})
 
-### 3. Active Defense: Gzip Bomb Decompression Trap
+const ex2Snippets = computed(() => ({
+  caddy: [
+    { filename: 'Caddyfile', lang: 'caddy', code: ex2_code.cleanCode, html: ex2_code.html, hasDiff: ex2_code.hasDiff },
+  ],
+}))
 
-When automated scrapers scan for `.env` or WordPress admin endpoints, send an active defense gzip bomb stream that expands ~1000× in client RAM:
-
-```nginx
-{
-    order route_warden before reverse_proxy
+// ─── Examples: 3. Active Defense: Gzip Bomb ─────────────────────────────────
+const ex3_code = buildSnippet({
+  lang: 'caddy',
+  code: `{
+    order route_warden before reverse_proxy # [!code ++]
 }
 
 honeypot.example.com {
-    route_warden {
-        enable_default_patterns true
-        path_patterns "(?i)^/wp-login\.php$" "(?i)^/xmlrpc\.php$"
-        response {
-            mode gzip_bomb
-            status_code 200
-            gzip_bomb_mb 10
-        }
-    }
+    route_warden { # [!code ++]
+        enable_default_patterns true # [!code ++]
+        path_patterns "(?i)^/wp-login\\.php$" "(?i)^/xmlrpc\\.php$" # [!code ++]
+        response { # [!code ++]
+            mode gzip_bomb # [!code ++]
+            status_code 200 # [!code ++]
+            gzip_bomb_mb 10 # [!code ++]
+        } # [!code ++]
+    } # [!code ++]
 
     reverse_proxy backend:80
-}
-```
+}`,
+})
 
-### 4. Interactive Captcha Verification
+const ex3Snippets = computed(() => ({
+  caddy: [
+    { filename: 'Caddyfile', lang: 'caddy', code: ex3_code.cleanCode, html: ex3_code.html, hasDiff: ex3_code.hasDiff },
+  ],
+}))
 
-Challenge visitors accessing sensitive URLs using Cloudflare Turnstile:
-
-```nginx
-{
-    order route_warden before reverse_proxy
+// ─── Examples: 4. Interactive Captcha ───────────────────────────────────────
+const ex4_code = buildSnippet({
+  lang: 'caddy',
+  code: `{
+    order route_warden before reverse_proxy # [!code ++]
 }
 
 portal.example.com {
-    route_warden {
-        path_patterns "(?i)^/portal/sensitive(/.*)?$"
-        response {
-            mode captcha
-            captcha {
-                provider turnstile
-                site_key "0x4AAAAAAAxxyyzz"
-            }
-        }
-    }
+    route_warden { # [!code ++]
+        path_patterns "(?i)^/portal/sensitive(/.*)?$" # [!code ++]
+        response { # [!code ++]
+            mode captcha # [!code ++]
+            captcha { # [!code ++]
+                provider turnstile # [!code ++]
+                site_key "0x4AAAAAAAxxyyzz" # [!code ++]
+            } # [!code ++]
+        } # [!code ++]
+    } # [!code ++]
 
     reverse_proxy backend:8080
-}
-```
+}`,
+})
 
----
+const ex4Snippets = computed(() => ({
+  caddy: [
+    { filename: 'Caddyfile', lang: 'caddy', code: ex4_code.cleanCode, html: ex4_code.html, hasDiff: ex4_code.hasDiff },
+  ],
+}))
 
-## JSON Configuration (Caddy Native API)
-
-If you configure Caddy via its native JSON API:
-
-```json
-{
+// ─── JSON Configuration (Caddy Native API) ──────────────────────────────────
+const json_api_code = buildSnippet({
+  lang: 'json',
+  code: `{
   "apps": {
     "http": {
       "servers": {
@@ -371,15 +358,15 @@ If you configure Caddy via its native JSON API:
             {
               "handle": [
                 {
-                  "handler": "route_warden",
-                  "enabled": true,
-                  "enable_default_patterns": true,
-                  "allowed_ips": ["10.0.0.0/8"],
-                  "response": {
-                    "mode": "json",
-                    "status_code": 404,
-                    "body": "{\"error\":\"Not Found\"}"
-                  }
+                  "handler": "route_warden", // [!code ++]
+                  "enabled": true, // [!code ++]
+                  "enable_default_patterns": true, // [!code ++]
+                  "allowed_ips": ["10.0.0.0/8"], // [!code ++]
+                  "response": { // [!code ++]
+                    "mode": "json", // [!code ++]
+                    "status_code": 404, // [!code ++]
+                    "body": "{\\"error\\":\\"Not Found\\"}" // [!code ++]
+                  } // [!code ++]
                 },
                 {
                   "handler": "reverse_proxy",
@@ -394,15 +381,139 @@ If you configure Caddy via its native JSON API:
       }
     }
   }
-}
+}`,
+})
+
+const jsonApiSnippets = computed(() => ({
+  caddy: [
+    { filename: 'caddy.json', lang: 'json', code: json_api_code.cleanCode, html: json_api_code.html, hasDiff: json_api_code.hasDiff },
+  ],
+}))
+</script>
+
+# Caddy-Warden: Caddy Security Module
+
+**Caddy-Warden** (`github.com/routewarden/caddy-warden`) is the official **Caddy v2** security module from RouteWarden. It brings high-performance sensitive path defense, anti-evasion normalization, IP allowlisting, and active deception defenses to Caddy web servers.
+
+---
+
+## Key Capabilities
+
+- **Zero-Config Sensitive File Shielding**: Blocks `.env`, `.git`, `.aws`, `.ssh`, `.sql`, database dumps, and server manifests out-of-the-box (`enable_default_patterns`).
+- **Anti-Evasion Engine**: Normalizes multiple URL encodings (`%252e%252e`), semicolon matrix parameters (`/;param/.env`), Windows backslashes (`\`), and null bytes (`%00`) before pattern matching.
+- **IP & CIDR Allowlisting**: Exempt trusted corporate subnets, office IPs, or VPNs (`allowed_ips`) using client IP detection or upstream proxy headers (`X-Forwarded-For`, `X-Real-IP`).
+- **Multi-Action Defense Engine**: Respond with JSON errors, branded HTML, Cloudflare Turnstile/hCaptcha verification challenges, silent TCP resets (`silent_drop`), or bot-neutralizing **Gzip Bombs** (`gzip_bomb`).
+
+---
+
+## Installation & Building Caddy
+
+Caddy uses [xcaddy](https://github.com/caddyserver/xcaddy) to compile custom builds with plugins:
+
+### Using xcaddy (Recommended)
+
+<CodeViewer :snippets="xcaddySnippets" />
+
+### Using Dockerfile
+
+<CodeViewer :snippets="dockerfileSnippets" />
+
+### Using Docker Compose
+
+Run Caddy with RouteWarden alongside your upstream web services using a dedicated `Dockerfile`:
+
+<CodeViewer :snippets="composeSnippets" />
+
+---
+
+## Configuration
+
+You can define RouteWarden security rules using **`routewarden.json` (Recommended Universal Schema)** as your single source of truth, directly in your **Caddyfile**, or via Caddy's dynamic **JSON API**.
+
+### Option 1: `routewarden.json` (Recommended Universal Schema)
+
+#### How `routewarden.json` Works with Caddy
+
+`routewarden.json` acts as a portable security policy with IDE autocompletion and CI/CD validation. Its properties correspond directly to Caddy's directive blocks and JSON handler objects:
+- `"methods"` ➔ Caddyfile `methods GET POST` / JSON `"methods": ["GET", "POST"]`
+- `"allowedIps"` ➔ Caddyfile `allowed_ips ...` / JSON `"allowed_ips": [...]`
+- `"pathPatterns"` ➔ Caddyfile `path_patterns ...` / JSON `"path_patterns": [...]`
+- `"response"` ➔ Caddyfile `response { mode ... }` / JSON `"response": { ... }`
+
+<CodeViewer :snippets="configOpt1Snippets" />
+
+Validate and verify your rules with `rwarden` before deploying:
+
+::: code-group
+
+```bash [CLI]
+# Verify syntax, regex compilation, and CIDR blocks offline
+rwarden validate --config routewarden.json
 ```
+
+```bash [Docker]
+# Mount configuration file and validate
+docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest validate --config /routewarden.json
+```
+
+:::
+
+---
+
+## Directive Ordering
+
+In Caddy, custom HTTP handler modules must be ordered in the middleware chain. Add `order route_warden before basicauth` or `order route_warden before reverse_proxy` inside your Caddyfile global options block:
+
+<CodeViewer :snippets="orderingSnippets" />
+
+---
+
+## Option 2: Caddyfile Syntax
+
+<CodeViewer :snippets="caddyfileSyntaxSnippets" />
+
+---
+
+## Examples
+
+### 1. Basic Production Shield (JSON 404)
+
+Shield all sensitive paths and return a sterile JSON 404 response:
+
+<CodeViewer :snippets="ex1Snippets" />
+
+### 2. IP Whitelisting with Safe Admin Exceptions
+
+Allow corporate VPN (`10.0.0.0/8`) and office IP (`192.168.1.100`) to access administrative endpoints while blocking external crawlers:
+
+<CodeViewer :snippets="ex2Snippets" />
+
+### 3. Active Defense: Gzip Bomb Decompression Trap
+
+When automated scrapers scan for `.env` or WordPress admin endpoints, send an active defense gzip bomb stream that expands ~1000× in client RAM:
+
+<CodeViewer :snippets="ex3Snippets" />
+
+### 4. Interactive Captcha Verification
+
+Challenge visitors accessing sensitive URLs using Cloudflare Turnstile:
+
+<CodeViewer :snippets="ex4Snippets" />
+
+---
+
+## JSON Configuration (Caddy Native API)
+
+If you configure Caddy via its native JSON API:
+
+<CodeViewer :snippets="jsonApiSnippets" />
 
 ---
 
 ## Related Links
 
 - [RouteWarden Core Architecture & Anti-Evasion Engine](/core/architecture)
-- [Using routewarden.json in Production](/core/cli#using-routewarden-json-in-production)
+- [RouteWarden CLI Documentation ↗](https://routewarden.github.io/cli/)
 - [Response Modes Deep Dive (13 Actions)](/core/response-modes)
 - [Custom Path Patterns Reference](/core/custom-patterns)
 - [Caddy-Warden GitHub Repository](https://github.com/routewarden/caddy-warden)

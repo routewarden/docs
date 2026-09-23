@@ -1,25 +1,28 @@
-# Example 6: Kubernetes IngressRoute (Traefik CRD)
-
-Deploy RouteWarden inside Kubernetes clusters using Traefik's Custom Resource Definitions (`Middleware` and `IngressRoute`).
-
+---
+title: Example 6 – Kubernetes Ingress & CRDs
 ---
 
-## Traefik Kubernetes (IngressRoute CRD)
+<script setup>
+import { computed } from 'vue'
+import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
 
-### 1. Static Cluster Configuration
-
-Ensure the plugin is enabled in Traefik's Helm chart values:
-
-```yaml
+// ─── 1. Static Cluster Helm Configuration ─────────────────────────────────────
+const helmStatic = buildSnippet({
+  lang: 'yaml',
+  code: `# values.yaml (Traefik Helm Chart)
 additionalArguments:
   - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden"
-  - "--experimental.plugins.routewarden.version={{version}}"
-```
+  - "--experimental.plugins.routewarden.version={{version}}"`,
+})
 
-### 2. Manifests
+const helmSnippets = computed(() => ({
+  traefik: [{ filename: 'values.yaml', lang: 'yaml', code: helmStatic.cleanCode, html: helmStatic.html, hasDiff: false }],
+}))
 
-#### `middleware.yaml`
-```yaml
+// ─── 2. Kubernetes Ingress & CRD Manifests ────────────────────────────────────
+const traefikMiddleware = buildSnippet({
+  lang: 'yaml',
+  code: `# middleware.yaml
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
@@ -37,11 +40,12 @@ spec:
       response:
         mode: json
         statusCode: 403
-        body: '{"error":"Forbidden","source":"k8s-routewarden-crd"}'
-```
+        body: '{"error":"Forbidden","source":"k8s-routewarden-crd"}'`,
+})
 
-#### `ingressroute.yaml`
-```yaml
+const traefikIngressRoute = buildSnippet({
+  lang: 'yaml',
+  code: `# ingressroute.yaml
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -52,23 +56,18 @@ spec:
     - web
     - websecure
   routes:
-    - match: Host(`production.example.com`)
+    - match: Host(\`production.example.com\`)
       kind: Rule
       services:
         - name: app-service
           port: 80
       middlewares:
-        - name: routewarden-k8s-shield
-```
+        - name: routewarden-k8s-shield`,
+})
 
----
-
-## Caddy Kubernetes (Caddy Ingress / ConfigMap)
-
-When running Caddy in Kubernetes (via the official Caddy Ingress Controller or custom Caddy DaemonSet/Deployment built with `xcaddy --with github.com/routewarden/caddy-warden@{{version}}`), manage RouteWarden via a mounted `ConfigMap`:
-
-### `caddy-configmap.yaml`
-```yaml
+const caddyConfigMap = buildSnippet({
+  lang: 'yaml',
+  code: `# caddy-configmap.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -88,17 +87,17 @@ data:
             response {
                 mode json
                 status_code 403
-                body "{\"error\":\"Forbidden\",\"source\":\"caddy-k8s\"}"
+                body "{\\"error\\":\\"Forbidden\\",\\"source\\":\\"caddy-k8s\\"}"
             }
         }
 
         reverse_proxy app-service.default.svc.cluster.local:80
-    }
-```
+    }`,
+})
 
-### `caddy-ingress.yaml` (Standard Kubernetes Ingress)
-If using Caddy Ingress with Ingress annotations:
-```yaml
+const caddyIngress = buildSnippet({
+  lang: 'yaml',
+  code: `# caddy-ingress.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -118,17 +117,12 @@ spec:
               service:
                 name: app-service
                 port:
-                  number: 80
-```
+                  number: 80`,
+})
 
----
-
-## NGINX Kubernetes (Ingress-NGINX ConfigMap & Snippets)
-
-When using **ingress-nginx** (or custom OpenResty Ingress), mount the RouteWarden Lua library and inject inspection via the `configuration-snippet` or global server snippets:
-
-### `nginx-ingress-snippet.yaml`
-```yaml
+const nginxIngressSnippet = buildSnippet({
+  lang: 'yaml',
+  code: `# nginx-ingress-snippet.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -166,18 +160,84 @@ spec:
               service:
                 name: app-service
                 port:
-                  number: 80
-```
+                  number: 80`,
+})
 
----
+const k8sManifestSnippets = computed(() => ({
+  traefik: [
+    { filename: 'middleware.yaml', lang: 'yaml', code: traefikMiddleware.cleanCode, html: traefikMiddleware.html, hasDiff: false },
+    { filename: 'ingressroute.yaml', lang: 'yaml', code: traefikIngressRoute.cleanCode, html: traefikIngressRoute.html, hasDiff: false },
+  ],
+  caddy: [
+    { filename: 'caddy-configmap.yaml', lang: 'yaml', code: caddyConfigMap.cleanCode, html: caddyConfigMap.html, hasDiff: false },
+    { filename: 'caddy-ingress.yaml', lang: 'yaml', code: caddyIngress.cleanCode, html: caddyIngress.html, hasDiff: false },
+  ],
+  nginx: [
+    { filename: 'nginx-ingress.yaml', lang: 'yaml', code: nginxIngressSnippet.cleanCode, html: nginxIngressSnippet.html, hasDiff: false },
+  ],
+}))
 
-## Deployment Commands
-
-```bash
-# Apply both CRDs
+// ─── 3. Deployment & Inspection Commands ──────────────────────────────────────
+const deployTraefik = buildSnippet({
+  lang: 'bash',
+  code: `# Apply Traefik CRDs
 kubectl apply -f middleware.yaml
 kubectl apply -f ingressroute.yaml
 
 # Inspect middleware status
-kubectl get middleware routewarden-k8s-shield -o yaml
-```
+kubectl get middleware routewarden-k8s-shield -o yaml`,
+})
+
+const deployCaddy = buildSnippet({
+  lang: 'bash',
+  code: `# Apply Caddy ConfigMap and Ingress
+kubectl apply -f caddy-configmap.yaml
+kubectl apply -f caddy-ingress.yaml
+
+# Restart Caddy deployment to reload ConfigMap
+kubectl rollout restart deployment/caddy-ingress-controller`,
+})
+
+const deployNginx = buildSnippet({
+  lang: 'bash',
+  code: `# Apply Ingress-NGINX manifest
+kubectl apply -f nginx-ingress-snippet.yaml
+
+# Verify Ingress resource
+kubectl get ingress secured-nginx-ingress`,
+})
+
+const deployCommandsSnippets = computed(() => ({
+  traefik: [{ filename: 'Traefik Commands', lang: 'bash', code: deployTraefik.cleanCode, html: deployTraefik.html, hasDiff: false }],
+  caddy:   [{ filename: 'Caddy Commands',   lang: 'bash', code: deployCaddy.cleanCode,   html: deployCaddy.html,   hasDiff: false }],
+  nginx:   [{ filename: 'NGINX Commands',   lang: 'bash', code: deployNginx.cleanCode,   html: deployNginx.html,   hasDiff: false }],
+}))
+</script>
+
+# Example 6: Kubernetes Ingress & CRDs
+
+Deploy RouteWarden inside Kubernetes clusters using Custom Resource Definitions (`Middleware`, `IngressRoute`) or native Kubernetes `Ingress` annotations and `ConfigMap` resources.
+
+---
+
+## 1. Static Cluster Helm Configuration
+
+When using Traefik, ensure the RouteWarden plugin is enabled in Traefik's Helm chart values:
+
+<CodeViewer :snippets="helmSnippets" />
+
+---
+
+## 2. Ingress & Middleware Manifests
+
+Select your ingress controller below to view the corresponding Kubernetes manifests:
+
+<CodeViewer :snippets="k8sManifestSnippets" />
+
+---
+
+## 3. Deployment Commands
+
+Apply the manifests and verify your ingress shield status:
+
+<CodeViewer :snippets="deployCommandsSnippets" />

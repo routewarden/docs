@@ -1,0 +1,67 @@
+/* ============================================================
+   Gateway Dropdown — injected into .vp-code-group .tabs by index.ts
+   Mirrors the QuickSetup dropdown styles (which are scoped
+   inside QuickSetup.vue and don't apply to DOM-created elements).
+   ============================================================ */
+
+/* Push the gateway dropdown to the far right */
+.vp-code-group .tabs .rw-group-gateway-wrapper {
+  margin-left: auto;
+  padding-right: 44px; /* clear space for copy button */
+  flex-shrink: 0;
+}
+
+.rw-group-gateway-wrapper.rw-dropdown-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.rw-group-gateway-wrapper .rw-dropdown-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--vp-c-text-3);
+  margin-right: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.rw-group-gateway-wrapper .rw-gateway-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 6px;
+  padding: 4px 26px 4px 10px;
+  font-family: var(--vp-font-family-base);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  line-height: 1;
+}
+
+.dark .rw-group-gateway-wrapper .rw-gateway-select {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+}
+
+.rw-group-gateway-wrapper .rw-gateway-select:hover,
+.rw-group-gateway-wrapper .rw-gateway-select:focus {
+  border-color: var(--vp-c-brand-1);
+  box-shadow: 0 0 0 2px var(--vp-c-brand-soft);
+}
+
+.rw-group-gateway-wrapper .rw-dropdown-chevron {
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
+  color: var(--vp-c-text-2);
+  transition: transform 0.2s ease;
+}
