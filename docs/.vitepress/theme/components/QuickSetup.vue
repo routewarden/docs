@@ -196,7 +196,7 @@ const currentHasDiff = computed(() => {
 <style>
 .rw-setup-body pre.shiki {
   margin: 0 !important;
-  padding: 12px 18px !important;
+  padding: 12px 0 !important;
   background: transparent !important;
   border-radius: 0 !important;
   font-family: var(--vp-font-family-mono);
@@ -209,11 +209,15 @@ const currentHasDiff = computed(() => {
   display: block;
   width: fit-content;
   min-width: 100%;
+  box-sizing: border-box;
   line-height: 0; /* collapse \n text-nodes between .line spans */
 }
 
 .rw-setup-body .line {
   display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 18px;
   line-height: 1.5 !important;
 }
 
@@ -222,15 +226,14 @@ const currentHasDiff = computed(() => {
 }
 
 /* Diff gutter — identical to custom.css global rules */
-.rw-setup-body pre.has-diff {
-  padding-left: 28px !important;
+.rw-setup-body pre.has-diff .line {
+  padding: 0 18px 0 28px;
 }
 
 .rw-setup-body pre.has-diff .line.diff.add {
   background: rgba(16, 185, 129, 0.1) !important;
-  margin: 0 -18px 0 -28px;
-  padding: 0 18px 0 28px;
   border-left: 3px solid #10b981;
+  padding: 0 18px 0 25px;
   position: relative;
 }
 
@@ -258,6 +261,11 @@ const currentHasDiff = computed(() => {
 
 /* === Diff hidden state === */
 /* When showDiff is false, suppress all diff styling so code reads as plain text */
+.rw-setup-body.rw-hide-diff pre.has-diff .line,
+.dark .rw-setup-body.rw-hide-diff pre.has-diff .line {
+  padding-left: 18px !important;
+}
+
 .rw-setup-body.rw-hide-diff .line.diff.add,
 .rw-setup-body.rw-hide-diff .line.diff.remove,
 .dark .rw-setup-body.rw-hide-diff .line.diff.add,
@@ -269,8 +277,7 @@ const currentHasDiff = computed(() => {
   background: transparent !important;
   border-left: none !important;
   border-left-color: transparent !important;
-  margin: 0 !important;
-  padding: 0 !important;
+  padding-left: 18px !important;
   opacity: 1 !important;
 }
 
@@ -284,10 +291,5 @@ const currentHasDiff = computed(() => {
 .dark .rw-setup-body.rw-hide-diff pre.has-diff .line.diff.remove::before {
   display: none !important;
   content: none !important;
-}
-
-.rw-setup-body.rw-hide-diff pre.has-diff,
-.dark .rw-setup-body.rw-hide-diff pre.has-diff {
-  padding-left: 18px !important;
 }
 </style>

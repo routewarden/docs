@@ -68,6 +68,15 @@ http:
   statusCode = 403
   body = '{"error":"Forbidden","scope":"global-shield"}'` }),
 
+  traefik_labels: buildSnippet({ lang: 'docker', code: `# Docker Compose Labels (on traefik service)
+- "traefik.enable=true"
+- "traefik.http.middlewares.global-warden.plugin.routewarden.enabled=true"
+- "traefik.http.middlewares.global-warden.plugin.routewarden.enableDefaultPatterns=true"
+- "traefik.http.middlewares.global-warden.plugin.routewarden.allowedIps=127.0.0.1,10.0.0.0/8"
+- "traefik.http.middlewares.global-warden.plugin.routewarden.response.mode=json"
+- "traefik.http.middlewares.global-warden.plugin.routewarden.response.statusCode=403"
+- 'traefik.http.middlewares.global-warden.plugin.routewarden.response.body={"error":"Forbidden","scope":"global-shield"}'` }),
+
   traefik_cli: buildSnippet({ lang: 'bash', code: `# CLI / Traefik Arguments
 traefik \\
   --entrypoints.web.address=:80 \\
@@ -227,6 +236,7 @@ const snippets = computed(() => ({
   traefik: [
     { filename: 'traefik.yaml', lang: 'yaml', code: s.traefik_yaml.cleanCode, html: s.traefik_yaml.html, hasDiff: s.traefik_yaml.hasDiff },
     { filename: 'traefik.toml', lang: 'toml', code: s.traefik_toml.cleanCode, html: s.traefik_toml.html, hasDiff: s.traefik_toml.hasDiff },
+    { filename: 'docker-compose.yaml', lang: 'docker', code: s.traefik_labels.cleanCode, html: s.traefik_labels.html, hasDiff: s.traefik_labels.hasDiff },
     { filename: 'traefik.cli', lang: 'bash', code: s.traefik_cli.cleanCode, html: s.traefik_cli.html, hasDiff: s.traefik_cli.hasDiff },
   ],
   caddy: [

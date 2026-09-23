@@ -475,6 +475,15 @@ const altTraefikYaml = buildSnippet({
   lang: 'yaml',
   code: `# dynamic_conf.yml
 http:
+  routers:
+    immich:
+      rule: "Host(\`photos.example.com\`)"
+      entryPoints:
+        - websecure
+      middlewares:
+        - immich-smart-shield # [!code ++]
+      service: immich-service
+
   middlewares:
     immich-smart-shield: # [!code ++]
       plugin: # [!code ++]
@@ -495,7 +504,65 @@ http:
           response: # [!code ++]
             mode: json # [!code ++]
             statusCode: 404 # [!code ++]
-            body: '{"error":"Not Found","message":"Resource unavailable"}' # [!code ++]`,
+            body: '{"error":"Not Found","message":"Resource unavailable"}' # [!code ++]
+
+  services:
+    immich-service:
+      loadBalancer:
+        servers:
+          - url: "http://immich-server:2283"`,
+})
+
+const altTraefikToml = buildSnippet({
+  lang: 'toml',
+  code: `# dynamic_conf.toml
+[http.routers.immich]
+  rule = "Host(\`photos.example.com\`)"
+  entryPoints = ["websecure"]
+  middlewares = ["immich-smart-shield"] # [!code ++]
+  service = "immich-service"
+
+[http.middlewares.immich-smart-shield.plugin.routewarden] # [!code ++]
+  enabled = true # [!code ++]
+  enableDefaultPatterns = true # [!code ++]
+  pathPatterns = [ # [!code ++]
+    "(?i)^/api/auth/login.*$", # [!code ++]
+    "(?i)^/api/auth/admin-sign-up.*$", # [!code ++]
+    "(?i)^/api/users.*$", # [!code ++]
+    "(?i)^/api/admin.*$", # [!code ++]
+    "(?i)^/api/server-info/stats.*$" # [!code ++]
+  ] # [!code ++]
+  allowedIps = [ # [!code ++]
+    "10.0.0.0/8",      # Internal LAN # [!code ++]
+    "100.64.0.0/10",    # Tailscale CGNAT subnet # [!code ++]
+    "192.168.1.0/24"   # Home Office subnet # [!code ++]
+  ] # [!code ++]
+
+[http.middlewares.immich-smart-shield.plugin.routewarden.response] # [!code ++]
+  mode = "json" # [!code ++]
+  statusCode = 404 # [!code ++]
+  body = '{"error":"Not Found","message":"Resource unavailable"}' # [!code ++]
+
+[http.services.immich-service.loadBalancer]
+  [[http.services.immich-service.loadBalancer.servers]]
+    url = "http://immich-server:2283"`,
+})
+
+const altTraefikLabels = buildSnippet({
+  lang: 'docker',
+  code: `# docker-compose.yaml — Single router with IP allowlist bypass
+- "traefik.enable=true"
+- "traefik.http.routers.immich.rule=Host(\`photos.example.com\`)"
+- "traefik.http.routers.immich.entrypoints=websecure"
+- "traefik.http.routers.immich.middlewares=immich-smart-shield" # [!code ++]
+- "traefik.http.middlewares.immich-smart-shield.plugin.routewarden.enabled=true" # [!code ++]
+- "traefik.http.middlewares.immich-smart-shield.plugin.routewarden.enableDefaultPatterns=true" # [!code ++]
+- "traefik.http.middlewares.immich-smart-shield.plugin.routewarden.pathPatterns=(?i)^/api/auth/login.*$,(?i)^/api/auth/admin-sign-up.*$,(?i)^/api/users.*$,(?i)^/api/admin.*$,(?i)^/api/server-info/stats.*$" # [!code ++]
+- "traefik.http.middlewares.immich-smart-shield.plugin.routewarden.allowedIps=10.0.0.0/8,100.64.0.0/10,192.168.1.0/24" # [!code ++]
+- "traefik.http.middlewares.immich-smart-shield.plugin.routewarden.response.mode=json" # [!code ++]
+- "traefik.http.middlewares.immich-smart-shield.plugin.routewarden.response.statusCode=404" # [!code ++]
+- 'traefik.http.middlewares.immich-smart-shield.plugin.routewarden.response.body={"error":"Not Found","message":"Resource unavailable"}' # [!code ++]
+- "traefik.http.services.immich.loadbalancer.server.port=2283"`,
 })
 
 const altCaddyfile = buildSnippet({
@@ -562,11 +629,25 @@ http {
 const alternativeSnippets = computed(() => ({
   traefik: [
     {
-      filename: 'Traefik(YAML)',
+      filename: 'traefik.yaml',
       lang: 'yaml',
       code: altTraefikYaml.cleanCode,
       html: altTraefikYaml.html,
       hasDiff: altTraefikYaml.hasDiff,
+    },
+    {
+      filename: 'traefik.toml',
+      lang: 'toml',
+      code: altTraefikToml.cleanCode,
+      html: altTraefikToml.html,
+      hasDiff: altTraefikToml.hasDiff,
+    },
+    {
+      filename: 'docker-compose.yaml',
+      lang: 'docker',
+      code: altTraefikLabels.cleanCode,
+      html: altTraefikLabels.html,
+      hasDiff: altTraefikLabels.hasDiff,
     },
   ],
   caddy: [

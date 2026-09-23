@@ -199,7 +199,7 @@
 /* Pre block — flush, no extra chrome */
 .vp-doc div[class*='language-'] pre {
   margin: 0 !important;
-  padding: 12px 18px !important;
+  padding: 12px 0 !important;
   background: transparent !important;
   border-radius: 0 !important;
   font-family: var(--vp-font-family-mono) !important;
@@ -209,13 +209,20 @@
   overflow-x: auto !important;
 }
 
-/* Collapse \n text-node gaps between .line spans */
+/* Collapse \n text-node gaps and allow code to expand to full content width */
 .vp-doc div[class*='language-'] pre code {
+  display: block !important;
+  width: fit-content !important;
+  min-width: 100% !important;
+  box-sizing: border-box !important;
   line-height: 0 !important;
 }
 
 .vp-doc div[class*='language-'] pre .line {
   display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 0 18px !important;
   line-height: 1.5 !important;
 }
 
@@ -225,18 +232,17 @@
 }
 
 /* Diff add lines — green gutter with + indicator */
-.vp-doc div[class*='language-'].has-diff pre,
-.vp-doc div[class*='language-'] pre.has-diff,
-.vp-doc div.language-diff pre,
-.vp-doc div[class*='language-']:has(.line.diff) pre {
-  padding-left: 28px !important;
+.vp-doc div[class*='language-'].has-diff pre .line,
+.vp-doc div[class*='language-'] pre.has-diff .line,
+.vp-doc div.language-diff pre .line,
+.vp-doc div[class*='language-']:has(.line.diff) pre .line {
+  padding: 0 18px 0 28px !important;
 }
 
 .vp-doc div[class*='language-'] .line.diff.add {
   background: rgba(16, 185, 129, 0.1) !important;
-  margin: 0 -18px 0 -28px;
-  padding: 0 18px 0 28px;
-  border-left: 3px solid #10b981;
+  border-left: 3px solid #10b981 !important;
+  padding: 0 18px 0 25px !important;
   position: relative;
 }
 
@@ -265,9 +271,8 @@
 /* Diff remove lines */
 .vp-doc div[class*='language-'] .line.diff.remove {
   background: rgba(239, 68, 68, 0.08) !important;
-  margin: 0 -18px 0 -28px;
-  padding: 0 18px 0 28px;
-  border-left: 3px solid #ef4444;
+  border-left: 3px solid #ef4444 !important;
+  padding: 0 18px 0 25px !important;
   position: relative;
   opacity: 0.7;
 }
@@ -288,12 +293,11 @@
 /* Line focus highlight */
 .vp-doc div[class*='language-'] pre .line.highlighted {
   background: rgba(37, 99, 235, 0.08) !important;
-  margin: 0 -18px;
-  padding: 0 18px;
-  border-left: 2px solid var(--vp-c-brand-1);
+  border-left: 2px solid var(--vp-c-brand-1) !important;
+  padding: 0 18px 0 16px !important;
 }
 
 .dark .vp-doc div[class*='language-'] pre .line.highlighted {
   background: rgba(56, 189, 248, 0.1) !important;
-  border-left-color: #38bdf8;
+  border-left-color: #38bdf8 !important;
 }
