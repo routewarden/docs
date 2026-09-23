@@ -1,14 +1,13 @@
-# Example 3: Service-Level Docker Compose
-
-When individual microservices require custom regex rules, sensitive directory exceptions, query inspection, or dedicated error payloads, configure RouteWarden at the service router level.
-
+---
+title: Example 3 – Service-Level Docker Compose
 ---
 
-## Configuration Preview
+<script setup>
+import { computed } from 'vue'
+import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
 
-::: code-group
-
-```json [routewarden.json]
+const s = {
+  json: buildSnippet({ lang: 'json', code: `// routewarden.json
 // Generate Traefik dynamic.yml or labels:
 //   CLI:    rwarden generate --target [traefik|traefik-labels] --config routewarden.json
 //   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target [traefik|traefik-labels] --config /routewarden.json
@@ -22,8 +21,8 @@ When individual microservices require custom regex rules, sensitive directory ex
     "(?i)^/api/internal(/.*)?$"
   ],
   "allowPatterns": [
-    "(?i)^/robots\\.txt$",
-    "(?i)^/\\.well-known(/.*)?$"
+    "(?i)^/robots\\\\.txt$",
+    "(?i)^/\\\\.well-known(/.*)?$"
   ],
   "allowedIps": [
     "192.168.1.0/24",
@@ -32,16 +31,14 @@ When individual microservices require custom regex rules, sensitive directory ex
   "response": {
     "mode": "json",
     "statusCode": 403,
-    "body": "{\"error\":\"access_denied\",\"service\":\"web\"}",
+    "body": "{\\"error\\":\\"access_denied\\",\\"service\\":\\"web\\"}",
     "headers": {
       "X-Protected-By": "RouteWarden"
     }
   }
-}
-```
+}` }),
 
-```yaml [Traefik (File YAML)]
-# dynamic_conf.yml
+  traefik_yaml: buildSnippet({ lang: 'yaml', code: `# dynamic_conf.yml
 http:
   middlewares:
     service-warden:
@@ -54,8 +51,8 @@ http:
             - '(?i)^/admin(/.*)?$'
             - '(?i)^/api/internal(/.*)?$'
           allowPatterns:
-            - '(?i)^/robots\.txt$'
-            - '(?i)^/\.well-known(/.*)?$'
+            - '(?i)^/robots\\.txt$'
+            - '(?i)^/\\.well-known(/.*)?$'
           allowedIps:
             - "192.168.1.0/24"
             - "10.10.0.0/16"
@@ -68,16 +65,53 @@ http:
 
   routers:
     web-router:
-      rule: "Host(`example.com`)"
+      rule: "Host(\`example.com\`)"
       entryPoints:
         - web
       middlewares:
         - service-warden
-      service: web-service
-```
+      service: web-service` }),
 
-```nginx [Caddy (Caddyfile)]
-# Caddyfile: Service-specific custom rules and allowlist exceptions
+  traefik_toml: buildSnippet({ lang: 'toml', code: `# dynamic_conf.toml
+[http.routers.web-router]
+  rule = "Host(\`example.com\`)"
+  entryPoints = ["web"]
+  middlewares = ["service-warden"]
+  service = "web-service"
+
+[http.middlewares.service-warden.plugin.routewarden]
+  enabled = true
+  enableDefaultPatterns = true
+  checkQuery = true
+  pathPatterns = ["(?i)^/admin(/.*)?$", "(?i)^/api/internal(/.*)?$"]
+  allowPatterns = ["(?i)^/robots\\\\.txt$", "(?i)^/\\\\.well-known(/.*)?$"]
+  allowedIps = ["192.168.1.0/24", "10.10.0.0/16"]
+
+[http.middlewares.service-warden.plugin.routewarden.response]
+  mode = "json"
+  statusCode = 403
+  body = '{"error":"access_denied","service":"web"}'
+
+[http.middlewares.service-warden.plugin.routewarden.response.headers]
+  X-Protected-By = "RouteWarden"` }),
+
+  traefik_labels: buildSnippet({ lang: 'docker', code: `# Docker Compose Labels
+- "traefik.enable=true"
+- "traefik.http.routers.web.rule=Host(\`example.com\`)"
+- "traefik.http.routers.web.entrypoints=web"
+- "traefik.http.routers.web.middlewares=service-warden"
+- "traefik.http.middlewares.service-warden.plugin.routewarden.enabled=true"
+- "traefik.http.middlewares.service-warden.plugin.routewarden.enableDefaultPatterns=true"
+- "traefik.http.middlewares.service-warden.plugin.routewarden.checkQuery=true"
+- "traefik.http.middlewares.service-warden.plugin.routewarden.pathPatterns=(?i)^/admin(/.*)?$,(?i)^/api/internal(/.*)?$"
+- "traefik.http.middlewares.service-warden.plugin.routewarden.allowPatterns=(?i)^/robots\\\\.txt$,(?i)^/\\\\.well-known(/.*)?$"
+- "traefik.http.middlewares.service-warden.plugin.routewarden.allowedIps=192.168.1.0/24,10.10.0.0/16"
+- "traefik.http.middlewares.service-warden.plugin.routewarden.response.mode=json"
+- "traefik.http.middlewares.service-warden.plugin.routewarden.response.statusCode=403"
+- 'traefik.http.middlewares.service-warden.plugin.routewarden.response.body={"error":"access_denied","service":"web"}'
+- "traefik.http.middlewares.service-warden.plugin.routewarden.response.headers.X-Protected-By=RouteWarden"` }),
+
+  caddy: buildSnippet({ lang: 'caddy', code: `# Caddyfile: Service-specific custom rules and allowlist exceptions
 {
     order route_warden before reverse_proxy
 }
@@ -87,21 +121,19 @@ example.com {
         enable_default_patterns true
         check_query true
         path_patterns "(?i)^/admin(/.*)?$" "(?i)^/api/internal(/.*)?$"
-        allow_patterns "(?i)^/robots\.txt$" "(?i)^/\.well-known(/.*)?$"
+        allow_patterns "(?i)^/robots\\.txt$" "(?i)^/\\.well-known(/.*)?$"
         allowed_ips "192.168.1.0/24" "10.10.0.0/16"
         response {
             mode json
             status_code 403
-            body "{\"error\":\"access_denied\",\"service\":\"web\"}"
+            body "{\\"error\\":\\"access_denied\\",\\"service\\":\\"web\\"}"
         }
     }
 
     reverse_proxy web:80
-}
-```
+}` }),
 
-```nginx [NGINX (OpenResty)]
-# nginx.conf: Service-Level Custom Rules & Query Inspection
+  nginx: buildSnippet({ lang: 'nginx', code: `# nginx.conf: Service-Level Custom Rules & Query Inspection
 http {
     lua_package_path "/usr/local/openresty/site/lualib/?.lua;/etc/nginx/lua/lib/?.lua;;";
 
@@ -116,8 +148,8 @@ http {
                 "(?i)^/api/internal(/.*)?$"
             },
             allow_patterns = {
-                "(?i)^/robots\\.txt$",
-                "(?i)^/\\.well-known(/.*)?$"
+                "(?i)^/robots\\\\.txt$",
+                "(?i)^/\\\\.well-known(/.*)?$"
             },
             allowed_ips = {
                 "192.168.1.0/24",
@@ -127,9 +159,7 @@ http {
                 mode = "json",
                 status_code = 403,
                 body = '{"error":"access_denied","service":"web"}',
-                headers = {
-                    ["X-Protected-By"] = "RouteWarden"
-                }
+                headers = { ["X-Protected-By"] = "RouteWarden" }
             }
         })
     }
@@ -146,97 +176,34 @@ http {
             proxy_pass http://web:80;
         }
     }
-}
-```
+}` }),
 
-```bash [Traefik (Docker Compose Labels)]
-# Docker Compose Labels / CLI equivalent
-- "traefik.enable=true"
-- "traefik.http.routers.web.rule=Host(`example.com`)"
-- "traefik.http.routers.web.entrypoints=web"
-- "traefik.http.routers.web.middlewares=service-warden"
-- "traefik.http.middlewares.service-warden.plugin.routewarden.enabled=true"
-- "traefik.http.middlewares.service-warden.plugin.routewarden.enableDefaultPatterns=true"
-- "traefik.http.middlewares.service-warden.plugin.routewarden.checkQuery=true"
-- "traefik.http.middlewares.service-warden.plugin.routewarden.pathPatterns=(?i)^/admin(/.*)?$,(?i)^/api/internal(/.*)?$"
-- "traefik.http.middlewares.service-warden.plugin.routewarden.allowPatterns=(?i)^/robots\\.txt$,(?i)^/\\.well-known(/.*)?$"
-- "traefik.http.middlewares.service-warden.plugin.routewarden.allowedIps=192.168.1.0/24,10.10.0.0/16"
-- "traefik.http.middlewares.service-warden.plugin.routewarden.response.mode=json"
-- "traefik.http.middlewares.service-warden.plugin.routewarden.response.statusCode=403"
-- 'traefik.http.middlewares.service-warden.plugin.routewarden.response.body={"error":"access_denied","service":"web"}'
-- "traefik.http.middlewares.service-warden.plugin.routewarden.response.headers.X-Protected-By=RouteWarden"
-```
-
-```toml [Traefik (TOML)]
-# dynamic_conf.toml
-[http.routers.web-router]
-  rule = "Host(`example.com`)"
-  entryPoints = ["web"]
-  middlewares = ["service-warden"]
-  service = "web-service"
-
-[http.middlewares.service-warden.plugin.routewarden]
-  enabled = true
-  enableDefaultPatterns = true
-  checkQuery = true
-  pathPatterns = ["(?i)^/admin(/.*)?$", "(?i)^/api/internal(/.*)?$"]
-  allowPatterns = ["(?i)^/robots\\.txt$", "(?i)^/\\.well-known(/.*)?$"]
-  allowedIps = ["192.168.1.0/24", "10.10.0.0/16"]
-
-[http.middlewares.service-warden.plugin.routewarden.response]
-  mode = "json"
-  statusCode = 403
-  body = '{"error":"access_denied","service":"web"}'
-
-[http.middlewares.service-warden.plugin.routewarden.response.headers]
-  X-Protected-By = "RouteWarden"
-```
-
-:::
-
----
-
-## Docker Compose Example
-
-::: code-group
-
-```yaml [Traefik (Docker Compose)]
-services:
+  docker_traefik: buildSnippet({ lang: 'yaml', code: `services:
   web:
     image: my-web-app:latest
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.web.rule=Host(`example.com`)"
+      - "traefik.http.routers.web.rule=Host(\`example.com\`)"
       - "traefik.http.routers.web.entrypoints=web"
-      # Attach service-specific middleware
-      - "traefik.http.routers.web.middlewares=service-warden"
+      - "traefik.http.routers.web.middlewares=service-warden" # [!code ++]
+      - "traefik.http.middlewares.service-warden.plugin.routewarden.enabled=true" # [!code ++]
+      - "traefik.http.middlewares.service-warden.plugin.routewarden.enableDefaultPatterns=true" # [!code ++]
+      - "traefik.http.middlewares.service-warden.plugin.routewarden.checkQuery=true" # [!code ++]
+      - "traefik.http.middlewares.service-warden.plugin.routewarden.pathPatterns=(?i)^/admin(/.*)?$,(?i)^/api/internal(/.*)?$" # [!code ++]
+      - "traefik.http.middlewares.service-warden.plugin.routewarden.allowPatterns=(?i)^/robots\\\\.txt$,(?i)^/\\\\.well-known(/.*)?$" # [!code ++]
+      - "traefik.http.middlewares.service-warden.plugin.routewarden.allowedIps=192.168.1.0/24,10.10.0.0/16" # [!code ++]
+      - "traefik.http.middlewares.service-warden.plugin.routewarden.response.mode=json" # [!code ++]
+      - "traefik.http.middlewares.service-warden.plugin.routewarden.response.statusCode=403" # [!code ++]
+      - "traefik.http.middlewares.service-warden.plugin.routewarden.response.headers.X-Protected-By=RouteWarden" # [!code ++]` }),
 
-      # RouteWarden Middleware Definition
-      - "traefik.http.middlewares.service-warden.plugin.routewarden.enabled=true"
-      - "traefik.http.middlewares.service-warden.plugin.routewarden.enableDefaultPatterns=true"
-      - "traefik.http.middlewares.service-warden.plugin.routewarden.checkQuery=true"
-      # Block internal/debug routes specifically for this application
-      - "traefik.http.middlewares.service-warden.plugin.routewarden.pathPatterns=(?i)^/admin(/.*)?$,(?i)^/api/internal(/.*)?$"
-      # Safe exceptions for public robot & ACME challenges
-      - "traefik.http.middlewares.service-warden.plugin.routewarden.allowPatterns=(?i)^/robots\\.txt$,(?i)^/\\.well-known(/.*)?$"
-      # Trusted internal office network
-      - "traefik.http.middlewares.service-warden.plugin.routewarden.allowedIps=192.168.1.0/24,10.10.0.0/16"
-      # Custom JSON response structure
-      - "traefik.http.middlewares.service-warden.plugin.routewarden.response.mode=json"
-      - "traefik.http.middlewares.service-warden.plugin.routewarden.response.statusCode=403"
-      - "traefik.http.middlewares.service-warden.plugin.routewarden.response.body={\"error\":\"access_denied\",\"service\":\"web\"}"
-      - "traefik.http.middlewares.service-warden.plugin.routewarden.response.headers.X-Protected-By=RouteWarden"
-```
-
-```yaml [Caddy (Docker Compose)]
-services:
+  docker_caddy: buildSnippet({ lang: 'yaml', code: `services:
   caddy:
     image: caddy:2-alpine
     build:
       context: .
       dockerfile_inline: |
         FROM caddy:2-builder AS builder
-        RUN xcaddy build --with github.com/routewarden/caddy-warden@{{version}}
+        RUN xcaddy build --with github.com/routewarden/caddy-warden@{{version}} # [!code ++]
         FROM caddy:2-alpine
         COPY --from=builder /usr/bin/caddy /usr/bin/caddy
     ports:
@@ -247,23 +214,59 @@ services:
       - web
 
   web:
-    image: my-web-app:latest
-```
+    image: my-web-app:latest` }),
 
-```yaml [NGINX / OpenResty (Docker Compose)]
-services:
+  docker_nginx: buildSnippet({ lang: 'yaml', code: `services:
   nginx:
     image: openresty/openresty:alpine
     ports:
       - "80:80"
     volumes:
-      - ./lib/resty/routewarden:/usr/local/openresty/site/lualib/resty/routewarden:ro
+      - ./lib/resty/routewarden:/usr/local/openresty/site/lualib/resty/routewarden:ro # [!code ++]
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - web
 
   web:
-    image: my-web-app:latest
-```
+    image: my-web-app:latest` }),
+}
 
-:::
+const snippets = computed(() => ({
+  traefik: [
+    { filename: 'traefik.yaml', lang: 'yaml', code: s.traefik_yaml.cleanCode, html: s.traefik_yaml.html, hasDiff: s.traefik_yaml.hasDiff },
+    { filename: 'traefik.toml', lang: 'toml', code: s.traefik_toml.cleanCode, html: s.traefik_toml.html, hasDiff: s.traefik_toml.hasDiff },
+    { filename: 'docker-compose.yaml', lang: 'docker', code: s.traefik_labels.cleanCode, html: s.traefik_labels.html, hasDiff: s.traefik_labels.hasDiff },
+  ],
+  caddy: [
+    { filename: 'Caddyfile', lang: 'caddy', code: s.caddy.cleanCode, html: s.caddy.html, hasDiff: s.caddy.hasDiff },
+  ],
+  nginx: [
+    { filename: 'nginx.conf', lang: 'nginx', code: s.nginx.cleanCode, html: s.nginx.html, hasDiff: s.nginx.hasDiff },
+  ],
+  cli: [
+    { filename: 'routewarden.json', lang: 'json', code: s.json.cleanCode, html: s.json.html, hasDiff: s.json.hasDiff },
+  ],
+}))
+
+const dockerSnippets = computed(() => ({
+  traefik: [{ filename: 'docker-compose.yaml', lang: 'yaml', code: s.docker_traefik.cleanCode, html: s.docker_traefik.html, hasDiff: s.docker_traefik.hasDiff }],
+  caddy:   [{ filename: 'docker-compose.yaml', lang: 'yaml', code: s.docker_caddy.cleanCode,   html: s.docker_caddy.html,   hasDiff: s.docker_caddy.hasDiff }],
+  nginx:   [{ filename: 'docker-compose.yaml', lang: 'yaml', code: s.docker_nginx.cleanCode,   html: s.docker_nginx.html,   hasDiff: s.docker_nginx.hasDiff }],
+}))
+</script>
+
+# Example 3: Service-Level Docker Compose
+
+When individual microservices require custom regex rules, sensitive directory exceptions, query inspection, or dedicated error payloads, configure RouteWarden at the service router level.
+
+---
+
+## Configuration Preview
+
+<CodeViewer :snippets="snippets" />
+
+---
+
+## Docker Compose Example
+
+<CodeViewer :snippets="dockerSnippets" />

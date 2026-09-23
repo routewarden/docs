@@ -1,0 +1,299 @@
+/* ============================================================
+   Global Code Block Editor Theme
+   Visually aligned with editor components (dots removed)
+   ============================================================ */
+
+/* Outer container for standalone blocks */
+.vp-doc div[class*='language-']:not(.rw-code-viewer-container div[class*='language-']) {
+  background: var(--vp-c-bg-alt) !important;
+  border: 1px solid var(--vp-c-divider) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04) !important;
+  margin: 1.25rem 0 !important;
+  position: relative !important;
+  /* Reserve space for the header bar */
+  padding-top: 38px !important;
+}
+
+.dark .vp-doc div[class*='language-']:not(.rw-code-viewer-container div[class*='language-']) {
+  background: #0d1322 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Header bar — fills the 38px reserved zone */
+.vp-doc div[class*='language-']:not(.rw-code-viewer-container div[class*='language-'])::before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 38px;
+  background: var(--vp-c-bg-soft);
+  border-bottom: 1px solid var(--vp-c-divider);
+  z-index: 1;
+}
+
+.dark .vp-doc div[class*='language-']:not(.rw-code-viewer-container div[class*='language-'])::before {
+  background: rgba(15, 23, 42, 0.7);
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+/* Terminal dots pseudo-element completely removed */
+
+/* --- VP-CODE-GROUP SUPPORT --- */
+/* When a code block is inside a tab group, the group provides the container and header */
+.vp-doc .vp-code-group:not(.rw-code-viewer-container .vp-code-group) {
+  background: var(--vp-c-bg-alt) !important;
+  border: 1px solid var(--vp-c-divider) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04) !important;
+  margin: 1.25rem 0 !important;
+}
+
+.dark .vp-doc .vp-code-group:not(.rw-code-viewer-container .vp-code-group) {
+  background: #0d1322 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Remove borders, padding, and pseudo-elements from the inner code blocks */
+.vp-doc .vp-code-group div[class*='language-'] {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding-top: 0 !important;
+  background: transparent !important;
+}
+
+.vp-doc .vp-code-group div[class*='language-']::before,
+.vp-doc .vp-code-group div[class*='language-']::after {
+  display: none !important;
+}
+
+/* Tabs header bar */
+.vp-doc .vp-code-group .tabs {
+  background: var(--vp-c-bg-soft) !important;
+  border-bottom: 1px solid var(--vp-c-divider) !important;
+  padding: 0 14px !important; /* Clean left alignment without terminal dots */
+  margin: 0 !important;
+  box-shadow: none !important;
+  position: relative;
+  min-height: 38px;
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  border-radius: 0 !important;
+}
+
+.dark .vp-doc .vp-code-group .tabs {
+  background: rgba(15, 23, 42, 0.7) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Style the VitePress tabs to look like our underline tabs */
+.vp-doc .vp-code-group .tabs label {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0 12px !important;
+  height: 100% !important;
+  min-height: 38px !important;
+  font-family: var(--vp-font-family-mono) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: var(--vp-c-text-3) !important;
+  background: transparent !important;
+  border-bottom: 2px solid transparent !important;
+  cursor: pointer !important;
+  transition: color 0.15s ease, border-color 0.15s ease !important;
+  line-height: 1 !important;
+}
+
+/* Kill VitePress's ::after bar indicator — we use border-bottom on the label instead.
+   Without this, both the ::after bar AND border-bottom underline show together. */
+.vp-doc .vp-code-group .tabs label::after {
+  display: none !important;
+}
+
+.vp-doc .vp-code-group .tabs label:hover {
+  color: var(--vp-c-text-1) !important;
+  border-bottom-color: var(--vp-c-divider) !important;
+}
+
+.dark .vp-doc .vp-code-group .tabs label:hover {
+  border-bottom-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Active tab — driven purely by input:checked CSS. No .active class on labels. */
+.vp-doc .vp-code-group .tabs input:checked + label {
+  color: var(--vp-c-brand-1) !important;
+  font-weight: 600 !important;
+  border-bottom-color: var(--vp-c-brand-1) !important;
+}
+
+.dark .vp-doc .vp-code-group .tabs input:checked + label {
+  color: #38bdf8 !important;
+  border-bottom-color: #38bdf8 !important;
+}
+
+/* --- END VP-CODE-GROUP SUPPORT --- */
+
+/* When only 1 tab matches the selected gateway, hide the tab labels (no need to
+   show a single-item tab bar) but keep the header bar and gateway
+   dropdown visible so the editor chrome stays intact. */
+.vp-doc .vp-code-group .tabs.rw-tabs-single label {
+  display: none !important;
+}
+
+/* Language label — right-aligned inside the header */
+.vp-doc div[class*='language-'] .lang {
+  position: absolute !important;
+  top: 0 !important;
+  right: 44px !important;
+  height: 38px !important;
+  line-height: 38px !important;
+  font-family: var(--vp-font-family-mono) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: var(--vp-c-text-3) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding: 0 !important;
+  background: transparent !important;
+  z-index: 3 !important;
+  opacity: 1 !important;
+}
+
+/* Fix .lang in code groups where padding-top was removed */
+.vp-doc .vp-code-group div[class*='language-'] .lang {
+  display: none !important; /* We don't need the language label if tabs show the names */
+}
+
+/* Copy button — sits in the header, right edge */
+.vp-doc div[class*='language-'] .copy {
+  position: absolute !important;
+  top: 7px !important;
+  right: 10px !important;
+  width: 24px !important;
+  height: 24px !important;
+  z-index: 3 !important;
+  opacity: 0.45 !important;
+  transition: opacity 0.15s ease !important;
+  background-color: transparent !important;
+}
+
+.vp-doc div[class*='language-']:hover .copy {
+  opacity: 1 !important;
+}
+
+/* Move copy button inside code groups to align properly */
+.vp-doc .vp-code-group div[class*='language-'] .copy {
+  top: -31px !important; /* Move it up into the tabs header */
+  right: 10px !important;
+}
+
+/* Pre block — flush, no extra chrome */
+.vp-doc div[class*='language-'] pre {
+  margin: 0 !important;
+  padding: 12px 18px !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  font-family: var(--vp-font-family-mono) !important;
+  font-size: 13px !important;
+  line-height: unset !important;
+  white-space: pre !important;
+  overflow-x: auto !important;
+}
+
+/* Collapse \n text-node gaps between .line spans */
+.vp-doc div[class*='language-'] pre code {
+  line-height: 0 !important;
+}
+
+.vp-doc div[class*='language-'] pre .line {
+  display: block !important;
+  line-height: 1.5 !important;
+}
+
+/* Blank lines — compact gap */
+.vp-doc div[class*='language-'] pre .line:empty {
+  height: 0.75em;
+}
+
+/* Diff add lines — green gutter with + indicator */
+.vp-doc div[class*='language-'].has-diff pre,
+.vp-doc div[class*='language-'] pre.has-diff,
+.vp-doc div.language-diff pre,
+.vp-doc div[class*='language-']:has(.line.diff) pre {
+  padding-left: 28px !important;
+}
+
+.vp-doc div[class*='language-'] .line.diff.add {
+  background: rgba(16, 185, 129, 0.1) !important;
+  margin: 0 -18px 0 -28px;
+  padding: 0 18px 0 28px;
+  border-left: 3px solid #10b981;
+  position: relative;
+}
+
+.vp-doc div[class*='language-'] .line.diff.add::before {
+  content: '+';
+  position: absolute;
+  left: 7px;
+  top: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #10b981;
+  line-height: inherit;
+  user-select: none;
+  pointer-events: none;
+}
+
+.dark .vp-doc div[class*='language-'] .line.diff.add {
+  background: rgba(16, 185, 129, 0.13) !important;
+  border-left-color: #34d399;
+}
+
+.dark .vp-doc div[class*='language-'] .line.diff.add::before {
+  color: #34d399;
+}
+
+/* Diff remove lines */
+.vp-doc div[class*='language-'] .line.diff.remove {
+  background: rgba(239, 68, 68, 0.08) !important;
+  margin: 0 -18px 0 -28px;
+  padding: 0 18px 0 28px;
+  border-left: 3px solid #ef4444;
+  position: relative;
+  opacity: 0.7;
+}
+
+.vp-doc div[class*='language-'] .line.diff.remove::before {
+  content: '-';
+  position: absolute;
+  left: 7px;
+  top: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #ef4444;
+  line-height: inherit;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Line focus highlight */
+.vp-doc div[class*='language-'] pre .line.highlighted {
+  background: rgba(37, 99, 235, 0.08) !important;
+  margin: 0 -18px;
+  padding: 0 18px;
+  border-left: 2px solid var(--vp-c-brand-1);
+}
+
+.dark .vp-doc div[class*='language-'] pre .line.highlighted {
+  background: rgba(56, 189, 248, 0.1) !important;
+  border-left-color: #38bdf8;
+}

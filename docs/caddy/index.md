@@ -25,13 +25,63 @@
 
 ---
 
-## 30-Second Quick Start
+<script setup>
+import { computed } from 'vue'
+import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
 
-::: code-group
+// ─── Installation & Setup Snippets ───────────────────────────────────────────
+const install_compose = buildSnippet({
+  lang: 'yaml',
+  code: `# docker-compose.yml
+services:
+  caddy:
+    build: # [!code ++]
+      context: . # [!code ++]
+      dockerfile_inline: | # [!code ++]
+        FROM caddy:2-builder AS builder # [!code ++]
+        RUN xcaddy build --with github.com/routewarden/caddy-warden@{{version}} # [!code ++]
+        FROM caddy:2-alpine # [!code ++]
+        COPY --from=builder /usr/bin/caddy /usr/bin/caddy # [!code ++]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
 
-```nginx [Caddy (Caddyfile)]
-# Caddyfile
-{
+volumes:
+  caddy_data:
+  caddy_config:`,
+})
+
+const install_xcaddy = buildSnippet({
+  lang: 'bash',
+  code: `# Build custom Caddy binary with caddy-warden:
+xcaddy build --with github.com/routewarden/caddy-warden@{{version}}`,
+})
+
+const install_dockerfile = buildSnippet({
+  lang: 'dockerfile',
+  code: `FROM caddy:2-builder AS builder
+RUN xcaddy build --with github.com/routewarden/caddy-warden@{{version}} # [!code ++]
+
+FROM caddy:2-alpine
+COPY --from=builder /usr/bin/caddy /usr/bin/caddy # [!code ++]`,
+})
+
+const installSnippets = computed(() => ({
+  caddy: [
+    { filename: 'Docker Compose (Inline)', lang: 'yaml', code: install_compose.cleanCode, html: install_compose.html, hasDiff: install_compose.hasDiff },
+    { filename: 'xcaddy', lang: 'bash', code: install_xcaddy.cleanCode, html: install_xcaddy.html, hasDiff: install_xcaddy.hasDiff },
+    { filename: 'Dockerfile', lang: 'dockerfile', code: install_dockerfile.cleanCode, html: install_dockerfile.html, hasDiff: install_dockerfile.hasDiff },
+  ],
+}))
+
+// ─── 30-Second Quick Start Snippets ──────────────────────────────────────────
+const quick_caddyfile = buildSnippet({
+  lang: 'nginx',
+  code: `{
     order route_warden before reverse_proxy
 }
 
@@ -41,27 +91,37 @@ example.com {
     }
 
     reverse_proxy localhost:8080
-}
-```
+}`,
+})
 
-```json [routewarden.json]
-// Generate Caddy directives:
-//   CLI:    rwarden generate --target caddy --config routewarden.json
-//   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target caddy --config /routewarden.json
-{
-  "$schema": "https://routewarden.github.io/cli/schema.json",
-  "enabled": true,
-  "enableDefaultPatterns": true
-}
-```
-
-```json [Caddy (JSON API)]
-{
+const quick_json = buildSnippet({
+  lang: 'json',
+  code: `{
   "handler": "route_warden",
   "enabled": true,
   "enable_default_patterns": true
-}
-```
+}`,
+})
 
-:::
+const quickStartSnippets = computed(() => ({
+  caddy: [
+    { filename: 'Caddyfile', lang: 'nginx', code: quick_caddyfile.cleanCode, html: quick_caddyfile.html, hasDiff: false },
+    { filename: 'Caddy (JSON API)', lang: 'json', code: quick_json.cleanCode, html: quick_json.html, hasDiff: false },
+  ],
+}))
+</script>
+
+## Installation & Setup
+
+Build a custom Caddy binary with `caddy-warden` or run via Docker:
+
+<CodeViewer :snippets="installSnippets" />
+
+---
+
+## 30-Second Quick Start
+
+Add RouteWarden directives to your Caddyfile or JSON API:
+
+<CodeViewer :snippets="quickStartSnippets" />
 

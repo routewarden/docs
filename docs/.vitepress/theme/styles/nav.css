@@ -1,0 +1,179 @@
+/* ============================================================
+   Navigation & Search Bar Layout
+   ============================================================ */
+
+.VPNav {
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border-bottom: 1px solid var(--vp-c-divider) !important;
+}
+
+.VPNavBar {
+  border-bottom: none !important;
+}
+
+/* Brand Title & Logo Alignment */
+.VPNavBarTitle .title {
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  font-size: 16px !important;
+}
+
+/* Prominent Desktop Search Bar - Takes Entire Remaining Space */
+@media (min-width: 768px) {
+  .VPNavBarSearch {
+    flex: 1 1 auto !important;
+    max-width: none !important;
+    margin: 0 24px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .VPNavBarSearch .DocSearch-Button,
+  .VPNavBarSearch .search-btn,
+  .VPNavBarSearch .VPNavBarSearch-button,
+  .VPNavBarSearch button {
+    width: 100% !important;
+    min-width: 200px !important;
+    height: 40px !important;
+    padding: 0 16px !important;
+    border-radius: 20px !important;
+    background: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .dark .VPNavBarSearch .DocSearch-Button,
+  .dark .VPNavBarSearch .search-btn,
+  .dark .VPNavBarSearch .VPNavBarSearch-button,
+  .dark .VPNavBarSearch button {
+    background: rgba(15, 23, 42, 0.65) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  }
+
+  .VPNavBarSearch button:hover {
+    border-color: var(--vp-c-brand-1) !important;
+    background: #ffffff !important;
+    box-shadow: 0 0 0 4px var(--vp-c-brand-soft), 0 4px 12px rgba(37, 99, 235, 0.08) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  .dark .VPNavBarSearch button:hover {
+    border-color: var(--vp-c-brand-1) !important;
+    background: rgba(19, 29, 51, 0.95) !important;
+    box-shadow: 0 0 0 4px var(--vp-c-brand-soft), 0 4px 14px rgba(0, 0, 0, 0.4) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  .VPNavBarSearch .search-btn-placeholder,
+  .VPNavBarSearch .DocSearch-Button-Placeholder {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: var(--vp-c-text-2) !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  .VPNavBarSearch .DocSearch-Button-Keys,
+  .VPNavBarSearch .search-btn-keys {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    padding: 2px 8px !important;
+    height: 22px !important;
+    border-radius: 6px !important;
+    border: 1px solid var(--vp-c-divider) !important;
+    background: var(--vp-c-bg) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    font-family: var(--vp-font-family-mono) !important;
+    color: var(--vp-c-text-2) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  .dark .VPNavBarSearch .DocSearch-Button-Keys,
+  .dark .VPNavBarSearch .search-btn-keys {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: var(--vp-c-text-2) !important;
+  }
+}
+
+/* Responsive Topbar Menu Items Progressive Disclosure */
+/* Between 768px and 959px: Keep search prominent, hide dense multi-column menus, show essential Gateways & Releases */
+@media (min-width: 768px) and (max-width: 959px) {
+  .VPNavBarMenu > :nth-child(2), /* Core Engine */
+  .VPNavBarMenu > :nth-child(3)  /* Solutions */ {
+    display: none !important;
+  }
+  .VPNavBarSearch {
+    margin: 0 12px !important;
+  }
+}
+
+/* Between 960px and 1240px: Show Gateways, Core Engine, Tools, Releases; collapse Solutions to keep search generous */
+@media (min-width: 960px) and (max-width: 1240px) {
+  .VPNavBarMenu > :nth-child(3) /* Solutions */ {
+    display: none !important;
+  }
+  .VPNavBarSearch {
+    margin: 0 16px !important;
+  }
+}
+
+/* At 1241px and above: Full suite of nav items is visible with roomy search bar */
+@media (min-width: 1241px) {
+  .VPNavBarSearch {
+    margin: 0 24px !important;
+  }
+}
+
+/* Mobile optimizations (< 768px) */
+@media (max-width: 767px) {
+  .VPNavBarTitle {
+    margin-right: 0.5rem !important;
+  }
+
+  .VPNavBarTitle .title {
+    font-size: 15px !important;
+  }
+
+  .VPNavBarSearch {
+    margin-right: 0.5rem !important;
+  }
+
+  /* Compact icon button for search on mobile */
+  .VPNavBarSearch .DocSearch-Button,
+  .VPNavBarSearch .search-btn {
+    min-width: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+    background-color: transparent !important;
+  }
+
+  .VPNavBarSearch .DocSearch-Button-Placeholder,
+  .VPNavBarSearch .DocSearch-Button-Keys {
+    display: none !important;
+  }
+
+  /* Remove the mobile hamburger button completely */
+  .VPNavBarHamburger {
+    display: none !important;
+  }
+
+  /* Prevent table overflow on small screens */
+  .vp-doc table {
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}

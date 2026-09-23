@@ -31,6 +31,16 @@ Browse ready-to-run configurations and production blueprints for RouteWarden acr
 
 ---
 
+## Technical References
+
+| Reference | Description | Target |
+|---|---|---|
+| [Custom Paths & Regex Guide](/reference/custom-paths) | Regex patterns, wildcard rules, and sensitive route catalog. | Traefik, Caddy & NGINX |
+| [Response Modes Reference](/reference/response-modes) | All 13 defense action modes, headers, and payload behaviors. | Traefik, Caddy & NGINX |
+| [Anti-Evasion Security Engine](/reference/anti-evasion) | URL normalization, recursive decoders, and directory traversal mitigation. | Traefik, Caddy & NGINX |
+
+---
+
 ## In-Repo Runnable Code
 
 All examples are checked directly into the [`examples/`](https://github.com/routewarden/traefik-warden/tree/main/examples) directory of the RouteWarden GitHub repository. You can clone the repo and run any scenario in seconds:
