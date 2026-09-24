@@ -275,7 +275,7 @@ http {
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden" # [!code ++]
-      - "--experimental.plugins.routewarden.version=v1.1.0" # [!code ++]
+      - "--experimental.plugins.routewarden.version=v1.2.1" # [!code ++]
     ports:
       - "80:80"
       - "8080:8080"
@@ -318,7 +318,7 @@ volumes:
       context: . # [!code ++]
       dockerfile_inline: | # [!code ++]
         FROM caddy:2-builder AS builder # [!code ++]
-        RUN xcaddy build --with github.com/routewarden/caddy-warden@v1.1.0 # [!code ++]
+        RUN xcaddy build --with github.com/routewarden/caddy-warden@v1.2.1 # [!code ++]
         FROM caddy:2-alpine # [!code ++]
         COPY --from=builder /usr/bin/caddy /usr/bin/caddy # [!code ++]
     ports:
