@@ -4,7 +4,30 @@ All notable changes to the **RouteWarden** Traefik middleware plugin are documen
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and RouteWarden adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.1.0] - 2026-09-20 (Latest)
+## [v1.2.0] - 2026-09-24 (Latest)
+
+### Key Highlights
+
+- **RouteWarden CLI (`rwarden`) Multi-Target Generation**:
+  - Upgraded `rwarden generate` with dedicated, explicit compile targets:
+    - `--target traefik-yaml`: Compiles `routewarden.json` directly into Traefik Dynamic Configuration YAML format.
+    - `--target traefik-toml`: Compiles `routewarden.json` directly into Traefik Dynamic Configuration TOML format.
+    - `--target traefik-labels`: Compiles `routewarden.json` directly into Traefik Docker Compose label syntax.
+    - `--target caddy`: Compiles `routewarden.json` directly into native Caddyfile directives.
+    - `--target nginx`: Compiles `routewarden.json` directly into OpenResty Lua initialization tables.
+  - Seamless pipeline from a single universal `routewarden.json` security policy to any target reverse proxy configuration.
+- **Interactive CodeViewer & Setup Snippets**:
+  - Implemented interactive `Diff` toggle across all gateways (`traefik`, `caddy`, `nginx`) in the 30-Second Setup documentation component.
+  - Added dedicated `generate` tab for the `cli` gateway demonstrating on-the-fly compilation of `routewarden.json` into Traefik YAML/TOML/Labels, Caddyfile, and OpenResty Lua.
+- **Unified Versioning Automation**:
+  - Updated `scripts/update-version.sh` across `traefik-warden`, `caddy-warden`, and `nginx-warden` repositories to automatically synchronize `VERSIONING.md` alongside `version.json`, `README.md`, and source files upon release.
+- **Gateway Plugin & Configuration Hardening**:
+  - Enhanced Caddyfile parsing and validation in `caddy-warden` (`caddyfile.go`) for robust handling of custom parameters and block directives.
+  - Enhanced OpenResty / NGINX Lua test suites and configuration validation in `nginx-warden` (`test_config.lua`).
+
+---
+
+## [v1.1.0] - 2026-09-20
 
 ### Key Highlights
 

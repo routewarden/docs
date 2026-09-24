@@ -80,15 +80,15 @@ const installSnippets = computed(() => ({
 
 // ─── 30-Second Quick Start Snippets ──────────────────────────────────────────
 const quick_caddyfile = buildSnippet({
-  lang: 'nginx',
+  lang: 'caddy',
   code: `{
-    order route_warden before reverse_proxy
+    order route_warden before reverse_proxy # [!code ++]
 }
 
 example.com {
-    route_warden {
-        enable_default_patterns true
-    }
+    route_warden { # [!code ++]
+        enable_default_patterns true # [!code ++]
+    } # [!code ++]
 
     reverse_proxy localhost:8080
 }`,
@@ -97,16 +97,16 @@ example.com {
 const quick_json = buildSnippet({
   lang: 'json',
   code: `{
-  "handler": "route_warden",
-  "enabled": true,
-  "enable_default_patterns": true
+  "handler": "route_warden", // [!code ++]
+  "enabled": true, // [!code ++]
+  "enable_default_patterns": true // [!code ++]
 }`,
 })
 
 const quickStartSnippets = computed(() => ({
   caddy: [
-    { filename: 'Caddyfile', lang: 'nginx', code: quick_caddyfile.cleanCode, html: quick_caddyfile.html, hasDiff: false },
-    { filename: 'Caddy (JSON API)', lang: 'json', code: quick_json.cleanCode, html: quick_json.html, hasDiff: false },
+    { filename: 'Caddyfile', lang: 'caddy', code: quick_caddyfile.cleanCode, html: quick_caddyfile.html, hasDiff: quick_caddyfile.hasDiff },
+    { filename: 'Caddy (JSON API)', lang: 'json', code: quick_json.cleanCode, html: quick_json.html, hasDiff: quick_json.hasDiff },
   ],
 }))
 </script>

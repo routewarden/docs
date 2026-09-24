@@ -2,7 +2,6 @@ import DefaultTheme from 'vitepress/theme'
 import type { EnhanceAppContext } from 'vitepress'
 import './custom.css'
 import PatternChecker from './components/PatternChecker.vue'
-import QuickSetup from './components/QuickSetup.vue'
 import CodeViewer from './components/CodeViewer.vue'
 import RwLayout from './components/RwLayout.vue'
 import { trackPageView, trackPlaygroundEvent } from './telemetry'
@@ -160,7 +159,7 @@ function syncTabsOnly(family: GatewayFamily, triggeringGroup?: HTMLElement): voi
 
 /**
  * Full sync on the active page: sync all tabs/dropdowns, then
- * broadcast rw:gateway-changed so Vue components (QuickSetup, PatternChecker, CodeViewer) update.
+ * broadcast rw:gateway-changed so Vue components (PatternChecker, CodeViewer) update.
  * Never called FROM the rw:gateway-changed handler.
  */
 function syncGatewayAcrossGroups(family: GatewayFamily, triggeringGroup?: HTMLElement): void {
@@ -285,7 +284,6 @@ export default {
   Layout: RwLayout,
   enhanceApp({ app, router }: EnhanceAppContext) {
     app.component('PatternChecker', PatternChecker)
-    app.component('QuickSetup', QuickSetup)
     app.component('CodeViewer', CodeViewer)
 
     // Route tracking for SPA page transitions in VitePress

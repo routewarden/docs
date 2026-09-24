@@ -9,8 +9,8 @@ import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
 const s = {
   json: buildSnippet({ lang: 'json', code: `// routewarden.json
 // Generate Traefik dynamic.yml:
-//   CLI:    rwarden generate --target traefik --config routewarden.json > dynamic_conf.yml
-//   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target traefik --config /routewarden.json > dynamic_conf.yml
+//   CLI:    rwarden generate --target traefik-yaml --config routewarden.json > dynamic_conf.yml
+//   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target traefik-yaml --config /routewarden.json > dynamic_conf.yml
 {
   "$schema": "https://routewarden.github.io/cli/schema.json",
   "enabled": true,

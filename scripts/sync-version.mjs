@@ -140,7 +140,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(im
   try {
     const { generateSetupSnippets } = await import('./generate-snippets.mjs')
     await generateSetupSnippets()
-    console.log(`Regenerated QuickSetup code snippets`)
+    console.log(`Regenerated setup code snippets`)
   } catch (err) {
     console.warn(`Could not regenerate setup snippets: ${err.message}`)
   }
