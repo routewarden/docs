@@ -1,6 +1,6 @@
 {
   "name": "routewarden-docs",
-  "version": "v3.4.0",
+  "version": "v3.5.0",
   "description": "Documentation and examples wiki site for RouteWarden Traefik middleware",
   "private": true,
   "type": "module",
