@@ -4,7 +4,36 @@ All notable changes to the **RouteWarden** Traefik middleware plugin are documen
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and RouteWarden adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.2.0] - 2026-09-24 (Latest)
+## [v1.2.1] - 2026-09-24 (Latest)
+
+### Key Highlights
+
+- **Query Parameter Attack Surface Hardening (`checkQuery` / `check_query`)**:
+  - Across all gateway plugins (`traefik-warden`, `caddy-warden`, `nginx-warden`), query parameter inspection now examines both parameter **keys** and **values**.
+  - Neutralizes evasion attempts where payload paths are placed in parameter names (e.g., `/?foo=bar&.env=1` or `/?settings.py=`).
+  - Added recursive path normalization on candidate query parameters.
+- **Client IP Extraction & Port/Bracket Normalization (`ip_filter`)**:
+  - Hardened IP address parsing across all gateways when upstream reverse proxies, load balancers, or CDNs (Cloudflare, AWS ALB, NGINX) include ports or brackets in `X-Forwarded-For` or `X-Real-IP` headers (e.g., `192.168.1.1:8080`, `[2001:db8::1]:54321`, or bracketed IPv6 `[2001:db8::1]`).
+  - Implemented automatic port and bracket stripping (`clean_ip` / `cleanIP`) before passing to standard IP/CIDR evaluation, preventing false rejections of legitimate whitelisted IPs.
+- **Response Modes & Silent Drop Parity (`silentDrop` / `silent_drop`)**:
+  - Standardized `silentDrop` mode across all gateways to match the modern `response.mode: silentDrop` configuration (replacing deprecated direct `silentDrop: bool` configs).
+  - Fixed OpenResty NGINX response handler and security event logger to accurately emit `action = "silentDrop"` in security logs when silent drop (HTTP 444) triggers.
+- **Honeypot Evaluation Scope (`fakeSuccess`)**:
+  - Ensured `fakeSuccess` honeypot evaluation across Traefik, Caddy, and NGINX inspects both normalized URL paths and raw request URIs to prevent bypasses via URI manipulation.
+- **OpenResty / NGINX Runtime Fixes (`nginx-warden`)**:
+  - Fixed variable scoping bug by making `compiled` strictly local in `compile_regex` to prevent race conditions across concurrent requests in OpenResty worker processes.
+  - Enabled `security_log = true` by default in `config.lua` for multi-gateway consistency with Traefik and Caddy.
+  - Escaped hyphens (`%-`) outside character classes in fallback pure-Lua pattern matching to prevent Lua's `-` quantifier magic character from misinterpreting regexes with hyphens in environments without PCRE.
+  - Added support for singular aliases (`path_pattern`, `block_pattern`, `allow_pattern`, `allowed_ip`) and single-string or table values in configuration parsing.
+- **Caddyfile Configuration Hardening (`caddy-warden`)**:
+  - Added singular directive aliases (`path_pattern`, `block_pattern`, `allow_pattern`, `allowed_ip`) in Caddyfile parsing for syntax convenience.
+  - Enforced top-level `rw.StatusCode` validation in `Validate()`.
+- **Traefik Logging Clean-Up (`traefik-warden`)**:
+  - Standardized debug logging to stdout and eliminated duplicate stderr log messages.
+
+---
+
+## [v1.2.0] - 2026-09-24
 
 ### Key Highlights
 
