@@ -224,7 +224,7 @@ const mode6Snippets = computed(() => ({
 // ─── 7. Silent TCP Drop (silentDrop) ─────────────────────────────────────────
 const m7_traefik = buildSnippet({
   lang: 'yaml',
-  code: `response:\n  mode: silentDrop\n# Alternatively via top-level flag:\nsilentDrop: true`,
+  code: `response:\n  mode: silentDrop`,
 })
 const m7_traefik_toml = buildSnippet({
   lang: 'toml',

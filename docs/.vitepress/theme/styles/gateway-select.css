@@ -1,7 +1,7 @@
 /* ============================================================
    Gateway Dropdown — injected into .vp-code-group .tabs by index.ts
-   Mirrors the QuickSetup dropdown styles (which are scoped
-   inside QuickSetup.vue and don't apply to DOM-created elements).
+   Mirrors the CodeViewer dropdown styles (which are scoped
+   inside CodeViewer.vue and don't apply to DOM-created elements).
    ============================================================ */
 
 /* Push the gateway dropdown to the far right */
