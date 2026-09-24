@@ -63,6 +63,24 @@ const installSnippets = computed(() => ({
   ],
 }))
 
+// ─── Universal routewarden.json Schema ───────────────────────────────────────
+const dyn_json = buildSnippet({
+  lang: 'json',
+  code: `{
+  "$schema": "https://routewarden.github.io/cli/schema.json",
+  "enabled": true,
+  "enableDefaultPatterns": true,
+  "enableDefaultAllowPatterns": true,
+  "methods": ["GET", "HEAD"],
+  "allowedIps": ["127.0.0.1", "10.0.0.0/8"],
+  "response": {
+    "mode": "json",
+    "statusCode": 403,
+    "body": "{\\"error\\":\\"Forbidden\\",\\"message\\":\\"Sensitive route protected by RouteWarden\\"}"
+  }
+}`,
+})
+
 // ─── Inline Lua Configuration (nginx.conf) ───────────────────────────────────
 const config_nginx = buildSnippet({
   lang: 'nginx',
@@ -108,7 +126,66 @@ const config_nginx = buildSnippet({
 
 const configSnippets = computed(() => ({
   nginx: [
+    { filename: 'routewarden.json', lang: dyn_json.lang, code: dyn_json.cleanCode, html: dyn_json.html, hasDiff: false },
     { filename: 'nginx.conf', lang: 'nginx', code: config_nginx.cleanCode, html: config_nginx.html, hasDiff: config_nginx.hasDiff },
+  ],
+}))
+
+// ─── Direct Generation & CI/CD Pipeline ───────────────────────────────────────
+const gen_cli = buildSnippet({
+  lang: 'bash',
+  code: `# 1. Validate schema compliance, regex patterns, and CIDRs
+rwarden validate --config routewarden.json
+
+# 2. Compile directly into OpenResty Lua configuration table
+rwarden generate --target nginx --config routewarden.json > /etc/nginx/lua/routewarden_conf.lua`,
+})
+
+const gen_docker = buildSnippet({
+  lang: 'bash',
+  code: `# Validate and generate without local installation
+docker run --rm -v $(pwd):/workspace -w /workspace \\
+  ghcr.io/routewarden/cli:latest validate --config routewarden.json
+
+docker run --rm -v $(pwd):/workspace -w /workspace \\
+  ghcr.io/routewarden/cli:latest generate --target nginx --config routewarden.json > routewarden_conf.lua`,
+})
+
+const gen_github = buildSnippet({
+  lang: 'yaml',
+  code: `# .github/workflows/deploy.yml
+name: Deploy NGINX Security Rules
+on:
+  push:
+    paths:
+      - 'routewarden.json'
+
+jobs:
+  build-nginx-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RouteWarden CLI
+        run: curl -sSfL https://routewarden.github.io/install.sh | sh
+
+      - name: Validate & Generate OpenResty Lua Config
+        run: |
+          rwarden validate --config routewarden.json
+          rwarden generate --target nginx --config routewarden.json > routewarden_conf.lua
+
+      - name: Deploy & Reload NGINX
+        run: |
+          # Copy to NGINX host and reload
+          scp routewarden_conf.lua user@nginx-host:/etc/nginx/lua/routewarden_conf.lua
+          ssh user@nginx-host "nginx -s reload"`,
+})
+
+const pipelineSnippets = computed(() => ({
+  cli: [
+    { filename: 'CLI', lang: gen_cli.lang, code: gen_cli.cleanCode, html: gen_cli.html, hasDiff: false },
+    { filename: 'Docker', lang: gen_docker.lang, code: gen_docker.cleanCode, html: gen_docker.html, hasDiff: false },
+    { filename: 'GitHub Actions', lang: gen_github.lang, code: gen_github.cleanCode, html: gen_github.html, hasDiff: false },
   ],
 }))
 
@@ -175,9 +252,15 @@ Deploy RouteWarden via Dockerfile, container run, Docker Compose, or manual pack
 
 ## Configuration
 
-Configure RouteWarden inline within your `nginx.conf` via OpenResty's `init_by_lua_block` and request inspection in `access_by_lua_block`:
+RouteWarden can be configured directly in OpenResty's `init_by_lua_block` or defined via **`routewarden.json`** as your universal security policy:
 
 <CodeViewer :snippets="configSnippets" />
+
+### Using `routewarden.json` Directly via Generate Pipeline
+
+If you maintain `routewarden.json` as your single source of truth across Git repositories or multi-gateway environments, use the [RouteWarden CLI (`rwarden`)](https://routewarden.github.io/cli/) to validate rules offline and compile directly into OpenResty Lua configuration tables during your deployment pipeline:
+
+<CodeViewer :snippets="pipelineSnippets" />
 
 ---
 

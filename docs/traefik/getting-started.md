@@ -66,6 +66,39 @@ const localPluginsSnippets = computed(() => ({
   ],
 }))
 
+// ─── File Provider (Static Configuration to load dynamic files) ──────────────
+const provider_yaml = buildSnippet({
+  lang: 'yaml',
+  code: `# traefik.yml (Static Configuration)
+providers:
+  file:
+    filename: "/etc/traefik/dynamic_conf.yml"
+    watch: true`,
+})
+
+const provider_toml = buildSnippet({
+  lang: 'toml',
+  code: `# traefik.toml (Static Configuration)
+[providers.file]
+  filename = "/etc/traefik/dynamic_conf.toml"
+  watch = true`,
+})
+
+const provider_cli = buildSnippet({
+  lang: 'bash',
+  code: `traefik \\
+  --providers.file.filename=/etc/traefik/dynamic_conf.yml \\
+  --providers.file.watch=true`,
+})
+
+const fileProviderSnippets = computed(() => ({
+  traefik: [
+    { filename: 'traefik.yaml', lang: provider_yaml.lang, code: provider_yaml.cleanCode, html: provider_yaml.html, hasDiff: false },
+    { filename: 'traefik.toml', lang: provider_toml.lang, code: provider_toml.cleanCode, html: provider_toml.html, hasDiff: false },
+    { filename: 'CLI / Docker', lang: provider_cli.lang, code: provider_cli.cleanCode, html: provider_cli.html, hasDiff: false },
+  ],
+}))
+
 // ─── 2. Dynamic Configuration ──────────────────────────────────────────────────
 const dyn_json = buildSnippet({
   lang: 'json',
@@ -90,15 +123,6 @@ const dyn_yaml = buildSnippet({
   lang: 'yaml',
   code: `# dynamic_conf.yml — Direct 1:1 mapping from routewarden.json
 http:
-  routers:
-    app-router:
-      rule: "Host(\`app.example.com\`)"
-      entryPoints:
-        - web
-      middlewares:
-        - route-shield # [!code ++]
-      service: app-service
-
   middlewares:
     route-shield: # [!code ++]
       plugin: # [!code ++]
@@ -125,12 +149,6 @@ http:
 const dyn_toml = buildSnippet({
   lang: 'toml',
   code: `# dynamic_conf.toml — TOML representation of routewarden.json
-[http.routers.app-router]
-  rule = "Host(\`app.example.com\`)"
-  entryPoints = ["web"]
-  middlewares = ["route-shield"] # [!code ++]
-  service = "app-service"
-
 [http.middlewares.route-shield.plugin.routewarden] # [!code ++]
   enabled = true # [!code ++]
   enableDefaultPatterns = true # [!code ++]
@@ -148,15 +166,13 @@ const dyn_toml = buildSnippet({
 
 const dyn_labels = buildSnippet({
   lang: 'docker',
-  code: `# Docker Compose labels representation of routewarden.json
+  code: `# Docker Compose labels mapping from routewarden.json
 services:
-  app:
-    image: my-app:latest
+  traefik:
+    image: traefik:v3.3
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=Host(\`app.example.com\`)"
-      - "traefik.http.routers.app.entrypoints=web"
-      - "traefik.http.routers.app.middlewares=route-shield" # [!code ++]
+      # RouteWarden middleware definition
       - "traefik.http.middlewares.route-shield.plugin.routewarden.enabled=true" # [!code ++]
       - "traefik.http.middlewares.route-shield.plugin.routewarden.enableDefaultPatterns=true" # [!code ++]
       - "traefik.http.middlewares.route-shield.plugin.routewarden.enableDefaultAllowPatterns=true" # [!code ++]
@@ -171,33 +187,144 @@ services:
 
 const dynamicSnippets = computed(() => ({
   traefik: [
-    { filename: 'traefik.yaml', lang: dyn_yaml.lang, code: dyn_yaml.cleanCode, html: dyn_yaml.html, hasDiff: dyn_yaml.hasDiff },
-    { filename: 'traefik.toml', lang: dyn_toml.lang, code: dyn_toml.cleanCode, html: dyn_toml.html, hasDiff: dyn_toml.hasDiff },
-    { filename: 'docker-compose.yml', lang: dyn_labels.lang, code: dyn_labels.cleanCode, html: dyn_labels.html, hasDiff: dyn_labels.hasDiff },
-  ],
-  cli: [
     { filename: 'routewarden.json', lang: dyn_json.lang, code: dyn_json.cleanCode, html: dyn_json.html, hasDiff: false },
+    { filename: 'dynamic_conf.yml', lang: dyn_yaml.lang, code: dyn_yaml.cleanCode, html: dyn_yaml.html, hasDiff: dyn_yaml.hasDiff },
+    { filename: 'dynamic_conf.toml', lang: dyn_toml.lang, code: dyn_toml.cleanCode, html: dyn_toml.html, hasDiff: dyn_toml.hasDiff },
+    { filename: 'docker-compose.yml', lang: dyn_labels.lang, code: dyn_labels.cleanCode, html: dyn_labels.html, hasDiff: dyn_labels.hasDiff },
   ],
 }))
 
-// ─── Offline Validation Snippets ──────────────────────────────────────────────
-const val_cli = buildSnippet({
+// ─── Direct Generation & CI/CD Pipeline ───────────────────────────────────────
+const gen_cli = buildSnippet({
   lang: 'bash',
-  code: `# Validate schema compliance, regex patterns, and CIDRs
-rwarden validate --config routewarden.json`,
+  code: `# 1. Validate schema compliance, regex patterns, and CIDRs
+rwarden validate --config routewarden.json
+
+# 2. Compile directly into Traefik dynamic YAML
+rwarden generate --target traefik-yaml --config routewarden.json > dynamic_conf.yml
+
+# Or compile into Traefik dynamic TOML
+rwarden generate --target traefik-toml --config routewarden.json > dynamic_conf.toml
+
+# Or compile into Docker Compose labels format
+rwarden generate --target traefik-labels --config routewarden.json`,
 })
 
-const val_docker = buildSnippet({
+const gen_docker = buildSnippet({
   lang: 'bash',
-  code: `# Mount configuration file and validate via container
-docker run --rm -v $(pwd)/routewarden.json:/routewarden.json \\
-  ghcr.io/routewarden/cli:latest validate --config /routewarden.json`,
+  code: `# Validate and generate without local installation
+docker run --rm -v $(pwd):/workspace -w /workspace \\
+  ghcr.io/routewarden/cli:latest validate --config routewarden.json
+
+docker run --rm -v $(pwd):/workspace -w /workspace \\
+  ghcr.io/routewarden/cli:latest generate --target traefik-yaml --config routewarden.json > dynamic_conf.yml`,
 })
 
-const validationSnippets = computed(() => ({
+const gen_github = buildSnippet({
+  lang: 'yaml',
+  code: `# .github/workflows/deploy.yml
+name: Deploy Traefik Security Rules
+on:
+  push:
+    paths:
+      - 'routewarden.json'
+
+jobs:
+  build-traefik-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RouteWarden CLI
+        run: curl -sSfL https://routewarden.github.io/install.sh | sh
+
+      - name: Validate & Generate Traefik Dynamic Config
+        run: |
+          rwarden validate --config routewarden.json
+          rwarden generate --target traefik-yaml --config routewarden.json > dynamic_conf.yml
+
+      - name: Deploy dynamic_conf.yml
+        run: |
+          # Copy dynamic_conf.yml to Traefik file provider directory
+          scp dynamic_conf.yml user@traefik-host:/etc/traefik/dynamic_conf.yml`,
+})
+
+const pipelineSnippets = computed(() => ({
   cli: [
-    { filename: 'CLI', lang: val_cli.lang, code: val_cli.cleanCode, html: val_cli.html, hasDiff: false },
-    { filename: 'Docker', lang: val_docker.lang, code: val_docker.cleanCode, html: val_docker.html, hasDiff: false },
+    { filename: 'CLI', lang: gen_cli.lang, code: gen_cli.cleanCode, html: gen_cli.html, hasDiff: false },
+    { filename: 'Docker', lang: gen_docker.lang, code: gen_docker.cleanCode, html: gen_docker.html, hasDiff: false },
+    { filename: 'GitHub Actions', lang: gen_github.lang, code: gen_github.cleanCode, html: gen_github.html, hasDiff: false },
+  ],
+}))
+
+// ─── 3. Global EntryPoint Protection ──────────────────────────────────────────
+const ep_yaml = buildSnippet({
+  lang: 'yaml',
+  code: `# traefik.yml (Static Configuration: Attach to EntryPoints)
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      middlewares:
+        - routewarden@file # [!code ++]
+  websecure:
+    address: ":443"
+    http:
+      middlewares:
+        - routewarden@file # [!code ++]`,
+})
+
+const ep_toml = buildSnippet({
+  lang: 'toml',
+  code: `# traefik.toml (Static Configuration: Attach to EntryPoints)
+[entryPoints.web]
+  address = ":80"
+  [entryPoints.web.http]
+    middlewares = ["routewarden@file"] # [!code ++]
+
+[entryPoints.websecure]
+  address = ":443"
+  [entryPoints.websecure.http]
+    middlewares = ["routewarden@file"] # [!code ++]`,
+})
+
+const ep_cli = buildSnippet({
+  lang: 'yaml',
+  code: `# docker-compose.yml (Global EntryPoint protection via CLI flags)
+services:
+  traefik:
+    image: traefik:v3.3
+    command:
+      - "--providers.docker=true"
+      - "--providers.file.filename=/etc/traefik/dynamic.yml"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.middlewares=routewarden@file" # [!code ++]
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.middlewares=routewarden@file" # [!code ++]
+      - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden" # [!code ++]
+      - "--experimental.plugins.routewarden.version={{version}}" # [!code ++]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./dynamic.yml:/etc/traefik/dynamic.yml:ro
+
+  # Zero-touch security: webapp is shielded automatically on web & websecure!
+  webapp:
+    image: my-app:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(\`app.example.com\`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      # No individual middleware declaration needed on services!`,
+})
+
+const entrypointSnippets = computed(() => ({
+  traefik: [
+    { filename: 'traefik.yaml', lang: ep_yaml.lang, code: ep_yaml.cleanCode, html: ep_yaml.html, hasDiff: ep_yaml.hasDiff },
+    { filename: 'traefik.toml', lang: ep_toml.lang, code: ep_toml.cleanCode, html: ep_toml.html, hasDiff: ep_toml.hasDiff },
+    { filename: 'docker-compose.yml', lang: ep_cli.lang, code: ep_cli.cleanCode, html: ep_cli.html, hasDiff: ep_cli.hasDiff },
   ],
 }))
 </script>
@@ -245,19 +372,46 @@ Declare RouteWarden in Traefik's plugins configuration:
 
 ### 2. Dynamic Configuration
 
-RouteWarden can be configured using **`routewarden.json`** as your universal security schema, or directly in Traefik dynamic file/label configurations. 
+In Traefik, middlewares, routers, and services are defined in **dynamic configuration** (via file provider or Docker labels), whereas plugins are declared in **static configuration** (`traefik.yml` or CLI flags).
 
-#### How `routewarden.json` Works with Traefik
+To load dynamic configuration files into Traefik, enable the file provider in your static configuration:
 
-Because `routewarden.json` adheres to the official RouteWarden JSON Schema, every field in `routewarden.json` maps directly 1-to-1 to Traefik's `plugin.routewarden` configuration keys. You maintain security rules in a single `routewarden.json` file with IDE schema validation, and deploy the corresponding keys into your Traefik router middleware:
+<CodeViewer :snippets="fileProviderSnippets" />
+
+RouteWarden can be configured using **`routewarden.json`** as your universal security schema, or directly in Traefik dynamic file/label configurations.
+
+#### How `routewarden.json` Maps to Dynamic Configuration
+
+Because `routewarden.json` adheres to the official RouteWarden JSON Schema, every field in `routewarden.json` maps directly 1-to-1 to Traefik's `plugin.routewarden` middleware configuration keys:
 
 <CodeViewer :snippets="dynamicSnippets" />
 
-> **Offline CI/CD Validation with `rwarden`**:
-> 
-> Validate your `routewarden.json` schema before deploying to Traefik using the [RouteWarden CLI (`rwarden`)](https://routewarden.github.io/cli/):
-> 
-> <CodeViewer :snippets="validationSnippets" />
+#### Using `routewarden.json` Directly via Generate Pipeline
+
+If you maintain `routewarden.json` as your single source of truth across Git repositories or multi-gateway environments, use the [RouteWarden CLI (`rwarden`)](https://routewarden.github.io/cli/) to validate rules offline and compile directly into Traefik configurations during your deployment pipeline:
+
+<CodeViewer :snippets="pipelineSnippets" />
+
+---
+
+### 3. Global Protection via EntryPoints (Protect All Services)
+
+Instead of manually attaching `routewarden` to every individual router across dozens of microservices or containers, you can attach RouteWarden directly to Traefik's **entryPoints** (such as `web` on `:80` and `websecure` on `:443`).
+
+When attached to an entryPoint, RouteWarden enforces security inspection **globally for all incoming requests** before any router or service is reached:
+
+<CodeViewer :snippets="entrypointSnippets" />
+
+#### Why Use EntryPoint Protection?
+- **Zero-Touch Service Protection**: Every newly deployed service or container inherits path traversal and asset protection automatically without modifying developer `docker-compose.yml` or Kubernetes manifests.
+- **Provider Syntax (`@file` vs `@docker`)**: When referencing middleware in static entryPoints, suffix the middleware name with the provider that defined it:
+  - `routewarden@file`: Middleware defined in dynamic file configuration (`dynamic.yml` or `dynamic.toml`).
+  - `routewarden@docker`: Middleware declared via Docker labels on the Traefik service itself.
+- **Defense in Depth**: Even if an application router is misconfigured or a developer forgets security labels, the gateway blocks sensitive probing at the entryPoint edge.
+
+> **Complete Global Shield Blueprint**:
+>
+> For full multi-container production recipes and docker-compose configurations, see [Example 2: Global EntryPoint Shield](/examples/docker-compose-global).
 
 ---
 
@@ -268,3 +422,4 @@ Because `routewarden.json` adheres to the official RouteWarden JSON Schema, ever
 - Check out the [Production Case Studies](/examples/overview) for real-world setups.
 - Use the [RouteWarden CLI (`rwarden`)](https://routewarden.github.io/cli/) for offline path testing and schema generation.
 - Check the [Examples & Wiki Cookbook](/examples/overview) for production Docker Compose & Kubernetes blueprints.
+

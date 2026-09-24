@@ -136,11 +136,15 @@ When a path matches a block rule, RouteWarden can respond with:
 - **`proxy`**: Forwards matching traffic to an internal inspection or canary service.
 - **`infiniteStream`**: Continuous stream of pseudorandom data.
 
+<script setup>
+import setupSnippets from './.vitepress/theme/components/setup-snippets.json'
+</script>
+
 ## 30-Second Setup
 
 Get protected in seconds with your preferred gateway:
 
-<QuickSetup />
+<CodeViewer :snippets="setupSnippets" />
 
 ---
 

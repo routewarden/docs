@@ -17,15 +17,27 @@ const install_compose = buildSnippet({
       - "--experimental.plugins.routewarden.version={{version}}" # [!code ++]
       - "--providers.docker=true"
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.middlewares=warden@docker" # [!code ++]
     ports:
       - "80:80"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro`,
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels: # [!code ++]
+      - "traefik.enable=true" # [!code ++]
+      - "traefik.http.middlewares.warden.plugin.routewarden.enabled=true" # [!code ++]
+      - "traefik.http.middlewares.warden.plugin.routewarden.enableDefaultPatterns=true" # [!code ++]`,
 })
 
 const install_yaml = buildSnippet({
   lang: 'yaml',
   code: `# traefik.yml (Static YAML)
+entryPoints: # [!code ++]
+  web: # [!code ++]
+    address: ":80" # [!code ++]
+    http: # [!code ++]
+      middlewares: # [!code ++]
+        - warden@file # [!code ++]
+
 experimental: # [!code ++]
   plugins: # [!code ++]
     routewarden: # [!code ++]
@@ -36,6 +48,11 @@ experimental: # [!code ++]
 const install_toml = buildSnippet({
   lang: 'toml',
   code: `# traefik.toml (Static TOML)
+[entryPoints.web] # [!code ++]
+  address = ":80" # [!code ++]
+  [entryPoints.web.http] # [!code ++]
+    middlewares = ["warden@file"] # [!code ++]
+
 [experimental.plugins.routewarden] # [!code ++]
   moduleName = "github.com/routewarden/traefik-warden" # [!code ++]
   version = "{{version}}" # [!code ++]`,
@@ -46,7 +63,8 @@ const install_cli = buildSnippet({
   code: `# Traefik CLI arguments
 traefik \\
   --experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden \\ # [!code ++]
-  --experimental.plugins.routewarden.version={{version}} # [!code ++]`,
+  --experimental.plugins.routewarden.version={{version}} \\ # [!code ++]
+  --entrypoints.web.http.middlewares=warden@docker # [!code ++]`,
 })
 
 const installSnippets = computed(() => ({
@@ -59,6 +77,37 @@ const installSnippets = computed(() => ({
 }))
 
 // ─── 30-Second Quick Start Snippets ──────────────────────────────────────────
+const quick_compose = buildSnippet({
+  lang: 'yaml',
+  code: `# docker-compose.yml: Global protection on entryPoint
+services:
+  traefik:
+    image: traefik:v3.3
+    command:
+      - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden"
+      - "--experimental.plugins.routewarden.version={{version}}"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.middlewares=warden@docker" # [!code ++]
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - "traefik.enable=true"
+      # Global EntryPoint Shield: protects ALL services automatically
+      - "traefik.http.middlewares.warden.plugin.routewarden.enabled=true" # [!code ++]
+      - "traefik.http.middlewares.warden.plugin.routewarden.enableDefaultPatterns=true" # [!code ++]
+
+  # All services are now shielded automatically without router labels:
+  webapp:
+    image: nginx:alpine
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=PathPrefix(\`/\`)"
+      - "traefik.http.routers.app.entrypoints=web"`,
+})
+
 const quick_yaml = buildSnippet({
   lang: 'yaml',
   code: `# dynamic_conf.yml
@@ -71,51 +120,35 @@ http:
           enableDefaultPatterns: true
 
   routers:
+    # Router requires no middleware labels when attached to entryPoints:
     app-router:
       rule: "Host(\`example.com\`)"
       entryPoints:
         - web
-      middlewares:
-        - warden
       service: app-service`,
 })
 
 const quick_toml = buildSnippet({
   lang: 'toml',
   code: `# dynamic_conf.toml
+[http.middlewares.warden.plugin.routewarden]
+  enabled = true
+  enableDefaultPatterns = true
+
 [http.routers.app-router]
   rule = "Host(\`example.com\`)"
   entryPoints = ["web"]
-  middlewares = ["warden"]
-  service = "app-service"
-
-[http.middlewares.warden.plugin.routewarden]
-  enabled = true
-  enableDefaultPatterns = true`,
-})
-
-const quick_labels = buildSnippet({
-  lang: 'yaml',
-  code: `# Docker Compose Labels on your backend container:
-services:
-  app:
-    image: my-app:latest
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.app.rule=Host(\`example.com\`)"
-      - "traefik.http.routers.app.entrypoints=web"
-      - "traefik.http.routers.app.middlewares=warden"
-      - "traefik.http.middlewares.warden.plugin.routewarden.enabled=true"
-      - "traefik.http.middlewares.warden.plugin.routewarden.enableDefaultPatterns=true"`,
+  service = "app-service"`,
 })
 
 const quickStartSnippets = computed(() => ({
   traefik: [
-    { filename: 'Traefik(YAML)', lang: 'yaml', code: quick_yaml.cleanCode, html: quick_yaml.html, hasDiff: false },
-    { filename: 'Traefik(TOML)', lang: 'toml', code: quick_toml.cleanCode, html: quick_toml.html, hasDiff: false },
-    { filename: 'Traefik(Labels)', lang: 'yaml', code: quick_labels.cleanCode, html: quick_labels.html, hasDiff: false },
+    { filename: 'docker-compose.yml', lang: 'yaml', code: quick_compose.cleanCode, html: quick_compose.html, hasDiff: quick_compose.hasDiff },
+    { filename: 'traefik.yaml', lang: 'yaml', code: quick_yaml.cleanCode, html: quick_yaml.html, hasDiff: false },
+    { filename: 'traefik.toml', lang: 'toml', code: quick_toml.cleanCode, html: quick_toml.html, hasDiff: false },
   ],
 }))
+
 </script>
 
 # RouteWarden for Traefik

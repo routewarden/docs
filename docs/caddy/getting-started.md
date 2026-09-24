@@ -174,9 +174,67 @@ const config_opt1_api = buildSnippet({
 
 const configOpt1Snippets = computed(() => ({
   caddy: [
-    { filename: 'Caddyfile', lang: 'caddy', code: config_opt1_caddyfile.cleanCode, html: config_opt1_caddyfile.html, hasDiff: config_opt1_caddyfile.hasDiff },
     { filename: 'routewarden.json', lang: 'json', code: config_opt1_json.cleanCode, html: config_opt1_json.html, hasDiff: false },
+    { filename: 'Caddyfile', lang: 'caddy', code: config_opt1_caddyfile.cleanCode, html: config_opt1_caddyfile.html, hasDiff: config_opt1_caddyfile.hasDiff },
     { filename: 'caddy-api.json', lang: 'json', code: config_opt1_api.cleanCode, html: config_opt1_api.html, hasDiff: false },
+  ],
+}))
+
+// ─── Direct Generation & CI/CD Pipeline ───────────────────────────────────────
+const gen_cli = buildSnippet({
+  lang: 'bash',
+  code: `# 1. Validate schema compliance, regex patterns, and CIDRs
+rwarden validate --config routewarden.json
+
+# 2. Compile directly into Caddyfile directive block
+rwarden generate --target caddy --config routewarden.json > Caddyfile`,
+})
+
+const gen_docker = buildSnippet({
+  lang: 'bash',
+  code: `# Validate and generate without local installation
+docker run --rm -v $(pwd):/workspace -w /workspace \\
+  ghcr.io/routewarden/cli:latest validate --config routewarden.json
+
+docker run --rm -v $(pwd):/workspace -w /workspace \\
+  ghcr.io/routewarden/cli:latest generate --target caddy --config routewarden.json > Caddyfile`,
+})
+
+const gen_github = buildSnippet({
+  lang: 'yaml',
+  code: `# .github/workflows/deploy.yml
+name: Deploy Caddy Security Rules
+on:
+  push:
+    paths:
+      - 'routewarden.json'
+
+jobs:
+  build-caddy-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install RouteWarden CLI
+        run: curl -sSfL https://routewarden.github.io/install.sh | sh
+
+      - name: Validate & Generate Caddyfile Snippet
+        run: |
+          rwarden validate --config routewarden.json
+          rwarden generate --target caddy --config routewarden.json > Caddyfile
+
+      - name: Reload Caddy Server
+        run: |
+          # Copy to Caddy host and reload
+          scp Caddyfile user@caddy-host:/etc/caddy/Caddyfile
+          ssh user@caddy-host "caddy reload --config /etc/caddy/Caddyfile"`,
+})
+
+const pipelineSnippets = computed(() => ({
+  cli: [
+    { filename: 'CLI', lang: gen_cli.lang, code: gen_cli.cleanCode, html: gen_cli.html, hasDiff: false },
+    { filename: 'Docker', lang: gen_docker.lang, code: gen_docker.cleanCode, html: gen_docker.html, hasDiff: false },
+    { filename: 'GitHub Actions', lang: gen_github.lang, code: gen_github.cleanCode, html: gen_github.html, hasDiff: false },
   ],
 }))
 
@@ -442,21 +500,11 @@ You can define RouteWarden security rules using **`routewarden.json` (Recommende
 
 <CodeViewer :snippets="configOpt1Snippets" />
 
-Validate and verify your rules with `rwarden` before deploying:
+#### Using `routewarden.json` Directly via Generate Pipeline
 
-::: code-group
+If you maintain `routewarden.json` as your single source of truth across Git repositories or multi-gateway environments, use the [RouteWarden CLI (`rwarden`)](https://routewarden.github.io/cli/) to validate rules offline and compile directly into Caddyfile directive blocks during your deployment pipeline:
 
-```bash [CLI]
-# Verify syntax, regex compilation, and CIDR blocks offline
-rwarden validate --config routewarden.json
-```
-
-```bash [Docker]
-# Mount configuration file and validate
-docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest validate --config /routewarden.json
-```
-
-:::
+<CodeViewer :snippets="pipelineSnippets" />
 
 ---
 

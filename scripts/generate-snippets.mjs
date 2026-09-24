@@ -3,15 +3,21 @@ import path from 'node:path'
 import { createMarkdownRenderer } from 'vitepress'
 
 export async function generateSetupSnippets(options = {}) {
-  const rootDir = options.rootDir || process.cwd()
-  const versionFilePath = path.join(rootDir, 'docs/version.json')
+  // Determine the docs directory (where package.json and scripts/ live)
+  let docsPackageDir = options.rootDir || process.cwd()
+  if (path.basename(docsPackageDir) !== 'docs' && fs.existsSync(path.join(docsPackageDir, 'docs/package.json'))) {
+    docsPackageDir = path.join(docsPackageDir, 'docs')
+  }
+
+  const versionFilePath = path.join(docsPackageDir, 'docs/version.json')
   let currentVersion = 'v1.1.0'
   if (fs.existsSync(versionFilePath)) {
     const vData = JSON.parse(fs.readFileSync(versionFilePath, 'utf8'))
     currentVersion = vData.version.startsWith('v') ? vData.version : `v${vData.version}`
   }
 
-  const md = await createMarkdownRenderer(path.join(rootDir, 'docs'))
+  const docsDir = path.join(docsPackageDir, 'docs')
+  const md = await createMarkdownRenderer(docsDir)
 
   // Helper: render code with diff-add highlights on specific lines.
   // Uses the Shiki line-range meta `{1,2,5}` which produces class="line highlighted"
@@ -32,8 +38,8 @@ export async function generateSetupSnippets(options = {}) {
       {
         filename: 'docker-compose.yml',
         lang: 'yaml',
-        // Lines 5,6 = routewarden plugin args; 21,22 = routewarden middleware labels
-        diffLines: [5, 6, 21, 22],
+        // Lines 5,6 = routewarden plugin args; 9 = global entrypoint middleware; 17,18 = routewarden middleware definition
+        diffLines: [5, 6, 9, 17, 18],
         code: `services:
   traefik:
     image: traefik:v3.3
@@ -42,20 +48,69 @@ export async function generateSetupSnippets(options = {}) {
       - "--experimental.plugins.routewarden.version=${currentVersion}"
       - "--providers.docker=true"
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.middlewares=warden@docker"
     ports:
       - "80:80"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - "traefik.enable=true"
+      # Global EntryPoint Shield: protects ALL services automatically
+      - "traefik.http.middlewares.warden.plugin.routewarden.enabled=true"
+      - "traefik.http.middlewares.warden.plugin.routewarden.enableDefaultPatterns=true"
 
   webapp:
     image: nginx:alpine
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.app.rule=PathPrefix(\`/\`)"
-      - "traefik.http.routers.app.entrypoints=web"
-      - "traefik.http.routers.app.middlewares=warden"
-      - "traefik.http.middlewares.warden.plugin.routewarden.enabled=true"
-      - "traefik.http.middlewares.warden.plugin.routewarden.enableDefaultPatterns=true"`
+      - "traefik.http.routers.app.entrypoints=web"`
+      },
+      {
+        filename: 'traefik.yaml',
+        lang: 'yaml',
+        // Line 6 = - warden@file; Lines 10-12 = plugin definition; Lines 16-20 = dynamic middleware block
+        diffLines: [6, 10, 11, 12, 16, 17, 18, 19, 20],
+        code: `entryPoints:
+  web:
+    address: ":80"
+    http:
+      middlewares:
+        - warden@file
+
+experimental:
+  plugins:
+    routewarden:
+      moduleName: github.com/routewarden/traefik-warden
+      version: ${currentVersion}
+
+# Dynamic Configuration:
+http:
+  middlewares:
+    warden:
+      plugin:
+        routewarden:
+          enabled: true
+          enableDefaultPatterns: true`
+      },
+      {
+        filename: 'traefik.toml',
+        lang: 'toml',
+        // Line 4 = middlewares; Lines 6-8 = plugin definition; Lines 12-13 = dynamic middleware block
+        diffLines: [4, 6, 7, 8, 12, 13],
+        code: `[entryPoints.web]
+  address = ":80"
+  [entryPoints.web.http]
+    middlewares = ["warden@file"]
+
+[experimental.plugins.routewarden]
+  moduleName = "github.com/routewarden/traefik-warden"
+  version = "${currentVersion}"
+
+# Dynamic Configuration:
+[http.middlewares.warden.plugin.routewarden]
+  enabled = true
+  enableDefaultPatterns = true`
       }
     ],
     caddy: [
@@ -87,7 +142,7 @@ volumes:
       },
       {
         filename: 'Caddyfile',
-        lang: 'nginx',
+        lang: 'caddy',
         // Lines 2 = order directive; 6,7,8 = route_warden block
         diffLines: [2, 6, 7, 8],
         code: `{
@@ -160,6 +215,27 @@ rwarden validate --config routewarden.json
 rwarden test --path "/%252e%252e/.env"`
       },
       {
+        filename: 'generate',
+        lang: 'bash',
+        diffLines: [],
+        code: `# Generate native gateway configurations from routewarden.json:
+
+# 1. Traefik Dynamic YAML
+rwarden generate --target traefik-yaml --config routewarden.json > dynamic.yml
+
+# 2. Traefik Dynamic TOML
+rwarden generate --target traefik-toml --config routewarden.json > dynamic.toml
+
+# 3. Traefik Docker Compose Labels
+rwarden generate --target traefik-labels --config routewarden.json
+
+# 4. Caddy Caddyfile Directive
+rwarden generate --target caddy --config routewarden.json > Caddyfile
+
+# 5. NGINX / OpenResty Lua init block
+rwarden generate --target nginx --config routewarden.json`
+      },
+      {
         filename: 'routewarden.json',
         lang: 'json',
         diffLines: [],
@@ -181,17 +257,19 @@ rwarden test --path "/%252e%252e/.env"`
   const result = {}
   for (const [gw, files] of Object.entries(setupSnippets)) {
     result[gw] = files.map(f => {
+      const hasDiff = Boolean(f.diffLines && f.diffLines.length > 0)
       const html = renderSnippet(f.code, f.lang, f.diffLines)
       return {
         filename: f.filename,
         lang: f.lang,
         code: f.code,
-        html
+        html,
+        hasDiff
       }
     })
   }
 
-  const targetPath = path.join(rootDir, 'docs/.vitepress/theme/components/setup-snippets.json')
+  const targetPath = path.join(docsPackageDir, 'docs/.vitepress/theme/components/setup-snippets.json')
   fs.writeFileSync(targetPath, JSON.stringify(result, null, 2) + '\n', 'utf8')
   return targetPath
 }
