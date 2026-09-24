@@ -101,6 +101,37 @@
     border-color: rgba(255, 255, 255, 0.1) !important;
     color: var(--vp-c-text-2) !important;
   }
+
+  /* Reset inner default key borders and padding to prevent double containers */
+  .VPNavBarSearch .DocSearch-Button-Key {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    line-height: 1 !important;
+    min-width: 0 !important;
+    box-shadow: none !important;
+    color: inherit !important;
+    font-size: inherit !important;
+  }
+
+  .VPNavBarSearch .DocSearch-Button-Key:first-child {
+    font-size: 0 !important;
+  }
+
+  .VPNavBarSearch .DocSearch-Button-Key:first-child:after {
+    font-size: 11px !important;
+    font-family: inherit !important;
+    font-weight: 700 !important;
+    color: inherit !important;
+    letter-spacing: normal !important;
+  }
 }
 
 /* Responsive Topbar Menu Items Progressive Disclosure */
