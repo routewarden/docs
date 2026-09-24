@@ -84,8 +84,8 @@ services:
   traefik:
     image: traefik:v3.3
     command:
-      - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden"
-      - "--experimental.plugins.routewarden.version={{version}}"
+      - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden"  # [!code ++]
+      - "--experimental.plugins.routewarden.version={{version}}" # [!code ++]
       - "--providers.docker=true"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.middlewares=warden@docker" # [!code ++]
