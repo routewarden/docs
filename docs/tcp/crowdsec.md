@@ -5,10 +5,10 @@ description: Connect TCP Warden with CrowdSec Local API (LAPI) for automated col
 
 # CrowdSec LAPI Integration
 
-RouteWarden TCP Warden features native, bidirectional integration with **[CrowdSec](https://www.crowdsec.net/)**:
+RouteWarden TCP Warden integrates directly with **[CrowdSec](https://www.crowdsec.net/)**:
 
-1. **Log Production**: Emits structured JSONL logs for every connection attempt, authentication failure, and security event.
-2. **Real-Time Remediation**: Operates as a native CrowdSec Bouncer, periodically polling CrowdSec Local API (LAPI) to enforce community and local IP bans at the L4 layer before connections reach your backend services.
+1. **Logs Security Events**: Writes structured JSONL logs for every connection attempt, failed login, or blocked action.
+2. **Blocks Threats in Real Time**: Acts as a native CrowdSec bouncer, automatically polling your CrowdSec Local API (LAPI) to block community-reported and local bad IPs before they ever reach your applications.
 
 ---
 

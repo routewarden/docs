@@ -133,11 +133,11 @@ smtp           smtp       0              5               0
 
 When deployed in production, TCP Warden organizes files across three dedicated paths:
 
-| Path | Volume | Purpose |
+| Path | Volume | What it stores |
 | :--- | :--- | :--- |
-| `/etc/routewarden/tcp-warden.yaml` | `tcp-warden-config` | Main YAML configuration file (AST-manipulated by CLI commands) |
-| `/var/lib/routewarden/plugins` | `tcp-warden-plugins` | Cached Git clones and compiled assets for modular protocol plugins |
-| `/var/log/routewarden/tcp-warden.jsonl` | `tcp-warden-logs` | High-throughput structured JSONL audit logs read by CrowdSec |
+| `/etc/routewarden/tcp-warden.yaml` | `tcp-warden-config` | Main configuration file (auto-generated on first boot). |
+| `/var/lib/routewarden/plugins` | `tcp-warden-plugins` | Downloaded plugins cache so restarts are instant. |
+| `/var/log/routewarden/tcp-warden.jsonl` | `tcp-warden-logs` | Structured audit log file recording all connection and security events. |
 
 ---
 

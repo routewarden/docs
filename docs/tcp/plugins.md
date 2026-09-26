@@ -15,22 +15,22 @@ Core protocols (`ssh`, `smtp`, `pop3`, `imap`, and raw `tcp`) are built directly
 
 RouteWarden provides **14 official plugins** ready for production use:
 
-| Plugin | Protocol(s) | Key Protection Capabilities |
+| Plugin | Protocol(s) | What it does |
 | :--- | :--- | :--- |
-| **[`http`](https://github.com/routewarden/plugins/tree/develop/http)** | `http` | Layer 7 HTTP/1.x filtering: Host header whitelisting, User-Agent blocking, path allowlists, and regex path/header blocking. Seamless WebSocket upgrade pass-through. |
-| **[`postgres`](https://github.com/routewarden/plugins/tree/develop/postgres)** | `postgres`, `postgresql` | Decodes `StartupMessage`, SSL negotiation, SCRAM-SHA-256 and MD5 authentication failures (`28P01` / `28000`), and brute-force tracking. |
-| **[`mysql`](https://github.com/routewarden/plugins/tree/develop/mysql)** | `mysql`, `mariadb` | Handshake sequence decoding, `CLIENT_SSL` negotiation, `caching_sha2_password` exchange, and access denied (`1045`/`1044`) mitigation. |
-| **[`redis`](https://github.com/routewarden/plugins/tree/develop/redis)** | `redis`, `resp` | RESP2/RESP3 command firewall: blocks dangerous commands (`FLUSHALL`, `CONFIG`, `SHUTDOWN`), tracks `-WRONGPASS` auth failures, and rate limits requests. |
-| **[`mongodb`](https://github.com/routewarden/plugins/tree/develop/mongodb)** | `mongodb` | OP_MSG wire protocol inspection: tracks authentication errors (codes `18`, `334`), and intercepts destructive operations (`drop`, `dropDatabase`, `shutdown`). |
-| **[`memcached`](https://github.com/routewarden/plugins/tree/develop/memcached)** | `memcached` | ASCII protocol firewall: intercepts admin commands (`flush_all`, `shutdown`), tracks invalid auth, and handles multi-key queries safely. |
-| **[`tls_sni`](https://github.com/routewarden/plugins/tree/develop/tls_sni)** | `tls`, `tls-sni`, `https` | Transparent Layer 4 TLS ClientHello inspection to route or filter by domain name (SNI) without terminating TLS encryption or needing certificates. |
-| **[`amqp`](https://github.com/routewarden/plugins/tree/develop/amqp)** | `amqp`, `rabbitmq` | AMQP 0-9-1 connection/channel frame inspection: decodes `Connection.StartOk` and tracks SASL PLAIN authentication failures. |
-| **[`ldap`](https://github.com/routewarden/plugins/tree/develop/ldap)** | `ldap` | LDAPv3 ASN.1 BER message decoding: detects Simple Bind authentication failures (`resultCode: 49`) and mitigates dictionary attacks against Active Directory/OpenLDAP. |
-| **[`vnc`](https://github.com/routewarden/plugins/tree/develop/vnc)** | `vnc`, `rfb` | RFB 3.3/3.7/3.8 protocol negotiation: tracks VNC authentication failures (`SecurityResult: 1`) and isolates remote desktop brute-force attempts. |
-| **[`ftp`](https://github.com/routewarden/plugins/tree/develop/ftp)** | `ftp` | RFC 959 control connection inspection, `AUTH TLS`/`SSL` handover, anonymous login restrictions, and authentication error (`530`) triggers. |
-| **[`mqtt`](https://github.com/routewarden/plugins/tree/develop/mqtt)** | `mqtt` | IoT broker protection: parses MQTT `CONNECT` packets, enforces maximum ClientID length, and blocks malicious ClientID prefixes. |
-| **[`minecraft`](https://github.com/routewarden/plugins/tree/develop/minecraft)** | `minecraft` | Minecraft Java Server List Ping (SLP) inspector: blocks malformed handshake floods and enforces allowed protocol versions. |
-| **[`echo_filter`](https://github.com/routewarden/plugins/tree/develop/echo_filter)** | `echo`, `stream-filter` | Bidirectional stream filter demonstrating real-time regex/keyword payload sanitization and interception. |
+| **[`http`](https://github.com/routewarden/plugins/tree/develop/http)** | `http` | Blocks vulnerability scanners (User-Agent), regex path attacks (e.g. `/.env`, `/admin`), and validates Host headers. Transparent WebSocket pass-through. |
+| **[`postgres`](https://github.com/routewarden/plugins/tree/develop/postgres)** | `postgres`, `postgresql` | Catches failed password attempts (`28P01`) and automatically bans brute-force bots targeting PostgreSQL. |
+| **[`mysql`](https://github.com/routewarden/plugins/tree/develop/mysql)** | `mysql`, `mariadb` | Detects Access Denied errors (`1045`) and mitigates credential brute-forcing against MySQL and MariaDB. |
+| **[`redis`](https://github.com/routewarden/plugins/tree/develop/redis)** | `redis`, `resp` | Command firewall: blocks dangerous commands (`FLUSHALL`, `CONFIG`, `SHUTDOWN`) and bans repeated wrong passwords (`-WRONGPASS`). Supports RESP2 & RESP3. |
+| **[`mongodb`](https://github.com/routewarden/plugins/tree/develop/mongodb)** | `mongodb` | Wire protocol firewall: blocks destructive commands (`drop`, `dropDatabase`, `shutdown`) and bans failed authentications. |
+| **[`memcached`](https://github.com/routewarden/plugins/tree/develop/memcached)** | `memcached` | Protects caches by blocking administrative wipe commands (`flush_all`) and tracking unauthorized attempts. |
+| **[`tls_sni`](https://github.com/routewarden/plugins/tree/develop/tls_sni)** | `tls`, `tls-sni`, `https` | Inspects domain names (SNI) at Layer 4 to allow, block, or route domains without needing TLS certificates or decryption. |
+| **[`amqp`](https://github.com/routewarden/plugins/tree/develop/amqp)** | `amqp`, `rabbitmq` | Protects RabbitMQ and AMQP brokers by tracking SASL authentication failures and malicious connection frames. |
+| **[`ldap`](https://github.com/routewarden/plugins/tree/develop/ldap)** | `ldap` | Detects failed LDAP bind attempts (`resultCode: 49`) to protect Active Directory and OpenLDAP from credential stuffing. |
+| **[`vnc`](https://github.com/routewarden/plugins/tree/develop/vnc)** | `vnc`, `rfb` | Protects remote desktop servers by detecting and banning VNC brute-force login attempts. |
+| **[`ftp`](https://github.com/routewarden/plugins/tree/develop/ftp)** | `ftp` | Monitors control connections, restricts anonymous logins, and blocks repeated FTP authentication failures (`530`). |
+| **[`mqtt`](https://github.com/routewarden/plugins/tree/develop/mqtt)** | `mqtt` | Protects IoT brokers by enforcing valid client IDs and blocking scanner or bot prefixes. |
+| **[`minecraft`](https://github.com/routewarden/plugins/tree/develop/minecraft)** | `minecraft` | Protects game servers from ping floods, malformed handshake packets, and unsupported client versions. |
+| **[`echo_filter`](https://github.com/routewarden/plugins/tree/develop/echo_filter)** | `echo`, `stream-filter` | Example bidirectional stream filter that inspects and sanitizes text keywords in real time. |
 
 ---
 

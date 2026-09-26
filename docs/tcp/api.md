@@ -1,35 +1,43 @@
 ---
-title: Management API & Server-Sent Events
-description: Administrative REST and live Server-Sent Events (SSE) stream endpoints exposed by RouteWarden TCP Warden.
+title: HTTP Management API & Live Events
+description: Simple REST endpoints and live Server-Sent Events (SSE) stream for monitoring and managing TCP Warden.
 ---
 
-# Management API & Server-Sent Events
+# HTTP API & Live Events
 
-TCP Warden includes a built-in HTTP server on port `9091` (configurable via `api.listen`) providing health monitoring, service statistics, banlist management, and real-time event streaming.
+TCP Warden includes a built-in HTTP server on port `9091` (configurable via `api.listen`).
+
+Use it to:
+- Check daemon health and uptime.
+- View real-time traffic and connection counts per service.
+- View, add, or remove active IP bans.
+- Stream live security events directly in your terminal.
 
 ---
 
 ## Authentication
 
-If `api.auth_token` is configured in `tcp-warden.yaml`, all requests (except `/health`) require an HTTP `Authorization` header:
+If you set `auth_token` in your `tcp-warden.yaml`, pass it in the `Authorization` header:
 
 ```bash
 curl -H "Authorization: Bearer my-secret-token" http://127.0.0.1:9091/stats
 ```
 
+*(The `/health` endpoint is always accessible without a token so health checks and container probes keep working).*
+
 ---
 
 ## Endpoints
 
-### 1. Health Probe (`GET /health`)
+### 1. Health Check (`GET /health`)
 
-Lightweight liveness probe for Docker healthchecks and Kubernetes probes.
+A quick check to confirm the daemon is up and running. Perfect for Docker health checks or Kubernetes probes.
 
 ```bash
 curl -s http://127.0.0.1:9091/health
 ```
 
-**Response (`200 OK`)**:
+**Example Response**:
 ```json
 {
   "status": "ok",
@@ -39,48 +47,48 @@ curl -s http://127.0.0.1:9091/health
 
 ---
 
-### 2. Service Statistics (`GET /stats`)
+### 2. Traffic & Connection Stats (`GET /stats`)
 
-Returns aggregated connection metrics and byte counters per configured service.
+Shows how many connections are active, total allowed and blocked requests, and bytes transferred for each service.
 
 ```bash
 curl -s http://127.0.0.1:9091/stats
 ```
 
-**Response (`200 OK`)**:
+**Example Response**:
 ```json
 {
   "services": {
     "ssh": {
-      "active_connections": 2,
-      "total_allowed": 1420,
-      "total_blocked": 38,
+      "active_connections": 1,
+      "total_allowed": 142,
+      "total_blocked": 8,
       "bytes_in": 1048576,
       "bytes_out": 4194304
     },
     "postgres": {
-      "active_connections": 15,
-      "total_allowed": 8920,
-      "total_blocked": 12,
+      "active_connections": 5,
+      "total_allowed": 2340,
+      "total_blocked": 0,
       "bytes_in": 52428800,
       "bytes_out": 104857600
     }
   },
-  "uptime_seconds": 86400
+  "uptime_seconds": 3600
 }
 ```
 
 ---
 
-### 3. Active Banlist (`GET /banlist`)
+### 3. View Banned IPs (`GET /banlist`)
 
-Lists all currently banned IP addresses, ban reasons, offending service, and expiration timestamps.
+Lists all currently banned IPs, why they were banned, and when the ban expires.
 
 ```bash
 curl -s http://127.0.0.1:9091/banlist
 ```
 
-**Response (`200 OK`)**:
+**Example Response**:
 ```json
 {
   "bans": [
@@ -98,21 +106,21 @@ curl -s http://127.0.0.1:9091/banlist
 
 ---
 
-### 4. Manual IP Ban (`POST /ban`)
+### 4. Manually Ban an IP (`POST /ban`)
 
-Manually ban an IP address across all services or for a specific service.
+Block an offending IP address across all services:
 
 ```bash
 curl -X POST http://127.0.0.1:9091/ban \
   -H "Content-Type: application/json" \
-  -d '{"ip": "203.0.113.50", "duration": "24h", "reason": "abusive scanning"}'
+  -d '{"ip": "203.0.113.50", "duration": "24h", "reason": "suspicious port scan"}'
 ```
 
 ---
 
-### 5. Manual IP Unban (`POST /unban`)
+### 5. Unban an IP (`POST /unban`)
 
-Lift an active ban immediately:
+Remove a ban immediately if an IP was blocked by mistake:
 
 ```bash
 curl -X POST http://127.0.0.1:9091/unban \
@@ -124,20 +132,20 @@ curl -X POST http://127.0.0.1:9091/unban \
 
 ### 6. Live Security Events Stream (`GET /events`)
 
-A high-performance **Server-Sent Events (SSE)** endpoint streaming live connection decisions as they occur in the 8-stage pipeline.
+Watch security decisions live as they happen using **Server-Sent Events (SSE)**. You can pipe this into monitoring tools, Slack bots, or simply watch in your terminal:
 
 ```bash
 curl -N http://127.0.0.1:9091/events
 ```
 
-**Stream Output**:
+**Live Output Example**:
 ```
 event: security_event
-data: {"service":"ssh","client_ip":"198.51.100.80","country":"CN","action":"auth_failure","reason":"attempt 1/3","bytes_in":0,"bytes_out":0,"timestamp":"2026-09-25T21:55:01Z"}
+data: {"service":"ssh","client_ip":"198.51.100.80","country":"CN","action":"auth_failure","reason":"failed login attempt 1/3","timestamp":"2026-09-25T21:55:01Z"}
 
 event: security_event
-data: {"service":"ssh","client_ip":"198.51.100.80","country":"CN","action":"banned","reason":"max_auth_failures_exceeded (3)","bytes_in":0,"bytes_out":0,"timestamp":"2026-09-25T21:55:04Z"}
+data: {"service":"ssh","client_ip":"198.51.100.80","country":"CN","action":"banned","reason":"max failures exceeded","timestamp":"2026-09-25T21:55:04Z"}
 
 event: security_event
-data: {"service":"postgres","client_ip":"10.0.0.5","country":"US","action":"allowed","reason":"session_complete","bytes_in":8192,"bytes_out":16384,"timestamp":"2026-09-25T21:55:12Z"}
+data: {"service":"http","client_ip":"203.0.113.12","country":"US","action":"blocked","reason":"blocked_path_/.env","timestamp":"2026-09-25T21:55:10Z"}
 ```

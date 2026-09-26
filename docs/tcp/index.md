@@ -57,16 +57,16 @@ Unlike traditional L4 proxies like HAProxy or NGINX Stream that treat TCP stream
 
 ### Pipeline Stages Explained
 
-| Stage | Name | Description |
+| Stage | Name | What it does |
 | :--- | :--- | :--- |
-| **Stage 1** | **Concurrency Limiting** | Enforces `global.max_connections` (e.g., 10,000) using atomic counters to prevent resource starvation. |
-| **Stage 2** | **Failure Tracker & Banlist** | Thread-safe in-memory banlist tracking consecutive authentication failures within sliding time windows. Bans offenders for configured durations. |
-| **Stage 3** | **CrowdSec LAPI Sync** | Interrogates local CrowdSec bouncer cache for active community remediation decisions (ban, throttle, bypass). |
-| **Stage 4** | **IP Filtering** | Fast IPv4 and IPv6 subnet checking using `net.IPNet` allowlists and denylists. |
-| **Stage 5** | **Geo-Blocking** | Fast lookup against MaxMind GeoLite2 databases to enforce country-level access policies. |
-| **Stage 6** | **Token-Bucket Rate Limiter** | Per-client connection throttling with configurable connections-per-minute and burst allowance. |
-| **Stage 7** | **Protocol Inspection** | Performs state-machine protocol analysis (e.g. SSL negotiation, SASL, ClientHello SNI) before establishing bidirectional proxying. |
-| **Stage 8** | **Audit Logging & SSE** | Emits structured JSONL audit events and broadcasts real-time security events over Server-Sent Events (`:9091/events`). |
+| **Stage 1** | **Connection Limits** | Caps total open connections to prevent resource exhaustion and DoS. |
+| **Stage 2** | **Failure Tracker & Bans** | Automatically bans IPs that trigger repeated login or auth failures. |
+| **Stage 3** | **CrowdSec Sync** | Checks CrowdSec in real time to block known bad IPs reported by the community. |
+| **Stage 4** | **IP Filtering** | Allows or denies specific IP addresses and subnets (e.g., allow your VPN only). |
+| **Stage 5** | **Geo-Blocking** | Blocks or allows connections based on client country code (via MaxMind GeoIP). |
+| **Stage 6** | **Rate Limiting** | Throttles connection spikes per IP using a token-bucket algorithm. |
+| **Stage 7** | **Protocol Inspection** | Deeply inspects traffic (HTTP, SSH, Postgres, Redis, etc.) for attacks and blocked actions. |
+| **Stage 8** | **Audit Logs & SSE** | Writes structured JSONL logs and streams live security alerts over HTTP SSE. |
 
 <script setup>
 import { computed } from 'vue'

@@ -197,48 +197,48 @@ Full reference with global policy defaults, management API, CrowdSec integration
 
 ---
 
-## Global Policy Defaults (`global`)
+## Global Settings (`global`)
 
-The `global` block specifies daemon-wide limits, logging destinations, and global IP filter defaults.
+Daemon-wide defaults for connection limits, ban rules, and logging.
 
-| Field | Type | Default | Description |
+| Setting | Type | Default | What it means |
 | :--- | :--- | :--- | :--- |
-| `max_connections` | `int` | `10000` | Maximum concurrent client connections across all services. |
-| `ban_duration` | `duration` | `"1h"` | Default ban duration when an IP triggers repeated auth failures. |
-| `ban_after_failures` | `int` | `5` | Number of failures within a sliding window before banning. |
-| `tarpit_ms` | `int` | `1000` | Delay in ms applied to tarpitted connections. |
-| `log_level` | `string` | `"info"` | Minimum severity: `debug` | `info` | `warn` | `error`. |
-| `log_file` | `string` | — | JSONL structured audit log destination (consumed by CrowdSec parser). |
+| `max_connections` | `int` | `10000` | Total active connections allowed across all services at once. |
+| `ban_duration` | `duration` | `"1h"` | How long an offending IP stays banned (e.g., `"1h"`, `"24h"`). |
+| `ban_after_failures` | `int` | `5` | Failed attempts within the sliding window before an IP is banned. |
+| `tarpit_ms` | `int` | `1000` | Milliseconds to stall banned or challenged connections before closing. |
+| `log_level` | `string` | `"info"` | Log verbosity: `debug`, `info`, `warn`, or `error`. |
+| `log_file` | `string` | — | Path to JSONL audit log file (leave empty to log to stdout). |
 | `geoip_db` | `string` | — | Path to MaxMind GeoLite2 Country database (`.mmdb`). |
-| `ip_filter.allow` | `[]CIDR` | `[]` | CIDR blocks that bypass deny rules. |
-| `ip_filter.deny` | `[]CIDR` | `[]` | CIDR blocks that are always rejected. |
-| `geo_block.deny_countries` | `[]string` | `[]` | ISO 3166-1 alpha-2 country codes to block. |
+| `ip_filter.allow` | `[]CIDR` | `[]` | Subnets that are always allowed (e.g. `["10.0.0.0/8"]`). |
+| `ip_filter.deny` | `[]CIDR` | `[]` | Subnets that are always blocked immediately. |
+| `geo_block.deny_countries` | `[]string` | `[]` | Two-letter country codes to block (e.g. `["KP"]`). |
 
 ---
 
 ## Management API (`api`)
 
-Configures the local REST and Server-Sent Events (SSE) administration server on port `9091`.
+Settings for the local HTTP administration and metrics server (port `9091`).
 
-| Field | Type | Default | Description |
+| Setting | Type | Default | What it means |
 | :--- | :--- | :--- | :--- |
-| `enabled` | `bool` | `true` | Enables the management HTTP server. |
-| `listen` | `string` | `"127.0.0.1:9091"` | Listen address for the management API. |
-| `auth_token` | `string` | — | Optional bearer token required for administrative API requests. |
+| `enabled` | `bool` | `true` | Turns the management HTTP server on or off. |
+| `listen` | `string` | `"127.0.0.1:9091"` | Address and port to bind for management API requests. |
+| `auth_token` | `string` | — | Optional secret token required in the `Authorization` header. |
 
 ---
 
-## CrowdSec LAPI Bouncer (`crowdsec`)
+## CrowdSec Bouncer (`crowdsec`)
 
-Connects TCP Warden directly to a CrowdSec Local API (LAPI) instance.
+Connects TCP Warden to your CrowdSec Local API (LAPI) to automatically block malicious IPs.
 
-| Field | Type | Default | Description |
+| Setting | Type | Default | What it means |
 | :--- | :--- | :--- | :--- |
-| `enabled` | `bool` | `false` | Activates the CrowdSec bouncer integration. |
-| `lapi_url` | `string` | — | URL of the CrowdSec Local API instance. |
-| `api_key` | `string` | — | CrowdSec bouncer API key. |
-| `update_frequency` | `duration` | `"10s"` | Polling interval to refresh active remediation decisions. |
-| `fallback_action` | `string` | `"ban"` | Action on CrowdSec decision: `ban` | `throttle` | `bypass`. |
+| `enabled` | `bool` | `false` | Enables real-time CrowdSec ban enforcement. |
+| `lapi_url` | `string` | — | URL of your CrowdSec instance (e.g. `"http://127.0.0.1:8080"`). |
+| `api_key` | `string` | — | Bouncer API key generated via `cscli bouncers add`. |
+| `update_frequency` | `duration` | `"10s"` | How often to refresh active ban decisions from CrowdSec. |
+| `fallback_action` | `string` | `"ban"` | Action when an IP is flagged: `ban`, `throttle`, or `bypass`. |
 
 ---
 
@@ -312,12 +312,14 @@ When using a modular plugin from `routewarden/plugins`, use `plugin_config` to c
 
 ## Response Actions (`response.mode`)
 
-| Mode | Behavior | Best Used For |
+Choose how TCP Warden handles blocked or challenged connections:
+
+| Mode | What it does | Best used for |
 | :--- | :--- | :--- |
-| `reject` | Sends a TCP RST packet to close the socket immediately. | Standard firewalls and low-latency rejection. |
-| `drop` | Silently closes the socket without returning banner or data. | Stealth protection against automated port scanners. |
-| `tarpit` | Holds the socket open for `global.tarpit_ms` before terminating. Consumes attacker concurrency. | Slowing down aggressive automated scanners and bots. |
-| `silent` | Terminates connection without logging or event emissions. | Discarding high-volume spoofed traffic. |
+| `reject` | Closes the connection immediately with a TCP RST. | Clean, fast rejection with zero latency. |
+| `drop` | Closes the socket silently without sending any data. | Hiding services from automated port scanners. |
+| `tarpit` | Stalls the connection for `tarpit_ms` before closing. | Slowing down aggressive scanners and wasting bot concurrency. |
+| `silent` | Terminates without writing to logs or events. | Silently discarding high-volume spoofed traffic. |
 
 ---
 
