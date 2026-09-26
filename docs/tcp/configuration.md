@@ -156,7 +156,43 @@ const configSnippets = computed(() => ({
   ]
 }))
 
-// ─── Validate Snippet ─────────────────────────────────────────────────────────
+// ─── Port Range Snippets ────────────────────────────────────────────────────
+const port_range_1to1 = buildSnippet({
+  lang: 'yaml',
+  code: `services:
+  # 1:1 Port Range: each ingress port maps to an offset on upstream
+  # Port 8000 -> 9000, 8001 -> 9001, ..., 8005 -> 9005
+  microservice_fleet:
+    listen: ":8000-8005"
+    upstream: "10.0.0.10:9000-9005"
+    protocol: "tcp"`
+})
+
+const port_range_many_to_one = buildSnippet({
+  lang: 'yaml',
+  code: `services:
+  # Many-to-One Port Range: all ingress ports route to a single backend
+  # Ports 8080..8085 all forward into a single HTTP gateway or proxy
+  http_gateway_fleet:
+    listen: ":8080-8085"
+    upstream: "10.0.0.20:80"
+    protocol: "http"
+    plugin_config:
+      blocked_paths:
+        - "^/admin(/.*)?$"
+        - "\\.(env|git|bak|sql)$"
+      blocked_headers:
+        User-Agent: "(?i)(sqlmap|nikto|acunetix)"`
+})
+
+const portRangeSnippets = computed(() => ({
+  tcp: [
+    { filename: '1:1 Port Mapping', lang: 'yaml', code: port_range_1to1.cleanCode, html: port_range_1to1.html, hasDiff: false },
+    { filename: 'Many-to-One Mapping', lang: 'yaml', code: port_range_many_to_one.cleanCode, html: port_range_many_to_one.html, hasDiff: false },
+  ]
+}))
+
+// ─── Validate Snippets ────────────────────────────────────────────────────────
 const validate_cmd = buildSnippet({
   lang: 'bash',
   code: `# Validate config syntax, CIDRs, duplicate ports, and plugin dependencies
@@ -169,9 +205,16 @@ tcp-warden validate --config /etc/routewarden/tcp-warden.yaml
 #   • CrowdSec Enabled:       true`
 })
 
+const validate_docker = buildSnippet({
+  lang: 'bash',
+  code: `# Run validation inside a running Docker container
+docker compose exec tcp-warden tcp-warden validate --config /etc/routewarden/tcp-warden.yaml`
+})
+
 const validateSnippets = computed(() => ({
   tcp: [
-    { filename: 'validate', lang: 'bash', code: validate_cmd.cleanCode, html: validate_cmd.html, hasDiff: false },
+    { filename: 'CLI Command', lang: 'bash', code: validate_cmd.cleanCode, html: validate_cmd.html, hasDiff: false },
+    { filename: 'Docker Compose', lang: 'bash', code: validate_docker.cleanCode, html: validate_docker.html, hasDiff: false },
   ]
 }))
 </script>
@@ -262,35 +305,12 @@ Each key under `services` defines an isolated Layer 4 proxy listener. Common ser
 
 ## Port Range Forwarding
 
-TCP Warden supports listening on continuous port ranges. Both **1:1 mapping** and **many-to-one mapping** are fully supported:
+TCP Warden supports listening on continuous port ranges:
 
-### 1:1 Port Mapping
-Maps each incoming port directly to its offset on the upstream range (e.g., port 8000 forwards to 9000, 8001 to 9001, etc.):
+- **1:1 Port Mapping**: Each incoming port forwards directly to its corresponding port on the upstream target.
+- **Many-to-One Port Mapping**: An entire range of ingress ports forwards into a single backend (ideal for HTTP gateways and proxy fleets).
 
-```yaml
-services:
-  microservice_range:
-    listen: ":8000-8005"
-    upstream: "10.0.0.10:9000-9005"
-    protocol: "tcp"
-```
-
-### Many-to-One Port Mapping
-Directs traffic from an entire range of ingress ports into a single centralized backend (e.g., an internal HTTP ingress or API gateway):
-
-```yaml
-services:
-  http_gateway_fleet:
-    listen: ":8080-8085"
-    upstream: "10.0.0.20:80"
-    protocol: "http"
-    plugin_config:
-      blocked_paths:
-        - "^/admin(/.*)?$"
-        - "\\.(env|git|bak|sql)$"
-      blocked_headers:
-        User-Agent: "(?i)(sqlmap|nikto|acunetix)"
-```
+<CodeViewer :snippets="portRangeSnippets" />
 
 ---
 
@@ -325,6 +345,7 @@ Choose how TCP Warden handles blocked or challenged connections:
 
 ## Configuration Validation
 
+Always validate your configuration file before starting or reloading the proxy daemon:
 
 <CodeViewer :snippets="validateSnippets" />
 
