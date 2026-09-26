@@ -16,8 +16,45 @@ export async function generateSetupSnippets(options = {}) {
     currentVersion = vData.version.startsWith('v') ? vData.version : `v${vData.version}`
   }
 
+  const caddyLanguage = {
+    name: 'caddy',
+    aliases: ['caddyfile', 'Caddyfile'],
+    displayName: 'Caddyfile',
+    scopeName: 'source.caddyfile',
+    patterns: [
+      {
+        name: 'comment.line.number-sign.caddyfile',
+        match: '#.*$'
+      },
+      {
+        name: 'string.quoted.double.caddyfile',
+        begin: '"',
+        end: '"',
+        patterns: [{ name: 'constant.character.escape.caddyfile', match: '\\\\.' }]
+      },
+      {
+        name: 'constant.numeric.caddyfile',
+        match: '\\b\\d+(\\.\\d+)?\\b'
+      },
+      {
+        name: 'constant.language.boolean.caddyfile',
+        match: '\\b(true|false|on|off)\\b'
+      },
+      {
+        name: 'keyword.control.caddyfile',
+        match: '\\b(order|route_warden|reverse_proxy|tls|respond|import|handle|handle_path|root|encode|log|rewrite|redir|header|request_header|basicauth|forward_auth|abort|error)\\b'
+      },
+      {
+        name: 'entity.name.tag.caddyfile',
+        match: '^[\\s]*([a-zA-Z0-9_.-]+)'
+      }
+    ]
+  }
+
   const docsDir = path.join(docsPackageDir, 'docs')
-  const md = await createMarkdownRenderer(docsDir)
+  const md = await createMarkdownRenderer(docsDir, {
+    languages: [caddyLanguage]
+  })
 
   // Helper: render code with diff-add highlights on specific lines.
   // Uses the Shiki line-range meta `{1,2,5}` which produces class="line highlighted"
@@ -198,6 +235,67 @@ server {
         proxy_pass http://localhost:8080;
     }
 }`
+      }
+    ],
+    tcp: [
+      {
+        filename: 'docker-compose.yml',
+        lang: 'yaml',
+        diffLines: [3, 7, 8, 9],
+        code: `services:
+  tcp-warden:
+    image: routewarden/tcp-warden:latest
+    container_name: tcp-warden
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - tcp-warden-config:/etc/routewarden
+      - tcp-warden-plugins:/var/lib/routewarden/plugins
+      - tcp-warden-logs:/var/log/routewarden
+
+volumes:
+  tcp-warden-config:
+  tcp-warden-plugins:
+  tcp-warden-logs:`
+      },
+      {
+        filename: 'tcp-warden.yaml',
+        lang: 'yaml',
+        diffLines: [10, 11, 12, 13, 14, 15, 16],
+        code: `global:
+  max_connections: 10000
+  audit_log: /var/log/routewarden/audit.jsonl
+
+services:
+  ssh-bastion:
+    listen: ":2222"
+    upstream: "127.0.0.1:22"
+    protocol: ssh
+    rate_limit:
+      connections_per_minute: 10
+      burst: 5
+    failure_tracker:
+      max_failures: 5
+      window: 10m
+      ban_duration: 1h
+
+  smtp-inbound:
+    listen: ":2525"
+    upstream: "127.0.0.1:25"
+    protocol: smtp`
+      },
+      {
+        filename: 'terminal',
+        lang: 'bash',
+        diffLines: [],
+        code: `# 1. Start TCP Warden container
+docker compose up -d
+
+# 2. Check daemon health and active metrics
+curl -s http://127.0.0.1:9091/stats
+
+# 3. Stream real-time L4 security events
+curl -N http://127.0.0.1:9091/events`
       }
     ],
     cli: [

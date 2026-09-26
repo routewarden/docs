@@ -10,6 +10,9 @@ hero:
     alt: RouteWarden Logo
   actions:
     - theme: brand
+      text: TCP Warden (L4 Proxy) ➔
+      link: /tcp/
+    - theme: brand
       text: Traefik Plugin ➔
       link: /traefik/
     - theme: brand
@@ -23,6 +26,8 @@ hero:
       link: https://routewarden.github.io/cli/
 
 features:
+  - title: Layer 4 Protocol Firewall (TCP Warden)
+    details: "Protocol-aware reverse proxy and connection firewall defending non-HTTP services: SSH, SMTP, PostgreSQL, MySQL, Redis, MQTT, and TLS SNI."
   - title: Scanner Defense
     details: Intercepts automated crawlers probing for exposed credentials, source repositories, backups, and administrative endpoints.
   - title: Path Normalization
@@ -33,13 +38,11 @@ features:
     details: Supports custom JSON, HTML error pages, Cloudflare Turnstile or hCaptcha verification, redirects, silent drops, or gzip bombs.
   - title: CLI & Config Generator
     details: Use rwarden to test rules offline, validate routewarden.json schemas, and compile configs for Traefik, Caddy, or NGINX.
-  - title: Multi-Gateway Native
-    details: Drop-in support for Traefik dynamic configs, Docker labels, Kubernetes CRDs, Caddyfile directives, and NGINX Lua blocks.
 ---
 
 ## What is RouteWarden?
 
-**RouteWarden** is a security middleware for **Traefik**, **Caddy**, and **NGINX / OpenResty**. It runs at your edge router or ingress controller, evaluating inbound requests and blocking reconnaissance scans before they reach backend application containers.
+**RouteWarden** is an edge security suite providing Layer 7 sensitive path defense for **Traefik**, **Caddy**, and **NGINX / OpenResty**, alongside Layer 4 protocol firewalling with **TCP Warden**. It evaluates inbound requests and blocks reconnaissance scans and brute-force attacks before they reach backend application containers.
 
 Internet-connected servers receive continuous automated scans looking for `.env` files, `.git` trees, database dumps, backup archives, and administrative interfaces. RouteWarden matches these attempts at the proxy level and responds according to your configuration.
 

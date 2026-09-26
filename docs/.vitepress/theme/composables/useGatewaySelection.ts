@@ -1,6 +1,6 @@
 import { ref, computed, watch, onMounted, type Ref, type ComputedRef } from 'vue'
 
-export type GatewayId = 'traefik' | 'caddy' | 'nginx' | 'cli'
+export type GatewayId = 'traefik' | 'caddy' | 'nginx' | 'tcp' | 'cli'
 
 export interface GatewayOption {
   id: GatewayId
@@ -11,6 +11,7 @@ export const GATEWAYS: GatewayOption[] = [
   { id: 'traefik', label: 'Traefik' },
   { id: 'caddy', label: 'Caddy' },
   { id: 'nginx', label: 'NGINX' },
+  { id: 'tcp', label: 'TCP Warden' },
   { id: 'cli', label: 'RouteWarden CLI' }
 ]
 

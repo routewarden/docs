@@ -1,0 +1,328 @@
+---
+title: TCP Warden Configuration Reference
+description: Comprehensive configuration reference for tcp-warden.yaml, including rate limiting, geo-blocking, protocol guards, and JSON schema validation.
+---
+
+<script setup>
+import { computed } from 'vue'
+import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
+
+// ─── Global Schema Snippet ───────────────────────────────────────────────────
+const global_schema = buildSnippet({
+  lang: 'yaml',
+  code: `# yaml-language-server: $schema=https://routewarden.github.io/tcp-warden/tcp-warden.schema.json
+
+global:
+  max_connections: 10000
+  ban_duration: "1h"
+  ban_after_failures: 5
+  tarpit_ms: 1000
+  log_level: "info"
+  log_file: "/var/log/routewarden/tcp-warden.jsonl"
+  geoip_db: "/etc/routewarden/GeoLite2-Country.mmdb"
+  ip_filter:
+    allow:
+      - "127.0.0.1/32"
+      - "10.0.0.0/8"
+    deny:
+      - "198.51.100.0/24"
+  geo_block:
+    deny_countries:
+      - "KP"
+    allow_countries: []
+
+api:
+  enabled: true
+  listen: "127.0.0.1:9091"
+  auth_token: "\${ROUTEWARDEN_API_TOKEN}"
+
+crowdsec:
+  enabled: true
+  lapi_url: "http://127.0.0.1:8080"
+  api_key: "\${CROWDSEC_API_KEY}"
+  update_frequency: "10s"
+  fallback_action: "ban"
+
+plugins:
+  postgres:
+    enabled: true
+    source: "https://github.com/routewarden/plugins/postgres"
+  redis:
+    enabled: true
+    source: "https://github.com/routewarden/plugins/redis"
+  tls_sni:
+    enabled: true
+    source: "https://github.com/routewarden/plugins/tls_sni"`
+})
+
+// ─── Services Examples ────────────────────────────────────────────────────────
+const ssh_service = buildSnippet({
+  lang: 'yaml',
+  code: `services:
+  ssh_bastion:
+    listen: ":2222"
+    upstream: "127.0.0.1:22"
+    protocol: "ssh"
+    rate_limit:
+      connections_per_minute: 20
+      burst: 5
+    ip_filter:
+      allow:
+        - "10.0.0.0/8"
+        - "192.168.1.0/24"
+      deny: []
+    geo_block:
+      deny_countries:
+        - "RU"
+        - "CN"
+      allow_countries: []
+    max_auth_failures: 3
+    ban_after_failures: 3
+    ban_duration: "2h"
+    response:
+      mode: "reject"
+    ssh:
+      banner: "RouteWarden SSH Guard"
+      max_auth_tries: 3`
+})
+
+const smtp_service = buildSnippet({
+  lang: 'yaml',
+  code: `services:
+  mail_guard:
+    listen: ":2525"
+    upstream: "127.0.0.1:25"
+    protocol: "smtp"
+    smtp:
+      require_starttls: true
+      max_recipients: 50
+      blocked_sender_domains:
+        - "*.tempmail.com"
+        - "spam.org"`
+})
+
+const port_range_service = buildSnippet({
+  lang: 'yaml',
+  code: `services:
+  # 1:1 Port Range Mapping (8000 -> 9000, 8001 -> 9001, ..., 8005 -> 9005)
+  microservices_1to1:
+    listen: ":8000-8005"
+    upstream: "10.0.0.10:9000-9005"
+    protocol: "tcp"
+
+  # Many-to-One Port Mapping (all ports 8080..8085 route to backend port 80)
+  http_gateway_many_to_one:
+    listen: ":8080-8085"
+    upstream: "10.0.0.20:80"
+    protocol: "http"
+    plugin_config:
+      blocked_paths:
+        - "^/admin(/.*)?$"
+        - "\\.(env|git|bak|sql)$"
+      blocked_headers:
+        User-Agent: "(?i)(sqlmap|nikto|acunetix)"`
+})
+
+const db_service = buildSnippet({
+  lang: 'yaml',
+  code: `services:
+  db_proxy:
+    listen: ":5432"
+    upstream: "10.0.0.15:5432"
+    protocol: "postgres"
+    max_auth_failures: 5
+    ban_after_failures: 5
+    ban_duration: "1h"
+
+  cache_proxy:
+    listen: ":6380"
+    upstream: "127.0.0.1:6379"
+    protocol: "redis"
+    plugin_config:
+      blocked_commands:
+        - "FLUSHALL"
+        - "FLUSHDB"
+        - "CONFIG"
+        - "SHUTDOWN"`
+})
+
+const configSnippets = computed(() => ({
+  tcp: [
+    { filename: 'Full Schema', lang: 'yaml', code: global_schema.cleanCode, html: global_schema.html, hasDiff: false },
+    { filename: 'Port Ranges & HTTP', lang: 'yaml', code: port_range_service.cleanCode, html: port_range_service.html, hasDiff: false },
+    { filename: 'SSH Guard', lang: 'yaml', code: ssh_service.cleanCode, html: ssh_service.html, hasDiff: false },
+    { filename: 'DB & Redis Guard', lang: 'yaml', code: db_service.cleanCode, html: db_service.html, hasDiff: false },
+    { filename: 'SMTP Guard', lang: 'yaml', code: smtp_service.cleanCode, html: smtp_service.html, hasDiff: false },
+  ]
+}))
+
+// ─── Validate Snippet ─────────────────────────────────────────────────────────
+const validate_cmd = buildSnippet({
+  lang: 'bash',
+  code: `# Validate config syntax, CIDRs, duplicate ports, and plugin dependencies
+tcp-warden validate --config /etc/routewarden/tcp-warden.yaml
+
+# Output:
+# ✓ Configuration /etc/routewarden/tcp-warden.yaml is valid!
+#   • Global Max Connections: 10000
+#   • Services Configured:    4
+#   • CrowdSec Enabled:       true`
+})
+
+const validateSnippets = computed(() => ({
+  tcp: [
+    { filename: 'validate', lang: 'bash', code: validate_cmd.cleanCode, html: validate_cmd.html, hasDiff: false },
+  ]
+}))
+</script>
+
+# Configuration Reference
+
+TCP Warden is configured via a single declarative YAML file (default: `tcp-warden.yaml`).
+
+::: tip Schema Auto-Completion
+Enable real-time autocomplete, tooltips, and validation in VS Code or JetBrains editors by adding the JSON Schema header at the top of your YAML file:
+```yaml
+# yaml-language-server: $schema=https://routewarden.github.io/tcp-warden/tcp-warden.schema.json
+```
+:::
+
+---
+
+## Configuration Schema
+
+Full reference with global policy defaults, management API, CrowdSec integration, plugin declarations, and service definitions:
+
+<CodeViewer :snippets="configSnippets" />
+
+---
+
+## Global Policy Defaults (`global`)
+
+The `global` block specifies daemon-wide limits, logging destinations, and global IP filter defaults.
+
+| Field | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `max_connections` | `int` | `10000` | Maximum concurrent client connections across all services. |
+| `ban_duration` | `duration` | `"1h"` | Default ban duration when an IP triggers repeated auth failures. |
+| `ban_after_failures` | `int` | `5` | Number of failures within a sliding window before banning. |
+| `tarpit_ms` | `int` | `1000` | Delay in ms applied to tarpitted connections. |
+| `log_level` | `string` | `"info"` | Minimum severity: `debug` | `info` | `warn` | `error`. |
+| `log_file` | `string` | — | JSONL structured audit log destination (consumed by CrowdSec parser). |
+| `geoip_db` | `string` | — | Path to MaxMind GeoLite2 Country database (`.mmdb`). |
+| `ip_filter.allow` | `[]CIDR` | `[]` | CIDR blocks that bypass deny rules. |
+| `ip_filter.deny` | `[]CIDR` | `[]` | CIDR blocks that are always rejected. |
+| `geo_block.deny_countries` | `[]string` | `[]` | ISO 3166-1 alpha-2 country codes to block. |
+
+---
+
+## Management API (`api`)
+
+Configures the local REST and Server-Sent Events (SSE) administration server on port `9091`.
+
+| Field | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `enabled` | `bool` | `true` | Enables the management HTTP server. |
+| `listen` | `string` | `"127.0.0.1:9091"` | Listen address for the management API. |
+| `auth_token` | `string` | — | Optional bearer token required for administrative API requests. |
+
+---
+
+## CrowdSec LAPI Bouncer (`crowdsec`)
+
+Connects TCP Warden directly to a CrowdSec Local API (LAPI) instance.
+
+| Field | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `enabled` | `bool` | `false` | Activates the CrowdSec bouncer integration. |
+| `lapi_url` | `string` | — | URL of the CrowdSec Local API instance. |
+| `api_key` | `string` | — | CrowdSec bouncer API key. |
+| `update_frequency` | `duration` | `"10s"` | Polling interval to refresh active remediation decisions. |
+| `fallback_action` | `string` | `"ban"` | Action on CrowdSec decision: `ban` | `throttle` | `bypass`. |
+
+---
+
+## Services (`services`)
+
+Each key under `services` defines an isolated Layer 4 proxy listener. Common service fields:
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `listen` | `string` | Single port (`":2222"`) or port range (`":8000-8005"`). |
+| `upstream` | `string` | Backend target: single address (`"127.0.0.1:22"`), single backend for many-to-one ranges (`"10.0.0.1:80"`), or matching 1:1 range (`"10.0.0.1:9000-9005"`). |
+| `protocol` | `string` | Protocol handler: `ssh`, `smtp`, `pop3`, `imap`, `tcp`, or any loaded plugin name (`http`, `postgres`, `redis`, `mongodb`, etc.). |
+| `plugin_config` | `map` | Protocol-specific inspector options passed directly to the active plugin. |
+| `rate_limit.connections_per_minute` | `int` | Token-bucket rate: connections allowed per minute per IP. |
+| `rate_limit.burst` | `int` | Maximum burst allowance above the rate limit. |
+| `max_auth_failures` | `int` | Maximum auth failures before banning the client IP. |
+| `ban_duration` | `duration` | Overrides `global.ban_duration` for this service. |
+| `response.mode` | `string` | Rejection strategy: `reject` | `drop` | `tarpit` | `silent`. |
+
+---
+
+## Port Range Forwarding
+
+TCP Warden supports listening on continuous port ranges. Both **1:1 mapping** and **many-to-one mapping** are fully supported:
+
+### 1:1 Port Mapping
+Maps each incoming port directly to its offset on the upstream range (e.g., port 8000 forwards to 9000, 8001 to 9001, etc.):
+
+```yaml
+services:
+  microservice_range:
+    listen: ":8000-8005"
+    upstream: "10.0.0.10:9000-9005"
+    protocol: "tcp"
+```
+
+### Many-to-One Port Mapping
+Directs traffic from an entire range of ingress ports into a single centralized backend (e.g., an internal HTTP ingress or API gateway):
+
+```yaml
+services:
+  http_gateway_fleet:
+    listen: ":8080-8085"
+    upstream: "10.0.0.20:80"
+    protocol: "http"
+    plugin_config:
+      blocked_paths:
+        - "^/admin(/.*)?$"
+        - "\\.(env|git|bak|sql)$"
+      blocked_headers:
+        User-Agent: "(?i)(sqlmap|nikto|acunetix)"
+```
+
+---
+
+## Plugin Configuration (`plugin_config`)
+
+When using a modular plugin from `routewarden/plugins`, use `plugin_config` to customize the inspector's behavior:
+
+| Plugin | Key Options | Example Usage |
+| :--- | :--- | :--- |
+| **`http`** | `allowed_hosts`, `blocked_paths` (regex), `blocked_headers` (regex) | Intercept sensitive paths (`/\.env`), block scanner User-Agents. |
+| **`redis`** | `blocked_commands` | Intercept destructive commands (`FLUSHALL`, `CONFIG`, `SHUTDOWN`). |
+| **`mongodb`** | `blocked_ops` | Intercept collection drops (`drop`, `dropDatabase`, `shutdown`). |
+| **`tls_sni`** | `allowed_domains`, `blocked_domains` | Filter TLS SNI domain names with wildcard support (`*.example.com`). |
+| **`mqtt`** | `max_client_id_len`, `blocked_client_prefixes` | Enforce IoT device naming standards and block scanner prefixes. |
+| **`minecraft`** | `blocked_protocol_versions` | Reject outdated or vulnerable game client versions. |
+
+
+---
+
+## Response Actions (`response.mode`)
+
+| Mode | Behavior | Best Used For |
+| :--- | :--- | :--- |
+| `reject` | Sends a TCP RST packet to close the socket immediately. | Standard firewalls and low-latency rejection. |
+| `drop` | Silently closes the socket without returning banner or data. | Stealth protection against automated port scanners. |
+| `tarpit` | Holds the socket open for `global.tarpit_ms` before terminating. Consumes attacker concurrency. | Slowing down aggressive automated scanners and bots. |
+| `silent` | Terminates connection without logging or event emissions. | Discarding high-volume spoofed traffic. |
+
+---
+
+## Configuration Validation
+
+
+<CodeViewer :snippets="validateSnippets" />
+

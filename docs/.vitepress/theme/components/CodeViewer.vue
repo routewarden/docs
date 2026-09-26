@@ -176,6 +176,9 @@ function handleGatewayChange(newGw: GatewayId) {
           <div v-else-if="effectiveGateway === 'nginx' && slots.nginx">
             <slot name="nginx" />
           </div>
+          <div v-else-if="effectiveGateway === 'tcp' && slots.tcp">
+            <slot name="tcp" />
+          </div>
           <div v-else-if="effectiveGateway === 'cli' && slots.cli">
             <slot name="cli" />
           </div>
