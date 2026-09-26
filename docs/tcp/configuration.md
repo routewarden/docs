@@ -217,6 +217,36 @@ const validateSnippets = computed(() => ({
     { filename: 'Docker Compose', lang: 'bash', code: validate_docker.cleanCode, html: validate_docker.html, hasDiff: false },
   ]
 }))
+
+// ─── Schema Auto-Completion Snippets ─────────────────────────────────────────
+const schema_inline = buildSnippet({
+  lang: 'yaml',
+  code: `# yaml-language-server: $schema=https://routewarden.github.io/tcp-warden/tcp-warden.schema.json
+
+global:
+  max_connections: 10000
+
+services:
+  ssh_bastion:
+    listen: ":2222"
+    upstream: "127.0.0.1:22"`
+})
+
+const schema_vscode = buildSnippet({
+  lang: 'json',
+  code: `{
+  "yaml.schemas": {
+    "https://routewarden.github.io/tcp-warden/tcp-warden.schema.json": "tcp-warden*.yaml"
+  }
+}`
+})
+
+const schemaSnippets = computed(() => ({
+  tcp: [
+    { filename: 'tcp-warden.yaml', lang: 'yaml', code: schema_inline.cleanCode, html: schema_inline.html, hasDiff: false },
+    { filename: '.vscode/settings.json', lang: 'json', code: schema_vscode.cleanCode, html: schema_vscode.html, hasDiff: false },
+  ]
+}))
 </script>
 
 # Configuration Reference
@@ -224,10 +254,9 @@ const validateSnippets = computed(() => ({
 TCP Warden is configured via a single declarative YAML file (default: `tcp-warden.yaml`).
 
 ::: tip Schema Auto-Completion
-Enable real-time autocomplete, tooltips, and validation in VS Code or JetBrains editors by adding the JSON Schema header at the top of your YAML file:
-```yaml
-# yaml-language-server: $schema=https://routewarden.github.io/tcp-warden/tcp-warden.schema.json
-```
+Enable real-time autocomplete, tooltips, and validation in VS Code or JetBrains editors by adding the JSON Schema header at the top of your YAML file or mapping it in your workspace settings:
+
+<CodeViewer :snippets="schemaSnippets" />
 :::
 
 ---
