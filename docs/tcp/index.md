@@ -81,9 +81,9 @@ const quick_compose = buildSnippet({
     restart: unless-stopped
     network_mode: host
     volumes:
-      - tcp-warden-config:/etc/routewarden # [!code ++]
-      - tcp-warden-plugins:/var/lib/routewarden/plugins # [!code ++]
-      - tcp-warden-logs:/var/log/routewarden # [!code ++]
+      - tcp-warden-config:/etc/routewarden
+      - tcp-warden-plugins:/var/lib/routewarden/plugins
+      - tcp-warden-logs:/var/log/routewarden
 
 volumes:
   tcp-warden-config:
@@ -99,22 +99,22 @@ global:
   audit_log: /var/log/routewarden/tcp-warden.jsonl
 
 services:
-  ssh-bastion: # [!code ++]
-    listen: ":2222" # [!code ++]
-    upstream: "127.0.0.1:22" # [!code ++]
-    protocol: ssh # [!code ++]
-    rate_limit: # [!code ++]
-      connections_per_minute: 10 # [!code ++]
-      burst: 5 # [!code ++]
-    failure_tracker: # [!code ++]
-      max_failures: 5 # [!code ++]
-      window: 10m # [!code ++]
-      ban_duration: 1h # [!code ++]
+  ssh-bastion:
+    listen: ":2222"
+    upstream: "127.0.0.1:22"
+    protocol: ssh
+    rate_limit:
+      connections_per_minute: 10
+      burst: 5
+    failure_tracker:
+      max_failures: 5
+      window: 10m
+      ban_duration: 1h
 
-  postgres-cluster: # [!code ++]
-    listen: ":5432" # [!code ++]
-    upstream: "10.0.0.15:5432" # [!code ++]
-    protocol: postgres # [!code ++]`
+  postgres-cluster:
+    listen: ":5432"
+    upstream: "10.0.0.15:5432"
+    protocol: postgres`
 })
 
 const quick_cli = buildSnippet({
@@ -134,9 +134,9 @@ curl -N http://127.0.0.1:9091/events`
 
 const quickStartSnippets = computed(() => ({
   tcp: [
-    { filename: 'docker-compose.yml', lang: 'yaml', code: quick_compose.cleanCode, html: quick_compose.html, hasDiff: quick_compose.hasDiff },
-    { filename: 'tcp-warden.yaml', lang: 'yaml', code: quick_yaml.cleanCode, html: quick_yaml.html, hasDiff: quick_yaml.hasDiff },
-    { filename: 'CLI & Docker', lang: 'bash', code: quick_cli.cleanCode, html: quick_cli.html, hasDiff: quick_cli.hasDiff },
+    { filename: 'docker-compose.yml', lang: 'yaml', code: quick_compose.cleanCode, html: quick_compose.html, hasDiff: false },
+    { filename: 'tcp-warden.yaml', lang: 'yaml', code: quick_yaml.cleanCode, html: quick_yaml.html, hasDiff: false },
+    { filename: 'CLI & Docker', lang: 'bash', code: quick_cli.cleanCode, html: quick_cli.html, hasDiff: false },
   ]
 }))
 </script>

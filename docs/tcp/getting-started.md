@@ -11,22 +11,22 @@ import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
 const compose_file = buildSnippet({
   lang: 'yaml',
   code: `services:
-  tcp-warden: # [!code ++]
-    image: routewarden/tcp-warden:latest # [!code ++]
-    container_name: tcp-warden # [!code ++]
-    restart: unless-stopped # [!code ++]
-    network_mode: host # [!code ++]
-    volumes: # [!code ++]
-      - tcp-warden-config:/etc/routewarden # [!code ++]
-      - tcp-warden-plugins:/var/lib/routewarden/plugins # [!code ++]
-      - tcp-warden-logs:/var/log/routewarden # [!code ++]
-    environment: # [!code ++]
-      - CROWDSEC_API_KEY=\${CROWDSEC_API_KEY:-} # [!code ++]
+  tcp-warden:
+    image: routewarden/tcp-warden:latest
+    container_name: tcp-warden
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - tcp-warden-config:/etc/routewarden
+      - tcp-warden-plugins:/var/lib/routewarden/plugins
+      - tcp-warden-logs:/var/log/routewarden
+    environment:
+      - CROWDSEC_API_KEY=\${CROWDSEC_API_KEY:-}
 
-volumes:  # [!code ++]
-  tcp-warden-config:  # [!code ++]
-  tcp-warden-plugins:  # [!code ++]
-  tcp-warden-logs: # [!code ++]`  
+volumes:
+  tcp-warden-config:
+  tcp-warden-plugins:
+  tcp-warden-logs:`
 })
 
 const compose_launch = buildSnippet({
@@ -54,9 +54,9 @@ go build -o tcp-warden .
 
 const deploySnippets = computed(() => ({
   tcp: [
-    { filename: 'docker-compose.yml', lang: 'yaml', code: compose_file.cleanCode, html: compose_file.html, hasDiff: compose_file.hasDiff },
-    { filename: 'Docker CLI', lang: 'bash', code: compose_launch.cleanCode, html: compose_launch.html, hasDiff: compose_launch.hasDiff },
-    { filename: 'Binary (Go)', lang: 'bash', code: binary_install.cleanCode, html: binary_install.html, hasDiff: binary_install.hasDiff },
+    { filename: 'docker-compose.yml', lang: 'yaml', code: compose_file.cleanCode, html: compose_file.html, hasDiff: false },
+    { filename: 'Docker CLI', lang: 'bash', code: compose_launch.cleanCode, html: compose_launch.html, hasDiff: false },
+    { filename: 'Binary (Go)', lang: 'bash', code: binary_install.cleanCode, html: binary_install.html, hasDiff: false },
   ]
 }))
 
