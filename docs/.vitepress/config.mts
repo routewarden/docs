@@ -231,11 +231,38 @@ export default defineConfig({
             { text: 'Overview & Architecture', link: '/tcp/' },
             { text: 'Getting Started & Docker', link: '/tcp/getting-started' },
             { text: 'Configuration Reference', link: '/tcp/configuration' },
+            { text: 'Network & Firewall Integrations', link: '/tcp/network-integrations' },
             { text: 'Modular Protocol Plugins', link: '/tcp/plugins' },
             { text: 'Plugin Development Guide', link: '/tcp/plugin-development' },
-            { text: 'CrowdSec LAPI Bouncer', link: '/tcp/crowdsec' },
+            { text: 'CrowdSec Integration (Optional)', link: '/tcp/crowdsec' },
             { text: 'Management API & SSE', link: '/tcp/api' },
-            { text: 'CLI Commands Reference', link: '/tcp/cli' }
+            { text: 'CLI Commands Reference', link: '/tcp/cli' },
+            { text: 'Changelog & Releases', link: '/tcp/changelog' }
+          ]
+        },
+        {
+          text: 'Protocol Plugins Catalog',
+          collapsed: false,
+          items: [
+            { text: 'SSH Guard', link: '/tcp/plugins/ssh' },
+            { text: 'PostgreSQL Guard', link: '/tcp/plugins/postgres' },
+            { text: 'MySQL & MariaDB Guard', link: '/tcp/plugins/mysql' },
+            { text: 'Redis & Valkey Guard', link: '/tcp/plugins/redis' },
+            { text: 'MongoDB Wire Guard', link: '/tcp/plugins/mongodb' },
+            { text: 'HTTP & WebSocket Guard', link: '/tcp/plugins/http' },
+            { text: 'TLS SNI Router & Filter', link: '/tcp/plugins/tls-sni' },
+            { text: 'SMTP Mail Guard', link: '/tcp/plugins/smtp' },
+            { text: 'POP3 Mail Guard', link: '/tcp/plugins/pop3' },
+            { text: 'IMAP4 Mail Guard', link: '/tcp/plugins/imap' },
+            { text: 'FTP Control Guard', link: '/tcp/plugins/ftp' },
+            { text: 'LDAP & Active Directory', link: '/tcp/plugins/ldap' },
+            { text: 'AMQP & RabbitMQ Guard', link: '/tcp/plugins/amqp' },
+            { text: 'Memcached Cache Guard', link: '/tcp/plugins/memcached' },
+            { text: 'MQTT IoT Broker Guard', link: '/tcp/plugins/mqtt' },
+            { text: 'VNC Remote Desktop Guard', link: '/tcp/plugins/vnc' },
+            { text: 'Minecraft Game Guard', link: '/tcp/plugins/minecraft' },
+            { text: 'Generic Layer 4 Proxy', link: '/tcp/plugins/generic' },
+            { text: 'Echo Stream Filter', link: '/tcp/plugins/echo-filter' }
           ]
         },
         {

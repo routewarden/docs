@@ -12,20 +12,22 @@ const compose_file = buildSnippet({
   lang: 'yaml',
   code: `services:
   tcp-warden:
-    image: routewarden/tcp-warden:latest
+    image: ghcr.io/routewarden/tcp-warden:latest
     container_name: tcp-warden
     restart: unless-stopped
+    # Linux: 'network_mode: host' for raw socket IP visibility.
+    # macOS/Windows: use 'ports:' (e.g. "9091:9091", "2222:2222") instead.
     network_mode: host
+    environment:
+      - AUTO_INSTALL_PLUGINS=ssh postgres # Optional: auto-install plugins on boot
     volumes:
       - tcp-warden-config:/etc/routewarden
-      - tcp-warden-plugins:/var/lib/routewarden/plugins
+      - tcp-warden-data:/var/lib/routewarden
       - tcp-warden-logs:/var/log/routewarden
-    environment:
-      - CROWDSEC_API_KEY=\${CROWDSEC_API_KEY:-}
 
 volumes:
   tcp-warden-config:
-  tcp-warden-plugins:
+  tcp-warden-data:
   tcp-warden-logs:`
 })
 
@@ -65,7 +67,7 @@ const verify_health = buildSnippet({
   lang: 'bash',
   code: `# Health check
 curl -s http://127.0.0.1:9091/health
-# {"status":"ok","version":"1.0.0"}
+# {"status":"ok","version":"2.0.0"}
 
 # Active service stats
 curl -s http://127.0.0.1:9091/stats
@@ -93,7 +95,7 @@ const verifySnippets = computed(() => ({
 
 # Getting Started with TCP Warden
 
-RouteWarden TCP Warden is distributed as a single static binary and as a multi-arch container image (`routewarden/tcp-warden:latest`).
+RouteWarden TCP Warden is distributed as a single static binary and as a multi-arch container image (`ghcr.io/routewarden/tcp-warden:latest`).
 
 ---
 
@@ -107,6 +109,10 @@ Docker Compose provides automated persistent storage for configuration files, mo
 
 ::: tip First-Run Template Auto-Creation
 On initial boot, if `/etc/routewarden/tcp-warden.yaml` does not exist, TCP Warden automatically creates a fully-commented default configuration template in the `tcp-warden-config` volume.
+:::
+
+::: info Optional: CrowdSec Integration
+CrowdSec integration is completely optional. If you want to connect TCP Warden to CrowdSec LAPI for collaborative threat intelligence, automated bouncers, and shared decision lists, follow the dedicated [CrowdSec Integration Guide](./crowdsec).
 :::
 
 ---
@@ -131,12 +137,12 @@ smtp           smtp       0              5               0
 
 ## Directory & Volume Layout
 
-When deployed in production, TCP Warden organizes files across three dedicated paths:
+When deployed in production, TCP Warden organizes files across dedicated paths:
 
 | Path | Volume | What it stores |
 | :--- | :--- | :--- |
 | `/etc/routewarden/tcp-warden.yaml` | `tcp-warden-config` | Main configuration file (auto-generated on first boot). |
-| `/var/lib/routewarden/plugins` | `tcp-warden-plugins` | Downloaded plugins cache so restarts are instant. |
+| `/var/lib/routewarden` | `tcp-warden-data` | Persistent runtime state: SQLite `bans.db`, installed plugins, and recompiled binary. |
 | `/var/log/routewarden/tcp-warden.jsonl` | `tcp-warden-logs` | Structured audit log file recording all connection and security events. |
 
 ---
@@ -145,5 +151,6 @@ When deployed in production, TCP Warden organizes files across three dedicated p
 
 - Explore [Configuration Reference](./configuration) to configure proxy listeners, rate limits, and GeoIP rules.
 - Review [Modular Protocol Plugins](./plugins) to enable database and IoT protocol inspection.
-- Set up automated threat blocking with [CrowdSec Integration](./crowdsec).
+- Optionally set up collaborative community threat defense with [CrowdSec Integration (Optional)](./crowdsec).
+- Query health and stream events via [Management API & SSE](./api).
 

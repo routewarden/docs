@@ -244,7 +244,7 @@ server {
         diffLines: [3, 7, 8, 9],
         code: `services:
   tcp-warden:
-    image: routewarden/tcp-warden:latest
+    image: ghcr.io/routewarden/tcp-warden:latest
     container_name: tcp-warden
     restart: unless-stopped
     network_mode: host

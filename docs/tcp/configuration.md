@@ -34,14 +34,17 @@ global:
 api:
   enabled: true
   listen: "127.0.0.1:9091"
-  auth_token: "\${ROUTEWARDEN_API_TOKEN}"
+  # Optional: Unix domain socket for local IPC (no open TCP ports needed)
+  socket: "/var/run/routewarden/tcp-warden.sock"
+  socket_mode: "0666"
 
-crowdsec:
-  enabled: true
-  lapi_url: "http://127.0.0.1:8080"
-  api_key: "\${CROWDSEC_API_KEY}"
-  update_frequency: "10s"
-  fallback_action: "ban"
+# Optional: CrowdSec LAPI Bouncer (disabled by default)
+# crowdsec:
+#   enabled: true
+#   lapi_url: "http://127.0.0.1:8080"
+#   api_key: "\${CROWDSEC_API_KEY}"
+#   update_frequency: "10s"
+#   fallback_action: "ban"
 
 plugins:
   postgres:
@@ -271,7 +274,7 @@ Full reference with global policy defaults, management API, CrowdSec integration
 
 ## Global Settings (`global`)
 
-Daemon-wide defaults for connection limits, ban rules, and logging.
+Daemon-wide defaults for connection limits, ban rules, persistent state, and logging.
 
 | Setting | Type | Default | What it means |
 | :--- | :--- | :--- | :--- |
@@ -279,6 +282,7 @@ Daemon-wide defaults for connection limits, ban rules, and logging.
 | `ban_duration` | `duration` | `"1h"` | How long an offending IP stays banned (e.g., `"1h"`, `"24h"`). |
 | `ban_after_failures` | `int` | `5` | Failed attempts within the sliding window before an IP is banned. |
 | `tarpit_ms` | `int` | `1000` | Milliseconds to stall banned or challenged connections before closing. |
+| `data_dir` | `string` | `"/var/lib/routewarden"` | Persistent state directory storing SQLite `bans.db` and installed plugins cache. |
 | `log_level` | `string` | `"info"` | Log verbosity: `debug`, `info`, `warn`, or `error`. |
 | `log_file` | `string` | — | Path to JSONL audit log file (leave empty to log to stdout). |
 | `geoip_db` | `string` | — | Path to MaxMind GeoLite2 Country database (`.mmdb`). |
@@ -290,19 +294,27 @@ Daemon-wide defaults for connection limits, ban rules, and logging.
 
 ## Management API (`api`)
 
-Settings for the local HTTP administration and metrics server (port `9091`).
+Settings for the local HTTP administration, metrics, and SSE live events server (port `9091`).
 
 | Setting | Type | Default | What it means |
 | :--- | :--- | :--- | :--- |
 | `enabled` | `bool` | `true` | Turns the management HTTP server on or off. |
-| `listen` | `string` | `"127.0.0.1:9091"` | Address and port to bind for management API requests. |
-| `auth_token` | `string` | — | Optional secret token required in the `Authorization` header. |
+| `listen` | `string` | `"127.0.0.1:9091"` | Address and port to bind for management API requests (can also be configured via `ROUTEWARDEN_API_LISTEN`). |
+| `socket` | `string` | `"/var/run/routewarden/tcp-warden.sock"` | Optional Unix domain socket path for local IPC (can also be configured via `ROUTEWARDEN_API_SOCKET`). |
+| `socket_mode` | `string` | `"0666"` | File permission mode for the Unix domain socket. |
+| `auth_token` | `string` | — | Optional Bearer authentication token for securing REST and SSE endpoints. |
 
 ---
 
-## CrowdSec Bouncer (`crowdsec`)
+## CrowdSec Bouncer (`crowdsec`) <Badge type="info" text="Optional" />
 
 Connects TCP Warden to your CrowdSec Local API (LAPI) to automatically block malicious IPs.
+
+::: info Optional Integration
+Connecting TCP Warden to CrowdSec is completely optional (`enabled: false` by default). TCP Warden functions as a complete standalone Layer 4 proxy and firewall with its own GeoIP blocking, CIDR filters, rate limits, protocol inspectors, failure tracking, and embedded SQLite ban storage.
+
+To set up CrowdSec log ingestion, parsers, scenarios, and bouncers, see the dedicated [CrowdSec Integration Guide](./crowdsec).
+:::
 
 | Setting | Type | Default | What it means |
 | :--- | :--- | :--- | :--- |

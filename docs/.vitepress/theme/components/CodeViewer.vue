@@ -393,12 +393,19 @@ function handleGatewayChange(newGw: GatewayId) {
 }
 
 /* Collapse whitespace text-nodes and allow code to expand to full content width */
-.rw-code-viewer-container :deep(.rw-snippet-html pre code) {
+.rw-code-viewer-container :deep(.rw-snippet-html pre code),
+.rw-code-viewer-container :deep(.rw-raw-pre code),
+.rw-code-viewer-container :deep(pre code),
+.rw-code-viewer-container :deep(code) {
   display: block;
   width: fit-content;
   min-width: 100%;
   box-sizing: border-box;
   line-height: 0;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
 }
 
 /* Each line span restores its own line-height and spans full width of code */
@@ -517,6 +524,20 @@ function handleGatewayChange(newGw: GatewayId) {
 <!-- Unscoped: token styles for v-html snippet content -->
 <style>
 .rw-snippet-html pre { tab-size: 2; }
+.rw-code-viewer-container code,
+.rw-code-viewer-container pre code,
+.rw-snippet-html code,
+.rw-snippet-html pre code,
+.rw-raw-pre code {
+  background: transparent !important;
+  background-color: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+.vp-doc .custom-block .rw-code-viewer-container code,
+.vp-doc .custom-block .rw-code-viewer-container pre code {
+  color: inherit !important;
+}
 .rw-snippet-html .tok-comment { color: #94a3b8; font-style: italic; }
 .dark .rw-snippet-html .tok-comment { color: #64748b; }
 .rw-snippet-html .tok-keyword { color: #7c3aed; font-weight: 600; }
