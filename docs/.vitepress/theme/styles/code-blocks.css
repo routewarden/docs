@@ -301,3 +301,18 @@
   background: rgba(56, 189, 248, 0.1) !important;
   border-left-color: #38bdf8 !important;
 }
+
+/* Ensure CodeViewer inside custom-blocks (tip, warning, info, etc.) never inherits background tints or colors */
+.vp-doc .custom-block .rw-code-viewer-container code,
+.vp-doc .custom-block .rw-code-viewer-container pre,
+.vp-doc .custom-block .rw-code-viewer-container pre code,
+.vp-doc .custom-block .rw-code-viewer-container .rw-snippet-html code,
+.vp-doc .custom-block .rw-code-viewer-container .rw-raw-pre code {
+  color: inherit !important;
+  background-color: transparent !important;
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
