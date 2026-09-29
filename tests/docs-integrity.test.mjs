@@ -107,4 +107,24 @@ test('documentation structure and integrity', async (t) => {
     assert.ok(Array.isArray(registry.versions), 'registry.versions must be array')
     assert.ok(registry.versions.length > 0, 'registry.versions must not be empty')
   })
+
+  await t.test('tcp plugin documentation files exist and are non-empty', () => {
+    const tcpPluginsDir = path.join(docsDir, 'tcp', 'plugins')
+    assert.ok(fs.existsSync(tcpPluginsDir), 'Expected tcp/plugins directory')
+
+    const expectedPlugins = [
+      'amqp.md', 'echo-filter.md', 'ftp.md', 'generic.md', 'http.md',
+      'imap.md', 'ldap.md', 'memcached.md', 'minecraft.md', 'mongodb.md',
+      'mqtt.md', 'mysql.md', 'pop3.md', 'postgres.md', 'redis.md',
+      'smtp.md', 'ssh.md', 'tls-sni.md', 'vnc.md'
+    ]
+
+    for (const plugin of expectedPlugins) {
+      const fullPath = path.join(tcpPluginsDir, plugin)
+      assert.ok(fs.existsSync(fullPath), `Expected plugin doc: ${plugin}`)
+      const stat = fs.statSync(fullPath)
+      assert.ok(stat.size > 1000, `Plugin doc ${plugin} should have comprehensive content`)
+    }
+  })
 })
+

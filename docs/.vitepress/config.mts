@@ -7,6 +7,41 @@ import versionsRegistry from '../versions.json' with { type: 'json' }
 // CORS errors from Cloudflare rejecting requests with an empty/invalid token.
 const CF_ANALYTICS_TOKEN = process.env.CLOUDFLARE_ANALYTICS_TOKEN || ''
 
+const caddyLanguage = {
+  name: 'caddy',
+  aliases: ['caddyfile', 'Caddyfile'],
+  displayName: 'Caddyfile',
+  scopeName: 'source.caddyfile',
+  patterns: [
+    {
+      name: 'comment.line.number-sign.caddyfile',
+      match: '#.*$'
+    },
+    {
+      name: 'string.quoted.double.caddyfile',
+      begin: '"',
+      end: '"',
+      patterns: [{ name: 'constant.character.escape.caddyfile', match: '\\\\.' }]
+    },
+    {
+      name: 'constant.numeric.caddyfile',
+      match: '\\b\\d+(\\.\\d+)?\\b'
+    },
+    {
+      name: 'constant.language.boolean.caddyfile',
+      match: '\\b(true|false|on|off)\\b'
+    },
+    {
+      name: 'keyword.control.caddyfile',
+      match: '\\b(order|route_warden|reverse_proxy|tls|respond|import|handle|handle_path|root|encode|log|rewrite|redir|header|request_header|basicauth|forward_auth|abort|error)\\b'
+    },
+    {
+      name: 'entity.name.tag.caddyfile',
+      match: '^[\\s]*([a-zA-Z0-9_.-]+)'
+    }
+  ]
+}
+
 export default defineConfig({
   title: 'RouteWarden',
   description: 'High-Performance Traefik Middleware for Sensitive Path Defense',
@@ -83,6 +118,9 @@ export default defineConfig({
     pageData.params = { ...pageData.params, version: versionData.version }
   },
   markdown: {
+    languages: [
+      caddyLanguage as any
+    ],
     config(md) {
       const originalRender = md.render.bind(md)
       md.render = (src, env) => {
@@ -137,8 +175,9 @@ export default defineConfig({
     nav: [
       {
         text: 'Gateways',
-        activeMatch: '^/(traefik|caddy|nginx)/',
+        activeMatch: '^/(traefik|caddy|nginx|tcp)/',
         items: [
+          { text: 'TCP Warden (L4 Proxy)', link: '/tcp/' },
           { text: 'Traefik Plugin', link: '/traefik/' },
           { text: 'Caddy Module', link: '/caddy/' },
           { text: 'NGINX & OpenResty', link: '/nginx/' }
@@ -184,6 +223,59 @@ export default defineConfig({
       }
     ],
     sidebar: {
+      '/tcp/': [
+        {
+          text: 'TCP Warden (L4 Proxy & Firewall)',
+          collapsed: false,
+          items: [
+            { text: 'Overview & Architecture', link: '/tcp/' },
+            { text: 'Getting Started & Docker', link: '/tcp/getting-started' },
+            { text: 'Configuration Reference', link: '/tcp/configuration' },
+            { text: 'Network & Firewall Integrations', link: '/tcp/network-integrations' },
+            { text: 'Modular Protocol Plugins', link: '/tcp/plugins' },
+            { text: 'Plugin Development Guide', link: '/tcp/plugin-development' },
+            { text: 'CrowdSec Integration (Optional)', link: '/tcp/crowdsec' },
+            { text: 'Management API & SSE', link: '/tcp/api' },
+            { text: 'CLI Commands Reference', link: '/tcp/cli' },
+            { text: 'Changelog & Releases', link: '/tcp/changelog' }
+          ]
+        },
+        {
+          text: 'Protocol Plugins Catalog',
+          collapsed: false,
+          items: [
+            { text: 'SSH Guard', link: '/tcp/plugins/ssh' },
+            { text: 'PostgreSQL Guard', link: '/tcp/plugins/postgres' },
+            { text: 'MySQL & MariaDB Guard', link: '/tcp/plugins/mysql' },
+            { text: 'Redis & Valkey Guard', link: '/tcp/plugins/redis' },
+            { text: 'MongoDB Wire Guard', link: '/tcp/plugins/mongodb' },
+            { text: 'HTTP & WebSocket Guard', link: '/tcp/plugins/http' },
+            { text: 'TLS SNI Router & Filter', link: '/tcp/plugins/tls-sni' },
+            { text: 'SMTP Mail Guard', link: '/tcp/plugins/smtp' },
+            { text: 'POP3 Mail Guard', link: '/tcp/plugins/pop3' },
+            { text: 'IMAP4 Mail Guard', link: '/tcp/plugins/imap' },
+            { text: 'FTP Control Guard', link: '/tcp/plugins/ftp' },
+            { text: 'LDAP & Active Directory', link: '/tcp/plugins/ldap' },
+            { text: 'AMQP & RabbitMQ Guard', link: '/tcp/plugins/amqp' },
+            { text: 'Memcached Cache Guard', link: '/tcp/plugins/memcached' },
+            { text: 'MQTT IoT Broker Guard', link: '/tcp/plugins/mqtt' },
+            { text: 'VNC Remote Desktop Guard', link: '/tcp/plugins/vnc' },
+            { text: 'Minecraft Game Guard', link: '/tcp/plugins/minecraft' },
+            { text: 'Generic Layer 4 Proxy', link: '/tcp/plugins/generic' },
+            { text: 'Echo Stream Filter', link: '/tcp/plugins/echo-filter' }
+          ]
+        },
+        {
+          text: 'Gateways & Ecosystem',
+          collapsed: false,
+          items: [
+            { text: 'Traefik Middleware', link: '/traefik/' },
+            { text: 'Caddy Module', link: '/caddy/' },
+            { text: 'NGINX & OpenResty', link: '/nginx/' },
+            { text: 'Core Architecture', link: '/core/architecture' }
+          ]
+        }
+      ],
       '/traefik/': [
         {
           text: 'Traefik Gateway',
