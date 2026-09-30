@@ -1,5 +1,5 @@
 ---
-title: Configuration Reference
+title: "Traefik Warden: Configuration Reference"
 ---
 
 <script setup>
@@ -63,9 +63,9 @@ const configExampleSnippets = computed(() => ({
 }))
 </script>
 
-# Configuration Reference
+# Traefik Warden: Configuration Reference
 
-This reference covers all configuration options available in RouteWarden.
+This reference covers all configuration options available in **Traefik Warden**.
 
 ---
 

@@ -329,18 +329,18 @@ const entrypointSnippets = computed(() => ({
 }))
 </script>
 
-# Getting Started with RouteWarden
+# Traefik Warden: Getting Started
 
-**RouteWarden** is a high-performance Traefik middleware plugin written in pure Go, designed to intercept and block unauthorized reconnaissance, directory probing, and access to sensitive files before requests ever hit your backend services.
+**Traefik Warden** is a high-performance Traefik middleware plugin written in pure Go. It intercepts and blocks reconnaissance, directory probing, and unauthorized access to sensitive files before requests reach your backend services.
 
 ---
 
 ## Key Capabilities
 
-- **Automated Sensitive Asset Shielding**: Blocks attempts to access environment configurations (`.env`), VCS repositories (`.git`, `.svn`), credentials (`.aws`, `.ssh`), database dumps (`.sql`, `.bak`), application configurations (`.yaml`, `.conf`, `.ini`), and debug panels (`phpinfo.php`, `/actuator`).
-- **Anti-Evasion Engine**: Proactively detects and decodes layered URL encoding tricks (`%252e%252e`), semicolon path matrix parameters (`/;param/.env`), backslash separators (`\..\`), and null bytes (`%00`).
-- **IP & CIDR Subnet Allowlisting**: Exempts internal networks, VPN gateways, and developer machines from path blocking.
-- **Custom Responses & Captcha**: Return custom JSON error structures, custom branded HTML 404 pages, or challenge clients via **Cloudflare Turnstile**, **hCaptcha**, or **reCAPTCHA**.
+- **Automatic Sensitive Asset Shielding**: Blocks attempts to access environment configs (`.env`), git repos (`.git`), credentials (`.aws`, `.ssh`), database dumps (`.sql`), and debug panels (`phpinfo.php`, `/actuator`).
+- **Anti-Evasion Engine**: Decodes and normalizes nested URL encodings (`%252e%252e`), semicolon matrix parameters (`/;param/.env`), backslashes (`\..\`), and null bytes (`%00`).
+- **IP & CIDR Allowlisting**: Exempts internal networks, VPN gateways, and developer IPs from blocking.
+- **Flexible Responses & Captcha**: Return custom JSON/HTML errors, silent drops, gzip bombs, or challenge visitors via **Cloudflare Turnstile**, **hCaptcha**, or **reCAPTCHA**.
 
 ---
 

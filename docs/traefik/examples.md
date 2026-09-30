@@ -336,7 +336,7 @@ const r6Snippets = computed(() => ({
 
 # Traefik Cookbook & Recipes
 
-Production blueprints and ready-to-run configurations for deploying RouteWarden on **Traefik Proxy**.
+Production blueprints and ready-to-run configurations for deploying **Traefik Warden** on Traefik Proxy.
 
 ---
 

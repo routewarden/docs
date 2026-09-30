@@ -95,7 +95,7 @@ sudo systemctl restart sshd`
 
 const net_portswap_yaml = buildSnippet({
   lang: 'yaml',
-  code: `# RouteWarden tcp-warden.yaml
+  code: `# tcp-warden.yaml
 services:
   ssh_bastion:
     listen: ":22"

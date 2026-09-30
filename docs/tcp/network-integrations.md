@@ -1,6 +1,6 @@
 ---
 title: Network & Firewall Integrations
-description: Integration patterns for RouteWarden TCP Warden using nftables, iptables, reverse proxy port swapping, and Docker network isolation.
+description: Integration patterns for TCP Warden using nftables, iptables, reverse proxy port swapping, and Docker network isolation.
 ---
 
 <script setup>
@@ -97,7 +97,7 @@ const archSnippets = computed(() => ({
 // ─── 1. nftables Snippets ───────────────────────────────────────────────────
 const nft_setup = buildSnippet({
   lang: 'bash',
-  code: `# 1. Create a dedicated NAT table for RouteWarden
+  code: `# 1. Create a dedicated NAT table for TCP Warden
 sudo nft add table ip routewarden_nat
 
 # 2. Add the prerouting chain
@@ -106,25 +106,25 @@ sudo nft add chain ip routewarden_nat prerouting '{ type nat hook prerouting pri
 
 const nft_rules = buildSnippet({
   lang: 'bash',
-  code: `# SSH: Redirect external port 22 -> RouteWarden port 2222
+  code: `# SSH: Redirect external port 22 -> TCP Warden port 2222
 sudo nft add rule ip routewarden_nat prerouting iifname "eth0" tcp dport 22 redirect to :2222
 
-# SMTP: Redirect external port 25 -> RouteWarden port 2525
+# SMTP: Redirect external port 25 -> TCP Warden port 2525
 sudo nft add rule ip routewarden_nat prerouting iifname "eth0" tcp dport 25 redirect to :2525
 
-# POP3: Redirect external port 110 -> RouteWarden port 1110
+# POP3: Redirect external port 110 -> TCP Warden port 1110
 sudo nft add rule ip routewarden_nat prerouting iifname "eth0" tcp dport 110 redirect to :1110
 
-# IMAP: Redirect external port 143 -> RouteWarden port 1143
+# IMAP: Redirect external port 143 -> TCP Warden port 1143
 sudo nft add rule ip routewarden_nat prerouting iifname "eth0" tcp dport 143 redirect to :1143
 
-# FTP Control: Redirect external port 21 -> RouteWarden port 2121
+# FTP Control: Redirect external port 21 -> TCP Warden port 2121
 sudo nft add rule ip routewarden_nat prerouting iifname "eth0" tcp dport 21 redirect to :2121
 
-# TLS SNI / HTTPS: Redirect external port 443 -> RouteWarden port 8443
+# TLS SNI / HTTPS: Redirect external port 443 -> TCP Warden port 8443
 sudo nft add rule ip routewarden_nat prerouting iifname "eth0" tcp dport 443 redirect to :8443
 
-# HTTP: Redirect external port 80 -> RouteWarden port 8081
+# HTTP: Redirect external port 80 -> TCP Warden port 8081
 sudo nft add rule ip routewarden_nat prerouting iifname "eth0" tcp dport 80 redirect to :8081`
 })
 
@@ -148,25 +148,25 @@ const nftSnippets = computed(() => ({
 // ─── 2. iptables / UFW / firewalld Snippets ─────────────────────────────────
 const iptables_rules = buildSnippet({
   lang: 'bash',
-  code: `# SSH: Redirect external port 22 -> RouteWarden port 2222
+  code: `# SSH: Redirect external port 22 -> TCP Warden port 2222
 sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 22 -j REDIRECT --to-port 2222
 
-# SMTP: Redirect external port 25 -> RouteWarden port 2525
+# SMTP: Redirect external port 25 -> TCP Warden port 2525
 sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 25 -j REDIRECT --to-port 2525
 
-# POP3: Redirect external port 110 -> RouteWarden port 1110
+# POP3: Redirect external port 110 -> TCP Warden port 1110
 sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 110 -j REDIRECT --to-port 1110
 
-# IMAP: Redirect external port 143 -> RouteWarden port 1143
+# IMAP: Redirect external port 143 -> TCP Warden port 1143
 sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 143 -j REDIRECT --to-port 1143
 
-# FTP Control: Redirect external port 21 -> RouteWarden port 2121
+# FTP Control: Redirect external port 21 -> TCP Warden port 2121
 sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 21 -j REDIRECT --to-port 2121
 
-# TLS SNI / HTTPS: Redirect external port 443 -> RouteWarden port 8443
+# TLS SNI / HTTPS: Redirect external port 443 -> TCP Warden port 8443
 sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 443 -j REDIRECT --to-port 8443
 
-# HTTP: Redirect external port 80 -> RouteWarden port 8081
+# HTTP: Redirect external port 80 -> TCP Warden port 8081
 sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 8081`
 })
 
@@ -195,10 +195,10 @@ sudo ufw reload`
 
 const firewalld_rules = buildSnippet({
   lang: 'bash',
-  code: `# Forward incoming external port 22 to RouteWarden port 2222
+  code: `# Forward incoming external port 22 to TCP Warden port 2222
 sudo firewall-cmd --permanent --add-forward-port=port=22:proto=tcp:toport=2222
 
-# Forward incoming external port 5432 to RouteWarden port 5433
+# Forward incoming external port 5432 to TCP Warden port 5433
 sudo firewall-cmd --permanent --add-forward-port=port=5432:proto=tcp:toport=5433
 
 # Reload firewalld to apply
@@ -274,7 +274,7 @@ const docker_compose = buildSnippet({
     container_name: tcp-warden
     restart: unless-stopped
     ports:
-      # Public listener ports (protected by RouteWarden)
+      # Public listener ports (protected by TCP Warden)
       - "22:2222"       # SSH Guard
       - "80:8081"       # HTTP Protocol Guard
       - "443:8443"      # TLS SNI Guard
@@ -286,7 +286,7 @@ const docker_compose = buildSnippet({
       - "636:1636"      # LDAPS Guard
       - "5432:5432"     # PostgreSQL Bastion
       - "6379:6379"     # Redis Guard
-      - "9091:9091"     # RouteWarden Management API
+      - "9091:9091"     # TCP Warden Management API
     volumes:
       - ./tcp-warden.yaml:/etc/routewarden/tcp-warden.yaml:ro
       - tcp-warden-data:/var/lib/routewarden
@@ -360,7 +360,7 @@ const priv_systemd = buildSnippet({
   lang: 'bash',
   code: `# /etc/systemd/system/tcp-warden.service
 [Unit]
-Description=RouteWarden TCP Warden L4 Security Proxy
+Description=TCP Warden L4 Security Proxy
 After=network.target
 
 [Service]
@@ -400,7 +400,7 @@ const privSnippets = computed(() => ({
 // ─── 6. Verification Checklist Snippets ─────────────────────────────────────
 const verify_listeners = buildSnippet({
   lang: 'bash',
-  code: `# Check that RouteWarden and backends listen on distinct ports
+  code: `# Check that TCP Warden and backends listen on distinct ports
 ss -tlpn | grep -E ':(22|2222|5432|5433|6379|6380)'`
 })
 
@@ -436,7 +436,7 @@ const verifySnippets = computed(() => ({
 
 # Network & Firewall Integrations
 
-RouteWarden TCP Warden acts as an intelligent Layer 4 reverse proxy and protocol firewall. In order to inspect, rate-limit, and ban abusive clients, incoming traffic must pass through RouteWarden before reaching your backend services.
+TCP Warden acts as an intelligent Layer 4 reverse proxy and protocol firewall. In order to inspect, rate-limit, and ban abusive clients, incoming traffic must pass through TCP Warden before reaching your backend services.
 
 There are four primary architectures to achieve this:
 
@@ -457,17 +457,17 @@ There are four primary architectures to achieve this:
 
 ## Strategy 1: `nftables` Redirection (Modern Linux Default)
 
-`nftables` provides kernel-level packet redirection with minimal overhead. Your backend service continues listening on its default port on `127.0.0.1`. The kernel intercepts incoming traffic on external network interfaces and redirects it to RouteWarden.
+`nftables` provides kernel-level packet redirection with minimal overhead. Your backend service continues listening on its default port on `127.0.0.1`. The kernel intercepts incoming traffic on external network interfaces and redirects it to TCP Warden.
 
 ::: tip Port Range Recommendation: Privileged vs Unprivileged Ports
-- **Privileged Ports (`<= 1024`):** Services like **SSH (`22`)**, **SMTP (`25`)**, **POP3 (`110`)**, **IMAP (`143`)**, **FTP (`21`)**, and **HTTP/TLS (`80` / `443`)** benefit most from `nftables`/`iptables` redirection because existing system daemons typically run as root on standard ports. Redirection routes traffic through RouteWarden without reconfiguring system services.
-- **Unprivileged Ports (`> 1024`):** Services like **PostgreSQL (`5432`)**, **MySQL (`3306`)**, **Redis (`6379`)**, **MongoDB (`27017`)**, **AMQP (`5672`)**, and **MQTT (`1883`)** **do not require firewall rules**. You can simply bind RouteWarden directly to the standard port as a transparent reverse proxy (Strategy 3) or isolate them within a Docker network (Strategy 4).
+- **Privileged Ports (`<= 1024`):** Services like **SSH (`22`)**, **SMTP (`25`)**, **POP3 (`110`)**, **IMAP (`143`)**, **FTP (`21`)**, and **HTTP/TLS (`80` / `443`)** benefit most from `nftables`/`iptables` redirection because existing system daemons typically run as root on standard ports. Redirection routes traffic through TCP Warden without reconfiguring system services.
+- **Unprivileged Ports (`> 1024`):** Services like **PostgreSQL (`5432`)**, **MySQL (`3306`)**, **Redis (`6379`)**, **MongoDB (`27017`)**, **AMQP (`5672`)**, and **MQTT (`1883`)** **do not require firewall rules**. You can simply bind TCP Warden directly to the standard port as a transparent reverse proxy (Strategy 3) or isolate them within a Docker network (Strategy 4).
 :::
 
 ::: danger CRITICAL: LOOPBACK RECURSION PREVENTION
 Always include `iifname "eth0"` (your external interface). **Never** redirect traffic on the loopback interface (`lo`). 
 
-When RouteWarden forwards approved connections to `127.0.0.1:22`, the packet travels over `lo`. If the redirect rule matched all interfaces without `iifname`, RouteWarden's own connection would be caught and redirected back to RouteWarden, creating an infinite connection loop.
+When TCP Warden forwards approved connections to `127.0.0.1:22`, the packet travels over `lo`. If the redirect rule matched all interfaces without `iifname`, TCP Warden's own connection would be caught and redirected back to TCP Warden, creating an infinite connection loop.
 :::
 
 <CodeViewer :snippets="nftSnippets" />
@@ -484,7 +484,7 @@ For hosts running legacy `iptables`, Ubuntu UFW, or RHEL/CentOS `firewalld`:
 
 ## Strategy 3: Direct Port Swapping (Backend Reconfiguration)
 
-If you prefer RouteWarden to bind directly to standard ports (`22`, `5432`, `6379`, `3306`) without using firewall NAT rules, update your backend daemon configurations so they release the standard port and bind strictly to loopback:
+If you prefer TCP Warden to bind directly to standard ports (`22`, `5432`, `6379`, `3306`) without using firewall NAT rules, update your backend daemon configurations so they release the standard port and bind strictly to loopback:
 
 | Service | Configuration File | Required Setting Update | Service Restart Command |
 | :--- | :--- | :--- | :--- |
@@ -500,7 +500,7 @@ If you prefer RouteWarden to bind directly to standard ports (`22`, `5432`, `637
 | **FTP (vsftpd)** | `/etc/vsftpd.conf` | `listen_port=2122`<br>`listen_address=127.0.0.1` | `sudo systemctl restart vsftpd` |
 
 ::: warning BIND ADDRESS REQUIREMENT
-Always bind the backend service to `127.0.0.1` (loopback). If your backend service binds to `0.0.0.0` on its internal port, external attackers can bypass RouteWarden entirely by scanning and connecting directly to that port.
+Always bind the backend service to `127.0.0.1` (loopback). If your backend service binds to `0.0.0.0` on its internal port, external attackers can bypass TCP Warden entirely by scanning and connecting directly to that port.
 :::
 
 <CodeViewer :snippets="portswapSnippets" />
@@ -509,7 +509,7 @@ Always bind the backend service to `127.0.0.1` (loopback). If your backend servi
 
 ## Strategy 4: Docker Compose Network Isolation
 
-In containerized deployments, the backend database or service container should **never publish ports to the host**. Only RouteWarden exposes ports:
+In containerized deployments, the backend database or service container should **never publish ports to the host**. Only TCP Warden exposes ports:
 
 <CodeViewer :snippets="dockerSnippets" />
 
@@ -520,10 +520,10 @@ In containerized deployments, the backend database or service container should *
 On Linux systems, binding directly to ports below 1024 (`22` for SSH, `25` for SMTP, `80` for HTTP, `443` for HTTPS) normally requires root privileges.
 
 ### 1. In Docker: Host Port Mapping (Recommended)
-When using Docker port mappings like `ports: - "22:2222"`, the host Docker daemon binds port `22` on the host, while RouteWarden runs safely as non-root `routewarden` (UID 1000) inside the container. **No root permissions are needed.**
+When using Docker port mappings like `ports: - "22:2222"`, the host Docker daemon binds port `22` on the host, while TCP Warden runs safely as non-root `routewarden` (UID 1000) inside the container. **No root permissions are needed.**
 
 ### 2. In Docker: Direct Privileged Port Binding (`ports: - "22:22"`)
-If you configure RouteWarden to bind directly to `:22` inside the container, grant the capability in `docker-compose.yml` or set `TARGET_USER=root`.
+If you configure TCP Warden to bind directly to `:22` inside the container, grant the capability in `docker-compose.yml` or set `TARGET_USER=root`.
 
 ### 3. Outside Docker: Bare-Metal Linux (Systemd Service)
 To bind privileged ports without running the daemon as root, configure `AmbientCapabilities=CAP_NET_BIND_SERVICE`:

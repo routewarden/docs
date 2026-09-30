@@ -134,7 +134,7 @@ const ipSnippets = computed(() => ({
 
 # NGINX Configuration Reference
 
-Configuration schema, options, and parameters for **RouteWarden for NGINX & OpenResty** (`github.com/routewarden/nginx-warden`).
+Configuration schema, options, and parameters for **NGINX Warden** (`github.com/routewarden/nginx-warden`).
 
 ---
 

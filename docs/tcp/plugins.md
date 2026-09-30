@@ -231,9 +231,9 @@ All protocol-specific security inspectors (`ssh`, `smtp`, `pop3`, `imap`, `postg
 
 ---
 
-## Official Plugins Directory
+## Official Plugins
 
-RouteWarden provides **19 official plugins** in the [`routewarden/plugins`](https://github.com/routewarden/plugins) repository, covering database servers, mail systems, remote access, web services, caches, message brokers, and game servers:
+TCP Warden provides **19 official plugins** in the [`routewarden/plugins`](https://github.com/routewarden/plugins) repository, covering database servers, mail systems, remote access, web services, caches, message brokers, and game servers. All plugins can be installed instantly with `tcp-warden plugins install <name>`.
 
 | Plugin | Protocol(s) | Documentation | What it does |
 | :--- | :--- | :--- | :--- |
@@ -334,6 +334,6 @@ When running in Docker, mount the named volume `tcp-warden-data` to `/var/lib/ro
 
 ## Next Steps
 
-- **Routing Traffic:** Learn how to divert live traffic into RouteWarden via `nftables`, `iptables`, port swapping, or Docker networks in the [Network & Firewall Integrations Guide](./network-integrations).
-- **Developing Plugins:** Want to create your own protocol inspector? Follow the [Plugin Development & Integration Guide](./plugin-development).
+- **Routing Traffic:** Learn how to divert live traffic into TCP Warden via `nftables`, `iptables`, port swapping, or Docker networks in the [Network & Firewall Integrations Guide](./network-integrations).
+- **Developing Plugins:** Want to create your own protocol inspector? Follow the [Plugin Development & Integration Guide](./plugin-development/).
 - **Configuration Details:** Learn more about proxy listeners and port ranges in the [Configuration Reference](./configuration).

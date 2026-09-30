@@ -3,10 +3,11 @@
 </p>
 
 <p align="center">
-  <strong>High-Performance Edge Defense for Traefik, Caddy &amp; NGINX</strong>
+  <strong>Unified Edge &amp; L4 Defense for Traefik, Caddy, NGINX &amp; TCP Services</strong>
 </p>
 
 <p align="center">
+  <a href="https://github.com/routewarden/tcp-warden"><img src="https://img.shields.io/badge/TCP--Warden-L4%20Proxy-orange.svg" alt="TCP Warden L4"></a>
   <a href="https://github.com/routewarden/traefik-warden/actions/workflows/ci.yml"><img src="https://github.com/routewarden/traefik-warden/actions/workflows/ci.yml/badge.svg" alt="Traefik CI Status"></a>
   <a href="https://github.com/routewarden/caddy-warden/actions/workflows/ci.yml"><img src="https://github.com/routewarden/caddy-warden/actions/workflows/ci.yml/badge.svg" alt="Caddy CI Status"></a>
   <a href="https://github.com/routewarden/nginx-warden/actions/workflows/ci.yml"><img src="https://github.com/routewarden/nginx-warden/actions/workflows/ci.yml/badge.svg" alt="NGINX CI Status"></a>
@@ -23,7 +24,7 @@
 
 ## RouteWarden Documentation
 
-This repository contains the documentation, deployment guides, examples, and release references for RouteWarden across **[Traefik](https://github.com/routewarden/traefik-warden)**, **[Caddy](https://github.com/routewarden/caddy-warden)**, and **[NGINX & OpenResty](https://github.com/routewarden/nginx-warden)**.
+This repository contains the documentation, deployment guides, examples, and release references for RouteWarden across **[TCP Warden](https://github.com/routewarden/tcp-warden)**, **[Traefik](https://github.com/routewarden/traefik-warden)**, **[Caddy](https://github.com/routewarden/caddy-warden)**, and **[NGINX & OpenResty](https://github.com/routewarden/nginx-warden)**.
 
 - **Documentation Portal**: [https://routewarden.github.io/docs/](https://routewarden.github.io/docs/)
 - **Interactive Playground**: [https://routewarden.github.io/docs/?playground=open](https://routewarden.github.io/docs/?playground=open)
@@ -34,10 +35,11 @@ This repository contains the documentation, deployment guides, examples, and rel
 
 | Resource | Link | Description |
 |---|---|---|
-| **Interactive Playground** | [routewarden.github.io/docs/?playground=open](https://routewarden.github.io/docs/?playground=open) | Test URLs against normalization rules and generate gateway configs |
+| **TCP Warden (tcp-warden)** | [github.com/routewarden/tcp-warden](https://github.com/routewarden/tcp-warden) | Protocol-aware Layer 4 reverse proxy, rate limiter, and protocol firewall |
 | **Traefik Plugin (traefik-warden)** | [github.com/routewarden/traefik-warden](https://github.com/routewarden/traefik-warden) | Pure Go Traefik plugin with Yaegi compatibility |
 | **Caddy Plugin (caddy-warden)** | [github.com/routewarden/caddy-warden](https://github.com/routewarden/caddy-warden) | Official Caddy v2 security module and Caddyfile directive |
 | **NGINX Plugin (nginx-warden)** | [github.com/routewarden/nginx-warden](https://github.com/routewarden/nginx-warden) | High-performance Lua security module for NGINX & OpenResty |
+| **Interactive Playground** | [routewarden.github.io/docs/?playground=open](https://routewarden.github.io/docs/?playground=open) | Test URLs against normalization rules and generate gateway configs |
 | **Traefik Plugin Catalog** | [plugins.traefik.io](https://plugins.traefik.io/plugins/6aae41dd5b5ee35d8bd24ca5/route-warden) | Official Traefik Plugin listing |
 | **Documentation Portal** | [routewarden.github.io/docs](https://routewarden.github.io/docs/) | Installation guides, architecture, and configuration options |
 | **Examples Cookbook** | [Documentation Examples](https://routewarden.github.io/docs/examples/overview) | Ready-to-use Docker Compose and Kubernetes configurations |
@@ -151,6 +153,37 @@ http {
         }
     }
 }
+```
+
+#### TCP Warden (Layer 4 Infrastructure Defense)
+
+Launch with Docker Compose:
+```yaml
+services:
+  tcp-warden:
+    image: ghcr.io/routewarden/tcp-warden:latest
+    network_mode: host
+    volumes:
+      - tcp-warden-config:/etc/routewarden
+      - tcp-warden-data:/var/lib/routewarden
+```
+
+Configure `tcp-warden.yaml`:
+```yaml
+services:
+  ssh:
+    listen: ":2222"
+    upstream: "127.0.0.1:22"
+    protocol: ssh
+    max_auth_failures: 3
+    ban_duration: 1h
+
+  postgres:
+    listen: ":5432"
+    upstream: "127.0.0.1:5433"
+    protocol: postgres
+    max_auth_failures: 5
+    ban_duration: 2h
 ```
 
 ---

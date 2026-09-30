@@ -44,7 +44,7 @@ const caddyLanguage = {
 
 export default defineConfig({
   title: 'RouteWarden',
-  description: 'High-Performance Traefik Middleware for Sensitive Path Defense',
+  description: 'Unified Edge & L4 Defense: Stop sensitive file leaks in Traefik, Caddy, NGINX, and protect non-HTTP services with TCP Warden.',
   base: '/docs/',
   cleanUrls: true,
   vite: {
@@ -147,15 +147,15 @@ export default defineConfig({
     ['link', { rel: 'alternate icon', type: 'image/x-icon', href: '/docs/favicon.ico' }],
     ['meta', { name: 'theme-color', content: '#6366f1' }],
     ['meta', { name: 'author', content: 'RouteWarden Contributors' }],
-    ['meta', { name: 'keywords', content: 'traefik, traefik plugin, middleware, security, anti-evasion, ip whitelist, sensitive files, env protection, reverse proxy waf' }],
+    ['meta', { name: 'keywords', content: 'traefik, caddy, nginx, openresty, tcp-warden, middleware, security, anti-evasion, ip whitelist, sensitive files, env protection, reverse proxy waf, layer 4 firewall' }],
     ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:title', content: 'RouteWarden — High-Performance Traefik Middleware' }],
-    ['meta', { property: 'og:description', content: 'Stop sensitive file leaks (.env, .git, backups), neutralize path evasion attacks, whitelist IPs, and challenge threats before requests reach your backend.' }],
+    ['meta', { property: 'og:title', content: 'RouteWarden — Unified Edge & Protocol Security Suite' }],
+    ['meta', { property: 'og:description', content: 'Stop sensitive file leaks (.env, .git, backups) across Traefik, Caddy, and NGINX, and protect non-HTTP infrastructure with TCP Warden.' }],
     ['meta', { property: 'og:image', content: 'https://routewarden.github.io/docs/banner.png' }],
     ['meta', { property: 'og:url', content: 'https://routewarden.github.io/docs/' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-    ['meta', { name: 'twitter:title', content: 'RouteWarden — Traefik Security Middleware' }],
-    ['meta', { name: 'twitter:description', content: 'Ultra-fast sensitive path defense, anti-evasion normalization, IP whitelisting, and multi-action responses for Traefik.' }],
+    ['meta', { name: 'twitter:title', content: 'RouteWarden — Unified Edge & Protocol Security Suite' }],
+    ['meta', { name: 'twitter:description', content: 'Ultra-fast sensitive path defense for web gateways and protocol-aware Layer 4 proxying for backend infrastructure.' }],
     ['meta', { name: 'twitter:image', content: 'https://routewarden.github.io/docs/banner.png' }],
     // Cloudflare Web Analytics — only injected when the token secret is available at build time.
     // Omitting the script entirely when CF_ANALYTICS_TOKEN is empty avoids CORS rejections from
@@ -177,10 +177,10 @@ export default defineConfig({
         text: 'Gateways',
         activeMatch: '^/(traefik|caddy|nginx|tcp)/',
         items: [
-          { text: 'TCP Warden (L4 Proxy)', link: '/tcp/' },
-          { text: 'Traefik Plugin', link: '/traefik/' },
-          { text: 'Caddy Module', link: '/caddy/' },
-          { text: 'NGINX & OpenResty', link: '/nginx/' }
+          { text: 'TCP Warden (L4)', link: '/tcp/' },
+          { text: 'Traefik Warden', link: '/traefik/' },
+          { text: 'Caddy Warden', link: '/caddy/' },
+          { text: 'NGINX Warden', link: '/nginx/' }
         ]
       },
       {
@@ -231,17 +231,28 @@ export default defineConfig({
             { text: 'Overview & Architecture', link: '/tcp/' },
             { text: 'Getting Started & Docker', link: '/tcp/getting-started' },
             { text: 'Configuration Reference', link: '/tcp/configuration' },
+            { text: 'Log Levels', link: '/tcp/log-levels' },
             { text: 'Network & Firewall Integrations', link: '/tcp/network-integrations' },
             { text: 'Modular Protocol Plugins', link: '/tcp/plugins' },
-            { text: 'Plugin Development Guide', link: '/tcp/plugin-development' },
             { text: 'CrowdSec Integration (Optional)', link: '/tcp/crowdsec' },
+            { text: 'FAQ & Comparisons', link: '/tcp/faq' },
             { text: 'Management API & SSE', link: '/tcp/api' },
             { text: 'CLI Commands Reference', link: '/tcp/cli' },
             { text: 'Changelog & Releases', link: '/tcp/changelog' }
           ]
         },
         {
-          text: 'Protocol Plugins Catalog',
+          text: 'Plugin Development Guide',
+          collapsed: false,
+          items: [
+            { text: 'Overview & Quick Start', link: '/tcp/plugin-development/' },
+            { text: 'SDK & Lifecycle Reference', link: '/tcp/plugin-development/sdk-lifecycle' },
+            { text: 'In-Memory Testing & QA', link: '/tcp/plugin-development/testing' },
+            { text: 'Packaging & Publishing', link: '/tcp/plugin-development/publishing' }
+          ]
+        },
+        {
+          text: 'Official Plugins',
           collapsed: false,
           items: [
             { text: 'SSH Guard', link: '/tcp/plugins/ssh' },
@@ -269,16 +280,16 @@ export default defineConfig({
           text: 'Gateways & Ecosystem',
           collapsed: false,
           items: [
-            { text: 'Traefik Middleware', link: '/traefik/' },
-            { text: 'Caddy Module', link: '/caddy/' },
-            { text: 'NGINX & OpenResty', link: '/nginx/' },
+            { text: 'Traefik Warden', link: '/traefik/' },
+            { text: 'Caddy Warden', link: '/caddy/' },
+            { text: 'NGINX Warden', link: '/nginx/' },
             { text: 'Core Architecture', link: '/core/architecture' }
           ]
         }
       ],
       '/traefik/': [
         {
-          text: 'Traefik Gateway',
+          text: 'Traefik Warden',
           collapsed: false,
           items: [
             { text: 'Overview', link: '/traefik/' },
@@ -324,7 +335,7 @@ export default defineConfig({
       ],
       '/caddy/': [
         {
-          text: 'Caddy Gateway',
+          text: 'Caddy Warden',
           collapsed: false,
           items: [
             { text: 'Overview', link: '/caddy/' },
@@ -369,7 +380,7 @@ export default defineConfig({
       ],
       '/nginx/': [
         {
-          text: 'NGINX & OpenResty Gateway',
+          text: 'NGINX Warden',
           collapsed: false,
           items: [
             { text: 'Overview', link: '/nginx/' },
