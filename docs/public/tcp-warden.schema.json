@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://routewarden.github.io/tcp-warden/tcp-warden.schema.json",
-  "title": "RouteWarden TCP Warden Configuration Schema",
+  "title": "TCP Warden Configuration Schema",
   "description": "JSON schema for tcp-warden.yaml",
   "type": "object",
   "properties": {
@@ -16,7 +16,7 @@
         "ban_duration": { "type": "string", "default": "1h" },
         "ban_after_failures": { "type": "integer", "minimum": 0 },
         "tarpit_ms": { "type": "integer", "minimum": 0 },
-        "log_level": { "type": "string", "enum": ["debug", "info", "warn", "error"] },
+        "log_level": { "type": "string", "enum": ["debug", "info", "warn", "error", "off"], "default": "warn" },
         "log_file": { "type": "string" },
         "geoip_db": { "type": "string" },
         "ip_filter": {

@@ -343,7 +343,7 @@ const r6Snippets = computed(() => ({
 
 # Caddy Cookbook & Recipes
 
-Production blueprints and ready-to-run configurations for deploying Caddy-Warden on **Caddy Web Server**.
+Production blueprints and ready-to-run configurations for deploying **Caddy Warden** on Caddy Web Server.
 
 ---
 

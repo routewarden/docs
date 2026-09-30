@@ -78,7 +78,7 @@ const quickStartSnippets = computed(() => ({
 }))
 </script>
 
-# RouteWarden TCP Warden
+# TCP Warden
 
 <p class="tagline" style="font-size: 1.25rem; color: var(--vp-c-text-2); margin-bottom: 1.5rem;">
 A lightweight, protocol-aware security proxy and firewall for non-HTTP services.
@@ -206,8 +206,9 @@ Deploy and configure TCP Warden in three simple steps:
 | ⚙️ **[Configuration Reference](./configuration)** | Complete reference for `tcp-warden.yaml`, service definitions, and rate limits. |
 | 🌐 **[Network & Firewall Integrations](./network-integrations)** | Production deployment topologies, iptables/nftables PREROUTING, Docker bridge, and port-swapping. |
 | 🔌 **[Modular Protocol Plugins](./plugins)** | Browse, install, and configure official plugins for Postgres, Redis, MongoDB, and more. |
-| 🛠️ **[Plugin Development Guide](./plugin-development)** | Learn how to build, test, and package custom Layer 4 protocol inspectors in Go. |
+| 🛠️ **[Plugin Development Guide](./plugin-development/)** | Learn how to build, test, and package custom Layer 4 protocol inspectors in Go. |
 | 🛡️ **[CrowdSec Integration (Optional)](./crowdsec)** | Connect TCP Warden with CrowdSec LAPI for automated, community-driven threat remediation. |
+| ❓ **[FAQ & Comparisons](./faq)** | Plain-English answers, comparisons with CrowdSec, Fail2ban, and iptables, and synergy breakdown. |
 | 📡 **[Management API & SSE](./api)** | Query health status, view active bans, and stream live security alerts over HTTP. |
 | 💻 **[CLI Reference](./cli)** | Full reference for `run`, `validate`, `plugins`, `ban`, and `status` commands. |
 | 📜 **[Changelog & Releases](./changelog)** | Release notes, breaking changes, and migration history across TCP Warden versions. |

@@ -1,6 +1,6 @@
 ---
 title: Getting Started with TCP Warden
-description: Install and deploy RouteWarden TCP Warden via standalone binary or Docker Compose with persistent volume mounts.
+description: Install and deploy TCP Warden via standalone binary or Docker Compose with persistent volume mounts.
 ---
 
 <script setup>
@@ -67,7 +67,7 @@ const verify_health = buildSnippet({
   lang: 'bash',
   code: `# Health check
 curl -s http://127.0.0.1:9091/health
-# {"status":"ok","version":"2.0.0"}
+# {"status":"ok","version":"2.1.0"}
 
 # Active service stats
 curl -s http://127.0.0.1:9091/stats
@@ -95,7 +95,7 @@ const verifySnippets = computed(() => ({
 
 # Getting Started with TCP Warden
 
-RouteWarden TCP Warden is distributed as a single static binary and as a multi-arch container image (`ghcr.io/routewarden/tcp-warden:latest`).
+TCP Warden is distributed as a single static binary and as a multi-arch container image (`ghcr.io/routewarden/tcp-warden:latest`).
 
 ---
 
@@ -125,7 +125,7 @@ TCP Warden exposes an HTTP management endpoint on port `9091` (configurable via 
 
 Output of `./tcp-warden status`:
 ```
-🛡️  RouteWarden TCP Daemon Status (http://127.0.0.1:9091)
+🛡️  TCP Warden Daemon Status (http://127.0.0.1:9091)
 ----------------------------------------------------------------------
 SERVICE        PROTOCOL   ACTIVE CONNS   TOTAL ALLOWED   TOTAL BLOCKED
 ----------------------------------------------------------------------

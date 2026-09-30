@@ -324,7 +324,7 @@ const r5Snippets = computed(() => ({
 
 # NGINX Cookbook & Recipes
 
-Production patterns and ready-to-run configurations for deploying RouteWarden on **NGINX & OpenResty**.
+Production patterns and ready-to-run configurations for deploying **NGINX Warden** on NGINX & OpenResty.
 
 ---
 

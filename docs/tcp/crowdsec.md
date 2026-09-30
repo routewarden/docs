@@ -1,6 +1,6 @@
 ---
 title: CrowdSec Integration for TCP Warden (Optional)
-description: Step-by-step guide to connect RouteWarden TCP Warden with CrowdSec Local API (LAPI) for automated collaborative threat detection and real-time IP banning.
+description: Step-by-step guide to connect TCP Warden with CrowdSec Local API (LAPI) for automated collaborative threat detection and real-time IP banning.
 ---
 
 <script setup>
@@ -45,7 +45,13 @@ const archSnippets = computed(() => ({
 // ─── 1. Configuration (tcp-warden.yaml) ──────────────────────────────────────
 const crowdsec_config = buildSnippet({
   lang: 'yaml',
-  code: `# CrowdSec LAPI Bouncer integration in tcp-warden.yaml
+  code: `# CrowdSec integration in tcp-warden.yaml
+global:
+  # "warn" is recommended: suppresses routine "allowed" events from the JSONL
+  # audit feed so CrowdSec only parses auth failures, port scans, and blocks.
+  log_level: "warn"
+  log_file: "/var/log/routewarden/tcp-warden.jsonl"
+
 crowdsec:
   enabled: true
   lapi_url: "http://127.0.0.1:8080"
@@ -83,7 +89,7 @@ const parser_yaml = buildSnippet({
 filter: "evt.Line.Labels.type == 'routewarden-tcp'"
 onsuccess: next_stage
 name: routewarden/tcp-warden-parser
-description: "Parse RouteWarden TCP Warden structured JSONL security logs"
+description: "Parse TCP Warden structured JSONL security logs"
 nodes:
   - grok:
       pattern: '^%{GREEDYDATA:raw_json}$'
@@ -112,7 +118,7 @@ const parserSnippets = computed(() => ({
 const compose_yaml = buildSnippet({
   lang: 'yaml',
   code: `services:
-  # RouteWarden TCP Warden
+  # TCP Warden
   tcp-warden:
     image: ghcr.io/routewarden/tcp-warden:latest
     container_name: tcp-warden
@@ -124,6 +130,7 @@ const compose_yaml = buildSnippet({
       - tcp-warden-data:/var/lib/routewarden
       - tcp-warden-logs:/var/log/routewarden
     environment:
+      - ROUTEWARDEN_LOG_LEVEL=warn
       - CROWDSEC_API_KEY=\${CROWDSEC_API_KEY}
 
   # CrowdSec Security Engine
@@ -232,7 +239,7 @@ const healthResponseSnippets = computed(() => ({
 
 # CrowdSec Integration <Badge type="info" text="Optional" />
 
-RouteWarden TCP Warden is built to run fully autonomously, but it also natively supports bidirectional integration with **[CrowdSec](https://www.crowdsec.net/)**.
+TCP Warden is built to run fully autonomously, but it also natively supports bidirectional integration with **[CrowdSec](https://www.crowdsec.net/)**.
 
 ::: info Optional Integration
 TCP Warden operates as a complete standalone proxy and firewall without CrowdSec. All core features—including GeoIP filtering, CIDR allow/deny lists, token-bucket rate limiting, protocol inspection, brute-force failure tracking, and embedded SQLite ban storage—function out of the box with zero external dependencies.
@@ -262,6 +269,10 @@ Follow these sequential steps to deploy the combined TCP Warden and CrowdSec sta
 Tell CrowdSec where to find TCP Warden's structured JSONL audit log:
 
 <CodeViewer :snippets="acquisSnippets" />
+
+::: tip Built-in Optimization: Default `warn` Level
+TCP Warden defaults to `log_level: "warn"`, which logs **only** actionable security signals (`auth_failure` and `blocked` events) to `/var/log/routewarden/tcp-warden.jsonl` while suppressing routine `allowed` connection records. This significantly reduces log volume, disk I/O, and CPU consumption by CrowdSec parsers while maintaining 100% scenario detection fidelity. See [Log Levels](./log-levels) for full details.
+:::
 
 ---
 
@@ -301,6 +312,7 @@ Enable the CrowdSec bouncer section in your `tcp-warden.yaml`:
 
 | Field | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
+| `global.log_level` | `string` | `"warn"` | Defaults to `"warn"` so the JSONL feed emits only `auth_failure` and `blocked` events. |
 | `enabled` | `bool` | `false` | Set to `true` to activate CrowdSec decision polling. |
 | `lapi_url` | `string` | `"http://127.0.0.1:8080"` | URL of your CrowdSec Local API service. |
 | `api_key` | `string` | — | Bouncer API token obtained in Step 3. |
@@ -330,3 +342,8 @@ Verify that TCP Warden successfully connects to CrowdSec LAPI and receives activ
 In the [Management Dashboard](./api) or via `curl http://127.0.0.1:9091/health`, the health response will show the active CrowdSec connection status:
 
 <CodeViewer :snippets="healthResponseSnippets" />
+
+---
+
+> [!TIP] Architectural Deep Dive & Comparison
+> Want to understand the fundamental architectural differences between TCP Warden and CrowdSec, and why they work best together? Check out the [TCP Warden FAQ & Comparison Guide](./faq).

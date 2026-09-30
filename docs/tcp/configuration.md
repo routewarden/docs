@@ -17,7 +17,7 @@ global:
   ban_duration: "1h"
   ban_after_failures: 5
   tarpit_ms: 1000
-  log_level: "info"
+  log_level: "warn"
   log_file: "/var/log/routewarden/tcp-warden.jsonl"
   geoip_db: "/etc/routewarden/GeoLite2-Country.mmdb"
   ip_filter:
@@ -283,7 +283,7 @@ Daemon-wide defaults for connection limits, ban rules, persistent state, and log
 | `ban_after_failures` | `int` | `5` | Failed attempts within the sliding window before an IP is banned. |
 | `tarpit_ms` | `int` | `1000` | Milliseconds to stall banned or challenged connections before closing. |
 | `data_dir` | `string` | `"/var/lib/routewarden"` | Persistent state directory storing SQLite `bans.db` and installed plugins cache. |
-| `log_level` | `string` | `"info"` | Log verbosity: `debug`, `info`, `warn`, or `error`. |
+| `log_level` | `string` | `"warn"` | Log verbosity: `debug`, `info`, `warn`, `error`, or `off`. See [Log Levels](./log-levels). |
 | `log_file` | `string` | — | Path to JSONL audit log file (leave empty to log to stdout). |
 | `geoip_db` | `string` | — | Path to MaxMind GeoLite2 Country database (`.mmdb`). |
 | `ip_filter.allow` | `[]CIDR` | `[]` | Subnets that are always allowed (e.g. `["10.0.0.0/8"]`). |

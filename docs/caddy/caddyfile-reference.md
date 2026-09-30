@@ -1,6 +1,6 @@
 # Caddyfile Directive & JSON Reference
 
-Comprehensive syntax and configuration options for **Caddy-Warden** (`github.com/routewarden/caddy-warden`).
+Comprehensive syntax and configuration options for **Caddy Warden** (`github.com/routewarden/caddy-warden`).
 
 ---
 
@@ -87,7 +87,7 @@ route_warden {
 
 ### Default Block Patterns (`enable_default_patterns true`)
 
-When enabled (default), Caddy-Warden intercepts requests matching these compiled regular expressions:
+When enabled (default), Caddy Warden intercepts requests matching these compiled regular expressions:
 
 | Target Category | Compiled Regex | Intercepted Examples |
 |---|---|---|
@@ -100,7 +100,7 @@ When enabled (default), Caddy-Warden intercepts requests matching these compiled
 
 ### Default Allow Patterns (`enable_default_allow_patterns true`)
 
-When enabled (default), Caddy-Warden immediately allows standard public resources through without checking block rules:
+When enabled (default), Caddy Warden immediately allows standard public resources through without checking block rules:
 
 | Target Resource | Compiled Regex | Purpose |
 |---|---|---|

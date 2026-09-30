@@ -3,48 +3,60 @@ layout: home
 
 hero:
   name: "RouteWarden"
-  text: "High-Performance Edge Defense for Traefik, Caddy & NGINX"
-  tagline: "Stop sensitive file leaks (.env, .git, backups), neutralize path-evasion attacks, whitelist IPs, and challenge threats before requests reach your upstream services."
+  text: "High-Performance Edge & L4 Protocol Defense"
+  tagline: "Stop sensitive file leaks (.env, .git, backups), protect non-HTTP services (SSH, SMTP, DBs), and block threats before requests reach your backends."
   image:
     src: /icon.svg
     alt: RouteWarden Logo
   actions:
     - theme: brand
-      text: TCP Warden (L4 Proxy) ➔
+      text: TCP Warden (L4) ➔
       link: /tcp/
     - theme: brand
-      text: Traefik Plugin ➔
+      text: Traefik Warden ➔
       link: /traefik/
     - theme: brand
-      text: Caddy Module ➔
+      text: Caddy Warden ➔
       link: /caddy/
     - theme: brand
-      text: NGINX & OpenResty ➔
+      text: NGINX Warden ➔
       link: /nginx/
     - theme: alt
-      text: CLI Tool (rwarden) ➔
+      text: CLI & Dashboard ➔
       link: https://routewarden.github.io/cli/
 
 features:
-  - title: Layer 4 Protocol Firewall (TCP Warden)
-    details: "Protocol-aware reverse proxy and connection firewall defending non-HTTP services: SSH, SMTP, PostgreSQL, MySQL, Redis, MQTT, and TLS SNI."
-  - title: Scanner Defense
-    details: Intercepts automated crawlers probing for exposed credentials, source repositories, backups, and administrative endpoints.
-  - title: Path Normalization
-    details: Normalizes double URL encoding, directory traversal, backslashes, semicolon matrix parameters, and null bytes before evaluation.
-  - title: IP Allowlisting
-    details: Allows trusted subnets, VPNs, or developer IPs to bypass path checks using socket RemoteAddr, X-Forwarded-For, or X-Real-IP.
+  - title: Layer 4 Defense (TCP Warden)
+    details: "Protocol-aware reverse proxy protecting SSH, SMTP, IMAP, PostgreSQL, MySQL, Redis, and game servers."
+  - title: Scanner & Recon Defense
+    details: "Instantly drops automated bots scanning for .env files, git repositories, database dumps, and admin portals."
+  - title: Anti-Evasion Normalization
+    details: "Cleans up double percent-encoding, semicolon matrix parameters, Windows backslashes, and null-byte tricks."
+  - title: IP & VPN Whitelisting
+    details: "Allows trusted subnets, office IPs, or Tailscale/NetBird VPNs to bypass inspection with full X-Forwarded-For support."
   - title: Configurable Responses
-    details: Supports custom JSON, HTML error pages, Cloudflare Turnstile or hCaptcha verification, redirects, silent drops, or gzip bombs.
-  - title: CLI & Config Generator
-    details: Use rwarden to test rules offline, validate routewarden.json schemas, and compile configs for Traefik, Caddy, or NGINX.
+    details: "Respond with custom JSON, 404 deceptions, Turnstile/hCaptcha challenges, silent TCP drops, or bot-crashing gzip bombs."
+  - title: CLI & Web Dashboard
+    details: "Test paths offline with rwarden, generate gateway configs, and monitor security events in real-time."
 ---
+
+<script setup>
+import setupSnippets from './.vitepress/theme/components/setup-snippets.json'
+</script>
 
 ## What is RouteWarden?
 
-**RouteWarden** is an edge security suite providing Layer 7 sensitive path defense for **Traefik**, **Caddy**, and **NGINX / OpenResty**, alongside Layer 4 protocol firewalling with **TCP Warden**. It evaluates inbound requests and blocks reconnaissance scans and brute-force attacks before they reach backend application containers.
+**RouteWarden** is a unified edge defense suite built for reverse proxies and servers. It protects both **web traffic (Layer 7)** via **Traefik**, **Caddy**, and **NGINX**, as well as **infrastructure services (Layer 4)** via **TCP Warden**.
 
-Internet-connected servers receive continuous automated scans looking for `.env` files, `.git` trees, database dumps, backup archives, and administrative interfaces. RouteWarden matches these attempts at the proxy level and responds according to your configuration.
+Every server exposed to the public internet gets hammered by automated scanning scripts hunting for `.env` files, `.git` trees, backup archives, open databases, and unauthenticated management ports. RouteWarden filters these threats out at the perimeter before they consume backend resources.
+
+---
+
+## 30-Second Setup
+
+Get protected in seconds with your preferred gateway:
+
+<CodeViewer :snippets="setupSnippets" />
 
 ---
 
@@ -121,67 +133,47 @@ Attackers often obfuscate request paths to bypass string matching. RouteWarden n
 
 ---
 
-## Response Modes
+## Response Actions
 
-When a path matches a block rule, RouteWarden can respond with:
+When a path matches a block rule, choose how RouteWarden defends your server:
 
-- **`json`**: Structured JSON payload with customizable status code and body.
-- **`html`**: Custom HTML error page.
-- **`text`**: Plain text error message.
-- **`xml`**: XML-formatted error document.
-- **`captcha`**: Human challenge verification using Cloudflare Turnstile, hCaptcha, or Google reCAPTCHA.
-- **`redirect`**: HTTP redirect to an external sink or notice page.
-- **`silentDrop`**: Immediate TCP connection closure.
-- **`gzipBomb`**: Returns a compressed gzip payload that expands in client memory.
-- **`tarpit`**: Delivers bytes slowly to hold client connections open.
-- **`fakeSuccess`**: Decoy response returning synthetic data with a 200 OK.
-- **`rateLimitChallenge`**: Returns HTTP 429 with a standard `Retry-After` header.
-- **`proxy`**: Forwards matching traffic to an internal inspection or canary service.
-- **`infiniteStream`**: Continuous stream of pseudorandom data.
-
-<script setup>
-import setupSnippets from './.vitepress/theme/components/setup-snippets.json'
-</script>
-
-## 30-Second Setup
-
-Get protected in seconds with your preferred gateway:
-
-<CodeViewer :snippets="setupSnippets" />
+- **Clean Errors & Deception**: Return custom `json`, `html`, `text`, `xml`, or a deceptive `fakeSuccess` (200 OK honeypot).
+- **Active Defense**: Crash aggressive bots with `gzipBomb` (~1000× RAM expansion), reset connections via `silentDrop`, or delay scanners with `tarpit`.
+- **Challenges & Forwarding**: Challenge suspicious traffic with `captcha` (Turnstile / hCaptcha / reCAPTCHA), rate-limit via `rateLimitChallenge` (HTTP 429), or divert to a canary backend via `proxy`.
 
 ---
 
 ## Production Case Studies
 
-Real-world deployment patterns demonstrating how engineering teams and self-hosters protect their applications using RouteWarden:
+Real-world deployment patterns demonstrating how engineering teams protect their applications using RouteWarden:
 
 <div class="attack-grid">
   <div class="attack-card">
-    <h4><a href="/docs/examples/case-study-immich">Immich Photo Sharing</a></h4>
+    <h4><a href="/examples/case-study-immich">Immich Photo Sharing</a></h4>
     <p>Public photo/album sharing while strictly cloaking administrative, login, and user management APIs under a 404.</p>
   </div>
   <div class="attack-card">
-    <h4><a href="/docs/examples/case-study-webhooks">Zero-Trust Webhooks</a></h4>
+    <h4><a href="/examples/case-study-webhooks">Zero-Trust Webhooks</a></h4>
     <p>Lock down Stripe/GitHub payment webhook ingress using official provider IP CIDRs and silent TCP drops.</p>
   </div>
   <div class="attack-card">
-    <h4><a href="/docs/examples/case-study-observability">Metrics & Actuator Cloaking</a></h4>
+    <h4><a href="/examples/case-study-observability">Metrics & Actuator Cloaking</a></h4>
     <p>Shield Prometheus <code>/metrics</code> and Spring Boot <code>/actuator</code> from public scanners while keeping internal scrapers active.</p>
   </div>
   <div class="attack-card">
-    <h4><a href="/docs/examples/case-study-cms-shield">WordPress & CMS Shield</a></h4>
+    <h4><a href="/examples/case-study-cms-shield">WordPress & CMS Shield</a></h4>
     <p>Defeat brute-force and XML-RPC attacks on <code>wp-login.php</code> using interactive Cloudflare Turnstile / hCaptcha challenges.</p>
   </div>
   <div class="attack-card">
-    <h4><a href="/docs/examples/case-study-vaultwarden">Password Vaults (Bitwarden)</a></h4>
+    <h4><a href="/examples/case-study-vaultwarden">Password Vaults (Bitwarden)</a></h4>
     <p>Allow public mobile password sync while restricting <code>/admin</code> strictly to WireGuard or Tailscale subnets.</p>
   </div>
   <div class="attack-card">
-    <h4><a href="/docs/examples/case-study-honeypot-staging">Honeypots & Active Defense</a></h4>
+    <h4><a href="/examples/case-study-honeypot-staging">Honeypots & Active Defense</a></h4>
     <p>Crash scanning bots with <code>gzipBomb</code> decompression traps, reset TCP connections with <code>silentDrop</code>, and cloak staging preview clusters.</p>
   </div>
   <div class="attack-card">
-    <h4><a href="/docs/examples/crowdsec">CrowdSec Integration & Auto-Ban</a></h4>
+    <h4><a href="/examples/crowdsec">CrowdSec Integration & Auto-Ban</a></h4>
     <p>Emit structured JSON security audit events directly into CrowdSec to automatically ban attacker IPs across your firewall on their first request.</p>
   </div>
 </div>
@@ -190,9 +182,10 @@ Real-world deployment patterns demonstrating how engineering teams and self-host
 
 ## Ready to Explore?
 
-- Deploy on [Traefik Proxy](/traefik/) with our step-by-step setup guides and Docker Compose templates.
-- Deploy on [Caddy Web Server](/caddy/) with native Caddyfile directives and xcaddy builds.
-- Deploy on [NGINX & OpenResty](/nginx/) with in-memory Lua inspection.
-- Use the **[RouteWarden CLI (`rwarden`)](https://routewarden.github.io/cli/)** to test paths offline, validate configs, and generate gateway files.
+- Protect non-HTTP infrastructure with **[TCP Warden](/tcp/)** (SSH, SMTP, databases, Redis).
+- Deploy on **[Traefik Warden](/traefik/)** with Docker Compose templates.
+- Deploy on **[Caddy Warden](/caddy/)** with native Caddyfile directives.
+- Deploy on **[NGINX Warden](/nginx/)** with in-memory Lua inspection.
+- Monitor live attacks with the **[RouteWarden CLI & Dashboard](https://routewarden.github.io/cli/)**.
 - Learn about the [Core System Architecture](/core/architecture) and [Anti-Evasion Engine](/core/anti-evasion).
-- Browse real-world recipes in the [Cookbook & Case Studies](/examples/overview).
+- Browse real-world blueprints in the [Cookbook & Case Studies](/examples/overview).
