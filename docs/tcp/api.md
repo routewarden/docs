@@ -19,7 +19,7 @@ const health_res = buildSnippet({
   lang: 'json',
   code: `{
   "status": "ok",
-  "version": "2.0.0"
+  "version": "2.0.1"
 }`
 })
 
@@ -243,7 +243,7 @@ Shows how many connections are active, total allowed and blocked requests, and b
 
 ### 3. Configured Services List (`GET /services`)
 
-Retrieves the catalog of all configured Layer 4 services, their protocol inspectors, listening interfaces, upstream routing destinations, and operational status.
+Lists all active services, their protocol inspectors, listening ports, and upstream destinations.
 
 <CodeViewer :snippets="servicesSnippets" />
 

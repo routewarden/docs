@@ -1,11 +1,11 @@
 ---
 title: TCP Warden Changelog & Release Notes
-description: Complete release notes, breaking changes, and migration guide for RouteWarden TCP Warden.
+description: Complete release notes, breaking changes, and migration guide for TCP Warden.
 ---
 
 # TCP Warden Changelog & Release Notes
 
-All notable changes to **RouteWarden TCP Warden** (`github.com/routewarden/tcp-warden`) are documented here.
+All notable changes to **TCP Warden** (`github.com/routewarden/tcp-warden`) are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and TCP Warden adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 

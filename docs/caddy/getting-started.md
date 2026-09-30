@@ -449,18 +449,18 @@ const jsonApiSnippets = computed(() => ({
 }))
 </script>
 
-# Caddy-Warden: Caddy Security Module
+# Caddy Warden: Getting Started
 
-**Caddy-Warden** (`github.com/routewarden/caddy-warden`) is the official **Caddy v2** security module from RouteWarden. It brings high-performance sensitive path defense, anti-evasion normalization, IP allowlisting, and active deception defenses to Caddy web servers.
+**Caddy Warden** (`github.com/routewarden/caddy-warden`) is the official **Caddy v2** security module from RouteWarden. It brings high-performance sensitive path defense, anti-evasion normalization, IP allowlisting, and active deception defenses to Caddy web servers.
 
 ---
 
 ## Key Capabilities
 
-- **Zero-Config Sensitive File Shielding**: Blocks `.env`, `.git`, `.aws`, `.ssh`, `.sql`, database dumps, and server manifests out-of-the-box (`enable_default_patterns`).
+- **Automatic Sensitive Asset Shielding**: Blocks `.env`, `.git`, `.aws`, `.ssh`, `.sql`, database dumps, and server manifests out-of-the-box (`enable_default_patterns`).
 - **Anti-Evasion Engine**: Normalizes multiple URL encodings (`%252e%252e`), semicolon matrix parameters (`/;param/.env`), Windows backslashes (`\`), and null bytes (`%00`) before pattern matching.
 - **IP & CIDR Allowlisting**: Exempt trusted corporate subnets, office IPs, or VPNs (`allowed_ips`) using client IP detection or upstream proxy headers (`X-Forwarded-For`, `X-Real-IP`).
-- **Multi-Action Defense Engine**: Respond with JSON errors, branded HTML, Cloudflare Turnstile/hCaptcha verification challenges, silent TCP resets (`silent_drop`), or bot-neutralizing **Gzip Bombs** (`gzip_bomb`).
+- **Multi-Action Defense Engine**: Respond with JSON errors, branded HTML, Cloudflare Turnstile/hCaptcha challenges, silent TCP resets (`silent_drop`), or bot-neutralizing **Gzip Bombs** (`gzip_bomb`).
 
 ---
 

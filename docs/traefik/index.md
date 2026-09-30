@@ -1,5 +1,5 @@
 ---
-title: RouteWarden for Traefik
+title: "Traefik Warden — Traefik Middleware Plugin"
 ---
 
 <script setup>
@@ -151,45 +151,62 @@ const quickStartSnippets = computed(() => ({
 
 </script>
 
-# RouteWarden for Traefik
+# Traefik Warden
 
-**RouteWarden** (`github.com/routewarden/traefik-warden`) is an ultra-fast, zero-dependency Traefik middleware plugin built in pure Go. It acts as an **in-line security shield** deployed at your Traefik reverse proxy or ingress controller.
+<p class="tagline" style="font-size: 1.25rem; color: var(--vp-c-text-2); margin-bottom: 1.5rem;">
+Stop automated scanners from finding your <code>.env</code> files, backup archives, and admin endpoints before they ever reach your backend.
+</p>
 
----
-
-## Capabilities Overview
-
-- **Automatic Probing Defense**: Blocks automated vulnerability bots probing for `.env`, `.git`, `.aws/credentials`, database dumps, and server diagnostic endpoints.
-- **Path Anti-Evasion Engine**: Normalizes double percent-encoding, semicolon matrix parameters, Windows/IIS backslashes, and null bytes before regex evaluation.
-- **IP & CIDR Whitelisting**: Allows trusted corporate VPNs, office IPs, or developer subnets (`allowedIps`) to bypass inspection using `X-Forwarded-For`, `X-Real-IP`, or socket `RemoteAddr`.
-- **Pure Go & Yaegi Native**: 100% standard library compliance with Traefik's Yaegi dynamic interpreter. Zero external dependencies.
-- **Container & Orchestrator Native**: Supports Docker Compose labels (global entrypoints and per-service), file dynamic configurations (YAML/TOML), and Kubernetes IngressRoute CRDs.
+**Traefik Warden** (`github.com/routewarden/traefik-warden`) is a lightweight, pure Go middleware plugin for Traefik v2 and v3. It acts as an in-line shield at your gateway: dropping malicious scans, neutralizing path evasion tricks, and whitelisting trusted team IPs.
 
 ---
 
-## Quick Navigation
+## What Does Traefik Warden Do?
 
-| Guide | Description |
-|---|---|
-| [**Getting Started**](/traefik/getting-started) | Install RouteWarden on Traefik v2/v3 in under 5 minutes. |
-| [**Configuration Reference**](/traefik/configuration) | Static, dynamic, and container label configuration parameters. |
-| [**Local Deployment**](/traefik/local-deployment) | Test and develop plugins locally using `experimental.localPlugins`. |
-| [**Testing & CI**](/traefik/testing) | Verification routines, unit testing, and Docker Compose test suites. |
-| [**Traefik Recipes & Examples**](/traefik/examples) | Real-world blueprints (Docker Compose, Kubernetes IngressRoute, Immich). |
-
----
-
-## Installation & Setup
-
-Declare the RouteWarden plugin in Traefik's static configuration or container launch arguments:
-
-<CodeViewer :snippets="installSnippets" />
+<div class="attack-grid">
+  <div class="attack-card">
+    <h4>🛡️ Block Sensitive File Scans</h4>
+    <p>Automatically blocks bots searching for <code>.env</code>, <code>.git</code>, AWS keys, database dumps, and debug endpoints out of the box.</p>
+  </div>
+  <div class="attack-card">
+    <h4>🔍 Neutralize Path Evasion</h4>
+    <p>Stops sneaky URL encoding tricks like double percent-encoding (<code>%252e</code>), semicolon matrix parameters (<code>/;param/.env</code>), Windows backslashes, and null bytes.</p>
+  </div>
+  <div class="attack-card">
+    <h4>🌍 Whitelist Trusted IPs & VPNs</h4>
+    <p>Let office subnets, Tailscale, or developer IPs bypass security rules using simple CIDR rules with full <code>X-Forwarded-For</code> support.</p>
+  </div>
+  <div class="attack-card">
+    <h4>⚡ Zero Dependencies & Yaegi Native</h4>
+    <p>Built with 100% Go standard library. Runs cleanly inside Traefik's Yaegi runtime with zero external binary dependencies.</p>
+  </div>
+</div>
 
 ---
 
 ## 30-Second Quick Start
 
-Attach the RouteWarden middleware to your routers:
+Attach the Traefik Warden middleware to your routers:
 
 <CodeViewer :snippets="quickStartSnippets" />
+
+---
+
+## Installation & Setup
+
+Declare the Traefik Warden plugin in Traefik's static configuration or container launch arguments:
+
+<CodeViewer :snippets="installSnippets" />
+
+---
+
+## Explore the Documentation
+
+| Guide | Description |
+| :--- | :--- |
+| 🚀 **[Getting Started](/traefik/getting-started)** | Install Traefik Warden on Traefik v2/v3 in under 5 minutes. |
+| ⚙️ **[Configuration Reference](/traefik/configuration)** | Static, dynamic, and container label configuration parameters. |
+| 💻 **[Local Deployment](/traefik/local-deployment)** | Test and develop plugins locally using `experimental.localPlugins`. |
+| 🧪 **[Testing & CI](/traefik/testing)** | Verification routines, unit testing, and Docker Compose test suites. |
+| 💡 **[Traefik Recipes & Examples](/traefik/examples)** | Real-world blueprints (Docker Compose, Kubernetes IngressRoute, Immich). |
 

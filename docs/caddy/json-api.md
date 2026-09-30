@@ -1,5 +1,5 @@
 ---
-title: Caddy JSON API Reference
+title: "Caddy Warden: JSON API Reference"
 ---
 <script setup>
 import { computed } from 'vue'
@@ -95,7 +95,7 @@ const updateSnippets = computed(() => ({
 }))
 </script>
 
-# Caddy JSON API Reference
+# Caddy Warden: JSON API Reference
 
 Caddy features a dynamic REST API that allows updating configuration at runtime with zero downtime.
 
@@ -103,7 +103,7 @@ Caddy features a dynamic REST API that allows updating configuration at runtime 
 
 ## 1. Module Handler Identification
 
-RouteWarden registers itself in Caddy's HTTP middleware system under the ID:
+Caddy Warden registers itself in Caddy's HTTP middleware system under the ID:
 
 <CodeViewer :snippets="moduleIdSnippets" />
 

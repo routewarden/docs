@@ -1,6 +1,6 @@
 ---
 title: CrowdSec Integration for TCP Warden (Optional)
-description: Step-by-step guide to connect RouteWarden TCP Warden with CrowdSec Local API (LAPI) for automated collaborative threat detection and real-time IP banning.
+description: Step-by-step guide to connect TCP Warden with CrowdSec Local API (LAPI) for automated collaborative threat detection and real-time IP banning.
 ---
 
 <script setup>
@@ -83,7 +83,7 @@ const parser_yaml = buildSnippet({
 filter: "evt.Line.Labels.type == 'routewarden-tcp'"
 onsuccess: next_stage
 name: routewarden/tcp-warden-parser
-description: "Parse RouteWarden TCP Warden structured JSONL security logs"
+description: "Parse TCP Warden structured JSONL security logs"
 nodes:
   - grok:
       pattern: '^%{GREEDYDATA:raw_json}$'
@@ -112,7 +112,7 @@ const parserSnippets = computed(() => ({
 const compose_yaml = buildSnippet({
   lang: 'yaml',
   code: `services:
-  # RouteWarden TCP Warden
+  # TCP Warden
   tcp-warden:
     image: ghcr.io/routewarden/tcp-warden:latest
     container_name: tcp-warden
@@ -232,7 +232,7 @@ const healthResponseSnippets = computed(() => ({
 
 # CrowdSec Integration <Badge type="info" text="Optional" />
 
-RouteWarden TCP Warden is built to run fully autonomously, but it also natively supports bidirectional integration with **[CrowdSec](https://www.crowdsec.net/)**.
+TCP Warden is built to run fully autonomously, but it also natively supports bidirectional integration with **[CrowdSec](https://www.crowdsec.net/)**.
 
 ::: info Optional Integration
 TCP Warden operates as a complete standalone proxy and firewall without CrowdSec. All core features—including GeoIP filtering, CIDR allow/deny lists, token-bucket rate limiting, protocol inspection, brute-force failure tracking, and embedded SQLite ban storage—function out of the box with zero external dependencies.
@@ -330,3 +330,8 @@ Verify that TCP Warden successfully connects to CrowdSec LAPI and receives activ
 In the [Management Dashboard](./api) or via `curl http://127.0.0.1:9091/health`, the health response will show the active CrowdSec connection status:
 
 <CodeViewer :snippets="healthResponseSnippets" />
+
+---
+
+> [!TIP] Architectural Deep Dive & Comparison
+> Want to understand the fundamental architectural differences between TCP Warden and CrowdSec, and why they work best together? Check out the [TCP Warden FAQ & Comparison Guide](./faq).

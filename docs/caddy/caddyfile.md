@@ -104,9 +104,9 @@ const apiSnippets = computed(() => ({
 }))
 </script>
 
-# Caddyfile Directive & JSON Reference
+# Caddy Warden: Caddyfile Reference
 
-Comprehensive syntax and configuration options for **Caddy-Warden** (`github.com/routewarden/caddy-warden`).
+Comprehensive syntax and configuration options for **Caddy Warden** (`github.com/routewarden/caddy-warden`).
 
 ---
 

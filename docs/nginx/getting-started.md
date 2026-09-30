@@ -1,5 +1,5 @@
 ---
-title: Getting Started with RouteWarden for NGINX & OpenResty
+title: "NGINX Warden: Getting Started"
 ---
 
 <script setup>
@@ -226,9 +226,9 @@ const verificationSnippets = computed(() => ({
 }))
 </script>
 
-# Getting Started with RouteWarden for NGINX & OpenResty
+# NGINX Warden: Getting Started
 
-**RouteWarden for NGINX** (`github.com/routewarden/nginx-warden`) provides zero-dependency Lua middleware for OpenResty and NGINX servers equipped with `lua-nginx-module`. It executes inside worker processes during the `access_by_lua` phase to filter malicious requests before reverse-proxying.
+**NGINX Warden** (`github.com/routewarden/nginx-warden`) provides zero-dependency Lua middleware for OpenResty and NGINX servers equipped with `lua-nginx-module`. It executes inside worker processes during the `access_by_lua` phase to filter malicious requests before reverse-proxying.
 
 ---
 
