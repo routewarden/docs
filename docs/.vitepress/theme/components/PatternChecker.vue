@@ -101,6 +101,9 @@ const streamSizeMB = ref(50)
 // 5. Shared gateway selection composable
 const { activeGateway: selectedGateway, gateways } = useGatewaySelection()
 
+// Filter out TCP Warden from Playground gateway choices since playground evaluates Layer 7 HTTP patterns
+const playgroundGateways = computed(() => gateways.filter(g => g.id !== 'tcp'))
+
 type SnippetFormat = 'caddy' | 'nginx' | 'traefik_yaml' | 'traefik_toml' | 'docker' | 'k8s_traefik' | 'k8s_caddy' | 'k8s_nginx' | 'k8s' | 'cli_json' | 'cli_cmd'
 
 function gatewayFamilyOf(fmt: string): GatewayId {
@@ -149,11 +152,16 @@ const gatewayTabs = computed<FormatTab[]>(() => {
 
 // Sync selectedGateway -> snippetFormat
 watch(selectedGateway, (newGw) => {
+  if (newGw === 'tcp') {
+    // TCP Warden is Layer 4; fallback to traefik in Layer 7 playground
+    selectedGateway.value = 'traefik'
+    return
+  }
   const currentFamily = gatewayFamilyOf(snippetFormat.value)
   if (currentFamily !== newGw) {
     snippetFormat.value = defaultFormatFor(newGw)
   }
-})
+}, { immediate: true })
 
 // Sync snippetFormat -> selectedGateway
 watch(snippetFormat, (fmt) => {
@@ -946,7 +954,7 @@ onMounted(() => {
     <ExportEditorCard
       v-model:selectedGateway="selectedGateway"
       v-model:snippetFormat="snippetFormat"
-      :gateways="gateways"
+      :gateways="playgroundGateways"
       :gatewayTabs="gatewayTabs"
       :formatFilename="formatFilename"
       :highlightedSnippet="highlightedSnippet"
