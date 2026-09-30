@@ -231,6 +231,7 @@ export default defineConfig({
             { text: 'Overview & Architecture', link: '/tcp/' },
             { text: 'Getting Started & Docker', link: '/tcp/getting-started' },
             { text: 'Configuration Reference', link: '/tcp/configuration' },
+            { text: 'Log Levels', link: '/tcp/log-levels' },
             { text: 'Network & Firewall Integrations', link: '/tcp/network-integrations' },
             { text: 'Modular Protocol Plugins', link: '/tcp/plugins' },
             { text: 'CrowdSec Integration (Optional)', link: '/tcp/crowdsec' },

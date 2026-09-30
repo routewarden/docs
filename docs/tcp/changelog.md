@@ -11,7 +11,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [v2.0.0] - 2026-09-29 (Latest)
+## [v2.1.0] - 2026-09-30 (Latest)
+
+### 🚀 Feature Release: Configurable Log Levels & Dual-Stream Filtering
+
+TCP Warden v2.1.0 introduces fine-grained, leveled logging across both human-readable operational output and structured JSONL security event streams, featuring a zero-dependency leaf logger package and default `warn` filtering.
+
+#### 1. Configurable Log Levels (`debug`, `info`, `warn`, `error`, `off`)
+- **Granular Verbosity Control**: Added `global.log_level` supporting case-insensitive levels: `debug`, `info`, `warn` (or `warning`), `error`, and `off` (or `silent`).
+- **Environment Variable Override**: Supports `ROUTEWARDEN_LOG_LEVEL` for containerized environments, taking precedence over YAML configuration.
+- **Startup Banner**: Active log level is dynamically displayed in the daemon startup banner during boot.
+
+#### 2. Dual-Stream Logging Architecture
+- **Operational Logs (`stderr`)**: Human-readable daemon lifecycle events, banners, plugin compilation status, API listener confirmations, and system warnings.
+- **Security Event Stream (`stdout` + `log_file` JSONL)**: Structured audit records consumed by dashboards, SIEMs, and CrowdSec.
+- **Action-to-Level Event Gating**:
+  - `allowed` events: Emitted only at `debug` and `info`.
+  - `auth_failure` events: Emitted at `warn`, `info`, and `debug`.
+  - `blocked` / `banned` events: Emitted at `error`, `warn`, `info`, and `debug`.
+  - `off`: Completely silences both output streams.
+
+#### 3. Default Log Level: `warn` (Optimized for Production & CrowdSec)
+- **High-Volume Log Suppression**: Defaulting to `warn` prevents millions of routine `allowed` connection records from bloating disk storage.
+- **CrowdSec Ready Out of the Box**: Keeps `/var/log/routewarden/tcp-warden.jsonl` strictly focused on actionable threat signals (`auth_failure` and `blocked` events), minimizing CrowdSec parser CPU and disk I/O overhead.
+
+#### 4. New Zero-Dependency `logger` Package
+- **Leaf Architecture**: Introduced [`github.com/routewarden/tcp-warden/logger`](file:///Users/aman/git/routewarden/tcp-warden/logger) with zero internal imports, eliminating any risk of import cycles.
+- **Plugin Integration**: External protocol plugins in `github.com/routewarden/plugins` can now directly import `logger` to emit leveled trace, warning, and error diagnostics via `logger.Default().Debug(...)` / `logger.Default().Warn(...)`.
+
+---
+
+## [v2.0.0] - 2026-09-29
 
 ### 🚀 Major Release: Complete Protocol Modularization & Architecture V2
 

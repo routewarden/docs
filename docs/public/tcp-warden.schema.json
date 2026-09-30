@@ -16,7 +16,7 @@
         "ban_duration": { "type": "string", "default": "1h" },
         "ban_after_failures": { "type": "integer", "minimum": 0 },
         "tarpit_ms": { "type": "integer", "minimum": 0 },
-        "log_level": { "type": "string", "enum": ["debug", "info", "warn", "error"] },
+        "log_level": { "type": "string", "enum": ["debug", "info", "warn", "error", "off"], "default": "warn" },
         "log_file": { "type": "string" },
         "geoip_db": { "type": "string" },
         "ip_filter": {

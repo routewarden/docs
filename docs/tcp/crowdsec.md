@@ -45,7 +45,13 @@ const archSnippets = computed(() => ({
 // ─── 1. Configuration (tcp-warden.yaml) ──────────────────────────────────────
 const crowdsec_config = buildSnippet({
   lang: 'yaml',
-  code: `# CrowdSec LAPI Bouncer integration in tcp-warden.yaml
+  code: `# CrowdSec integration in tcp-warden.yaml
+global:
+  # "warn" is recommended: suppresses routine "allowed" events from the JSONL
+  # audit feed so CrowdSec only parses auth failures, port scans, and blocks.
+  log_level: "warn"
+  log_file: "/var/log/routewarden/tcp-warden.jsonl"
+
 crowdsec:
   enabled: true
   lapi_url: "http://127.0.0.1:8080"
@@ -124,6 +130,7 @@ const compose_yaml = buildSnippet({
       - tcp-warden-data:/var/lib/routewarden
       - tcp-warden-logs:/var/log/routewarden
     environment:
+      - ROUTEWARDEN_LOG_LEVEL=warn
       - CROWDSEC_API_KEY=\${CROWDSEC_API_KEY}
 
   # CrowdSec Security Engine
@@ -263,6 +270,10 @@ Tell CrowdSec where to find TCP Warden's structured JSONL audit log:
 
 <CodeViewer :snippets="acquisSnippets" />
 
+::: tip Built-in Optimization: Default `warn` Level
+TCP Warden defaults to `log_level: "warn"`, which logs **only** actionable security signals (`auth_failure` and `blocked` events) to `/var/log/routewarden/tcp-warden.jsonl` while suppressing routine `allowed` connection records. This significantly reduces log volume, disk I/O, and CPU consumption by CrowdSec parsers while maintaining 100% scenario detection fidelity. See [Log Levels](./log-levels) for full details.
+:::
+
 ---
 
 ### Step 2: Install Custom Parser & Scenarios
@@ -301,6 +312,7 @@ Enable the CrowdSec bouncer section in your `tcp-warden.yaml`:
 
 | Field | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
+| `global.log_level` | `string` | `"warn"` | Defaults to `"warn"` so the JSONL feed emits only `auth_failure` and `blocked` events. |
 | `enabled` | `bool` | `false` | Set to `true` to activate CrowdSec decision polling. |
 | `lapi_url` | `string` | `"http://127.0.0.1:8080"` | URL of your CrowdSec Local API service. |
 | `api_key` | `string` | — | Bouncer API token obtained in Step 3. |
