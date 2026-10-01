@@ -49,7 +49,7 @@ services:
       context: . # [!code ++]
       dockerfile_inline: | # [!code ++]
         FROM caddy:2-builder AS builder # [!code ++]
-        RUN xcaddy build --with github.com/routewarden/caddy-warden@{{version}} # [!code ++]
+        RUN xcaddy build --with github.com/routewarden/caddy-warden@{{caddy_version}} # [!code ++]
         FROM caddy:2-alpine # [!code ++]
         COPY --from=builder /usr/bin/caddy /usr/bin/caddy # [!code ++]
     ports:
@@ -68,13 +68,13 @@ volumes:
 const install_xcaddy = buildSnippet({
   lang: 'bash',
   code: `# Build custom Caddy binary with caddy-warden:
-xcaddy build --with github.com/routewarden/caddy-warden@{{version}}`,
+xcaddy build --with github.com/routewarden/caddy-warden@{{caddy_version}}`,
 })
 
 const install_dockerfile = buildSnippet({
   lang: 'dockerfile',
   code: `FROM caddy:2-builder AS builder
-RUN xcaddy build --with github.com/routewarden/caddy-warden@{{version}} # [!code ++]
+RUN xcaddy build --with github.com/routewarden/caddy-warden@{{caddy_version}} # [!code ++]
 
 FROM caddy:2-alpine
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy # [!code ++]`,
@@ -146,3 +146,4 @@ Build a custom Caddy binary with `caddy-warden` or run via Docker:
 | ⚙️ **[Caddyfile Reference](/caddy/caddyfile)** | Directive ordering, syntax schema, and configuration options. |
 | 📡 **[JSON API Reference](/caddy/json-api)** | Native Caddy REST API schema and zero-downtime reconfiguration. |
 | 💡 **[Caddy Recipes & Examples](/caddy/examples)** | Real-world Caddyfile recipes (Honeypot bombs, Turnstile, VPN allowlists). |
+| 📜 **[Changelog & Releases](/caddy/changelog)** | Complete release history, directive updates, and migration notes. |

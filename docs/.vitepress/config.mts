@@ -45,77 +45,56 @@ const caddyLanguage = {
 export default defineConfig({
   title: 'RouteWarden',
   description: 'Unified Edge & L4 Defense: Stop sensitive file leaks in Traefik, Caddy, NGINX, and protect non-HTTP services with TCP Warden.',
-  base: '/docs/',
+  base: '/',
   cleanUrls: true,
   vite: {
     server: {
       host: true
-    },
-    plugins: [
-      {
-        name: 'redirect-root-to-docs',
-        configureServer(server) {
-          server.middlewares.use((req: any, res: any, next: any) => {
-            if (req.url === '/' || req.url === '') {
-              res.writeHead(302, { Location: '/docs/' })
-              res.end()
-              return
-            }
-            if (req.url === '/favicon.ico') {
-              res.writeHead(302, { Location: '/docs/favicon.ico' })
-              res.end()
-              return
-            }
-            next()
-          })
-        },
-        configurePreviewServer(server) {
-          server.middlewares.use((req: any, res: any, next: any) => {
-            if (req.url === '/' || req.url === '') {
-              res.writeHead(302, { Location: '/docs/' })
-              res.end()
-              return
-            }
-            if (req.url === '/favicon.ico') {
-              res.writeHead(302, { Location: '/docs/favicon.ico' })
-              res.end()
-              return
-            }
-            next()
-          })
-        }
-      }
-    ]
+    }
   },
   async buildEnd(siteConfig) {
-    // Generate a fallback root index.html and 404.html redirecting to /docs/ if hosted at domain root
-    // Dynamically import node modules via runtime loader to avoid TS static resolution errors when @types/node is not installed
+    // Generate fallback redirect for old /docs/ URLs so existing links and bookmarks redirect seamlessly to /
     const importModule = (name: string) => new Function('n', 'return import(n)')(name)
     const fs = await importModule('node:fs')
     const path = await importModule('node:path')
     const outDir = siteConfig.outDir
     
-    const rootRedirectHtml = `<!DOCTYPE html>
+    const docsDir = path.join(outDir, 'docs')
+    if (!fs.existsSync(docsDir)) {
+      fs.mkdirSync(docsDir, { recursive: true })
+    }
+
+    const docsRedirectHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <title>Redirecting to RouteWarden Documentation...</title>
-  <meta http-equiv="refresh" content="0; url=/docs/">
-  <link rel="canonical" href="/docs/">
-  <script>window.location.replace("/docs/" + window.location.search + window.location.hash);</script>
+  <meta http-equiv="refresh" content="0; url=/">
+  <link rel="canonical" href="/">
+  <script>
+    const newPath = window.location.pathname.replace(/^\\/docs\\/?/, '/') + window.location.search + window.location.hash;
+    window.location.replace(newPath || '/');
+  </script>
 </head>
 <body>
-  <p>Redirecting to <a href="/docs/">RouteWarden Documentation</a>...</p>
+  <p>Redirecting to <a href="/">RouteWarden Documentation</a>...</p>
 </body>
 </html>
 `
-    // If output dir exists, write root-redirect helper
-    const targetFile = path.join(outDir, 'root-redirect.html')
-    fs.writeFileSync(targetFile, rootRedirectHtml, 'utf8')
+    fs.writeFileSync(path.join(docsDir, 'index.html'), docsRedirectHtml, 'utf8')
   },
   transformPageData(pageData) {
     // Provide version globally to markdown templates
-    pageData.params = { ...pageData.params, version: versionData.version }
+    const defaultVer = (versionData as any).traefik || (versionData as any).version || ''
+    pageData.params = {
+      ...pageData.params,
+      version: defaultVer,
+      traefik_version: (versionData as any).traefik || defaultVer,
+      caddy_version: (versionData as any).caddy || defaultVer,
+      nginx_version: (versionData as any).nginx || defaultVer,
+      tcp_version: (versionData as any).tcp || defaultVer,
+      cli_version: (versionData as any).cli || defaultVer,
+    }
   },
   markdown: {
     languages: [
@@ -124,7 +103,20 @@ export default defineConfig({
     config(md) {
       const originalRender = md.render.bind(md)
       md.render = (src, env) => {
-        let replaced = src.replace(/\{\{version\}\}/g, versionData.version)
+        const vDefault = (versionData as any).traefik || (versionData as any).version || ''
+        const vTraefik = (versionData as any).traefik || vDefault
+        const vCaddy = (versionData as any).caddy || vDefault
+        const vNginx = (versionData as any).nginx || vDefault
+        const vTcp = (versionData as any).tcp || vDefault
+        const vCli = (versionData as any).cli || vDefault
+
+        let replaced = src
+          .replace(/\{\{version\}\}/g, vDefault)
+          .replace(/\{\{(?:traefik_version|version_traefik)\}\}/g, vTraefik)
+          .replace(/\{\{(?:caddy_version|version_caddy)\}\}/g, vCaddy)
+          .replace(/\{\{(?:nginx_version|version_nginx)\}\}/g, vNginx)
+          .replace(/\{\{(?:tcp_version|version_tcp)\}\}/g, vTcp)
+          .replace(/\{\{(?:cli_version|version_cli)\}\}/g, vCli)
         // Escape raw unescaped pipes and backslashes inside inline code spans (`...`) within markdown table lines
         // so that table columns are not prematurely split by regex alternation pipes (e.g. `(^|/)`)
         // and backslashes are not stripped by markdown HTML parsing
@@ -143,20 +135,20 @@ export default defineConfig({
     }
   },
   head: [
-    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/docs/icon.svg' }],
-    ['link', { rel: 'alternate icon', type: 'image/x-icon', href: '/docs/favicon.ico' }],
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/icon.svg' }],
+    ['link', { rel: 'alternate icon', type: 'image/x-icon', href: '/favicon.ico' }],
     ['meta', { name: 'theme-color', content: '#6366f1' }],
     ['meta', { name: 'author', content: 'RouteWarden Contributors' }],
     ['meta', { name: 'keywords', content: 'traefik, caddy, nginx, openresty, tcp-warden, middleware, security, anti-evasion, ip whitelist, sensitive files, env protection, reverse proxy waf, layer 4 firewall' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: 'RouteWarden — Unified Edge & Protocol Security Suite' }],
     ['meta', { property: 'og:description', content: 'Stop sensitive file leaks (.env, .git, backups) across Traefik, Caddy, and NGINX, and protect non-HTTP infrastructure with TCP Warden.' }],
-    ['meta', { property: 'og:image', content: 'https://routewarden.github.io/docs/banner.png' }],
-    ['meta', { property: 'og:url', content: 'https://routewarden.github.io/docs/' }],
+    ['meta', { property: 'og:image', content: 'https://routewarden.github.io/banner.png' }],
+    ['meta', { property: 'og:url', content: 'https://routewarden.github.io/' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:title', content: 'RouteWarden — Unified Edge & Protocol Security Suite' }],
     ['meta', { name: 'twitter:description', content: 'Ultra-fast sensitive path defense for web gateways and protocol-aware Layer 4 proxying for backend infrastructure.' }],
-    ['meta', { name: 'twitter:image', content: 'https://routewarden.github.io/docs/banner.png' }],
+    ['meta', { name: 'twitter:image', content: 'https://routewarden.github.io/banner.png' }],
     // Cloudflare Web Analytics — only injected when the token secret is available at build time.
     // Omitting the script entirely when CF_ANALYTICS_TOKEN is empty avoids CORS rejections from
     // Cloudflare's RUM endpoint, which returns no Access-Control-Allow-Origin on invalid tokens.
@@ -206,10 +198,10 @@ export default defineConfig({
       },
       {
         text: 'Tools',
-        activeMatch: '^/tools/',
+        activeMatch: '^/(tools|cli)/',
         items: [
-          { text: 'Pattern & Response Playground', link: '/tools/pattern-checker' },
-          { text: 'RouteWarden CLI & Schema Portal', link: 'https://routewarden.github.io/cli/' }
+          { text: 'RouteWarden CLI (`rwarden`)', link: '/cli/' },
+          { text: 'Pattern & Response Playground', link: '/tools/pattern-checker' }
         ]
       },
       {
@@ -255,6 +247,8 @@ export default defineConfig({
           text: 'Official Plugins',
           collapsed: false,
           items: [
+            { text: 'DNS Guard (UDP & TCP)', link: '/tcp/plugins/dns' },
+            { text: 'BitTorrent Guard (TCP & UDP)', link: '/tcp/plugins/bittorrent' },
             { text: 'SSH Guard', link: '/tcp/plugins/ssh' },
             { text: 'PostgreSQL Guard', link: '/tcp/plugins/postgres' },
             { text: 'MySQL & MariaDB Guard', link: '/tcp/plugins/mysql' },
@@ -297,7 +291,8 @@ export default defineConfig({
             { text: 'Configuration Reference', link: '/traefik/configuration' },
             { text: 'Local Deployment', link: '/traefik/local-deployment' },
             { text: 'Testing & Verification', link: '/traefik/testing' },
-            { text: 'Recipes & Blueprints', link: '/traefik/examples' }
+            { text: 'Recipes & Blueprints', link: '/traefik/examples' },
+            { text: 'Changelog & Releases', link: '/traefik/changelog' }
           ]
         },
         {
@@ -342,7 +337,8 @@ export default defineConfig({
             { text: 'Getting Started (xcaddy/Docker)', link: '/caddy/getting-started' },
             { text: 'Caddyfile Reference', link: '/caddy/caddyfile' },
             { text: 'JSON API Reference', link: '/caddy/json-api' },
-            { text: 'Recipes & Blueprints', link: '/caddy/examples' }
+            { text: 'Recipes & Blueprints', link: '/caddy/examples' },
+            { text: 'Changelog & Releases', link: '/caddy/changelog' }
           ]
         },
         {
@@ -386,7 +382,8 @@ export default defineConfig({
             { text: 'Overview', link: '/nginx/' },
             { text: 'Getting Started (Docker/Lua)', link: '/nginx/getting-started' },
             { text: 'Configuration Reference', link: '/nginx/configuration' },
-            { text: 'Recipes & Blueprints', link: '/nginx/examples' }
+            { text: 'Recipes & Blueprints', link: '/nginx/examples' },
+            { text: 'Changelog & Releases', link: '/nginx/changelog' }
           ]
         },
         {
@@ -431,7 +428,7 @@ export default defineConfig({
             { text: 'Anti-Evasion Normalization', link: '/core/anti-evasion' },
             { text: 'Response Modes (13 Actions)', link: '/core/response-modes' },
             { text: 'Custom Regex Patterns', link: '/core/custom-patterns' },
-            { text: 'RouteWarden CLI Portal ↗', link: 'https://routewarden.github.io/cli/' },
+            { text: 'RouteWarden CLI Tool', link: '/cli/' },
             { text: 'Changelog & Migrations', link: '/core/changelog' }
           ]
         },
@@ -549,13 +546,45 @@ export default defineConfig({
           ]
         }
       ],
+      '/cli/': [
+        {
+          text: 'RouteWarden CLI (rwarden)',
+          collapsed: false,
+          items: [
+            { text: 'Overview & Features', link: '/cli/' },
+            { text: 'Installation', link: '/cli/installation' },
+            { text: 'Commands Reference', link: '/cli/commands' },
+            { text: 'Security Dashboard', link: '/cli/dashboard' },
+            { text: 'JSON Schema & CI/CD', link: '/cli/schema' },
+            { text: 'Changelog & Releases', link: '/cli/changelog' }
+          ]
+        },
+        {
+          text: 'Tools & Playground',
+          collapsed: false,
+          items: [
+            { text: 'Pattern & Response Playground', link: '/tools/pattern-checker' }
+          ]
+        },
+        {
+          text: 'Gateways & Ecosystem',
+          collapsed: false,
+          items: [
+            { text: 'TCP Warden (L4) ➔', link: '/tcp/' },
+            { text: 'Traefik Warden ➔', link: '/traefik/' },
+            { text: 'Caddy Warden ➔', link: '/caddy/' },
+            { text: 'NGINX Warden ➔', link: '/nginx/' },
+            { text: 'Core Architecture ➔', link: '/core/architecture' }
+          ]
+        }
+      ],
       '/tools/': [
         {
           text: 'Interactive Tools & Utilities',
           collapsed: false,
           items: [
-            { text: 'Pattern & Response Playground', link: '/tools/pattern-checker' },
-            { text: 'RouteWarden CLI Portal ↗', link: 'https://routewarden.github.io/cli/' }
+            { text: 'RouteWarden CLI (`rwarden`)', link: '/cli/' },
+            { text: 'Pattern & Response Playground', link: '/tools/pattern-checker' }
           ]
         },
         {

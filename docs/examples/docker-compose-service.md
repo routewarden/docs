@@ -12,7 +12,7 @@ const s = {
 //   CLI:    rwarden generate --target [traefik-yaml|traefik-toml|traefik-labels] --config routewarden.json
 //   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target [traefik-yaml|traefik-toml|traefik-labels] --config /routewarden.json
 {
-  "$schema": "https://routewarden.github.io/cli/schema.json",
+  "$schema": "https://routewarden.github.io/schema.json",
   "enabled": true,
   "enableDefaultPatterns": true,
   "checkQuery": true,
@@ -203,7 +203,7 @@ http {
       context: .
       dockerfile_inline: |
         FROM caddy:2-builder AS builder
-        RUN xcaddy build --with github.com/routewarden/caddy-warden@{{version}} # [!code ++]
+        RUN xcaddy build --with github.com/routewarden/caddy-warden@{{caddy_version}} # [!code ++]
         FROM caddy:2-alpine
         COPY --from=builder /usr/bin/caddy /usr/bin/caddy
     ports:

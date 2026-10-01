@@ -1,10 +1,10 @@
 {
-  "current": "v1.2.x",
+  "current": "v1.3.x",
   "versions": [
     {
-      "text": "v1.2.x (Latest)",
+      "text": "v1.3.x (Latest)",
       "link": "/traefik/getting-started",
-      "tag": "v1.2.x"
+      "tag": "v1.3.x"
     }
   ]
 }

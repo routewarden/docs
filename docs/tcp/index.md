@@ -81,12 +81,12 @@ const quickStartSnippets = computed(() => ({
 # TCP Warden
 
 <p class="tagline" style="font-size: 1.25rem; color: var(--vp-c-text-2); margin-bottom: 1.5rem;">
-A lightweight, protocol-aware security proxy and firewall for non-HTTP services.
+A lightweight, protocol-aware security proxy and firewall for non-HTTP services across TCP and UDP.
 </p>
 
-Most reverse proxies (like Traefik, Caddy, or NGINX) are built to protect web traffic (HTTP/HTTPS). But what protects your databases, SSH servers, message queues, and cache layers?
+Most reverse proxies (like Traefik, Caddy, or NGINX) are built to protect web traffic (HTTP/HTTPS). But what protects your databases, SSH servers, DNS resolvers, message queues, and cache layers?
 
-**TCP Warden** sits between the internet and your backend services. It intercepts raw TCP connections, inspects protocol handshakes, blocks brute-force attackers, rate-limits abusive clients, and optionally integrates with **CrowdSec**—all before malicious packets ever reach your servers.
+**TCP Warden** sits between the internet and your backend services. It intercepts raw TCP and UDP traffic, inspects protocol handshakes and datagrams, blocks brute-force attackers, rate-limits abusive clients, and optionally integrates with **CrowdSec**—all before malicious packets ever reach your servers.
 
 ---
 
@@ -179,6 +179,7 @@ TCP Warden provides a high-performance Layer 4 transparent proxy core, plus on-d
   - Universal Layer 4 transparent bastion for any TCP socket or proprietary protocol.
   - Token-bucket rate limiting, CIDR allow/deny filtering, GeoIP country blocking, max connection capping, tarpitting, and SQLite ban tracking without extra plugins.
 - **Modular Protocol Plugins (Installed via `tcp-warden plugins install <name>` or `AUTO_INSTALL_PLUGINS`)**:
+  - **DNS & P2P Protocols**: DNS Guard (`dns` over UDP/TCP), BitTorrent Guard (`bittorrent` over TCP/DHT/uTP).
   - **Remote Access & Mail**: SSH, SMTP, POP3, IMAP, FTP, VNC.
   - **Databases & Caches**: PostgreSQL, MySQL / MariaDB, Redis / Valkey, MongoDB, Memcached.
   - **Messaging & Directory**: AMQP (RabbitMQ), MQTT, LDAP / Active Directory.

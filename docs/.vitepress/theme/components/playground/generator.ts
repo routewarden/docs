@@ -462,7 +462,7 @@ export function generateGatewaySnippet(opts: SnippetOptions): string {
 
   if (snippetFormat === 'cli_json') {
     const configObj: Record<string, any> = {
-      $schema: 'https://routewarden.github.io/cli/schema.json',
+      $schema: 'https://routewarden.github.io/schema.json',
       enabled: enabled
     }
     if (debug) configObj.debug = true

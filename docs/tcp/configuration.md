@@ -149,9 +149,36 @@ const db_service = buildSnippet({
         - "SHUTDOWN"`
 })
 
+const udp_service = buildSnippet({
+  lang: 'yaml',
+  code: `services:
+  dns_hybrid:
+    listen: ":53"
+    upstream: "1.1.1.1:53"
+    transport: "both"         # Bind both UDP and TCP on port 53
+    protocol: "dns"
+    rate_limit:
+      connections_per_minute: 1200
+      burst: 200
+    geo_block:
+      deny_countries:
+        - "KP"
+    udp:
+      session_timeout: "15s"  # Idle NAT mapping cleanup timeout
+      max_sessions: 20000     # Protect host memory from UDP session floods
+      read_buffer_size: 4096  # Buffer size per datagram
+    plugin_config:
+      blocked_domains:
+        - "*.badware.test"
+      blocked_qtypes:
+        - "ANY"
+      block_private_ips: true`
+})
+
 const configSnippets = computed(() => ({
   tcp: [
     { filename: 'Full Schema', lang: 'yaml', code: global_schema.cleanCode, html: global_schema.html, hasDiff: false },
+    { filename: 'UDP & Dual Transport', lang: 'yaml', code: udp_service.cleanCode, html: udp_service.html, hasDiff: false },
     { filename: 'Port Ranges & HTTP', lang: 'yaml', code: port_range_service.cleanCode, html: port_range_service.html, hasDiff: false },
     { filename: 'SSH Guard', lang: 'yaml', code: ssh_service.cleanCode, html: ssh_service.html, hasDiff: false },
     { filename: 'DB & Redis Guard', lang: 'yaml', code: db_service.cleanCode, html: db_service.html, hasDiff: false },
@@ -334,13 +361,42 @@ Each key under `services` defines an isolated Layer 4 proxy listener. Common ser
 | :--- | :--- | :--- |
 | `listen` | `string` | Single port (`":2222"`) or port range (`":8000-8005"`). |
 | `upstream` | `string` | Backend target: single address (`"127.0.0.1:22"`), single backend for many-to-one ranges (`"10.0.0.1:80"`), or matching 1:1 range (`"10.0.0.1:9000-9005"`). |
-| `protocol` | `string` | Protocol handler: `ssh`, `smtp`, `pop3`, `imap`, `tcp`, or any loaded plugin name (`http`, `postgres`, `redis`, `mongodb`, etc.). |
+| `transport` | `string` | Network transport: `"tcp"` (default), `"udp"`, or `"both"` (binds both TCP and UDP listeners on the same port, e.g. for DNS on `:53`). |
+| `protocol` | `string` | Protocol handler: `ssh`, `smtp`, `pop3`, `imap`, `tcp`, or any loaded plugin name (`dns`, `bittorrent`, `http`, `postgres`, `redis`, etc.). |
 | `plugin_config` | `map` | Protocol-specific inspector options passed directly to the active plugin. |
-| `rate_limit.connections_per_minute` | `int` | Token-bucket rate: connections allowed per minute per IP. |
+| `rate_limit.connections_per_minute` | `int` | Token-bucket rate: connections (TCP) or packets (UDP) allowed per minute per IP. |
 | `rate_limit.burst` | `int` | Maximum burst allowance above the rate limit. |
 | `max_auth_failures` | `int` | Maximum auth failures before banning the client IP. |
 | `ban_duration` | `duration` | Overrides `global.ban_duration` for this service. |
-| `response.mode` | `string` | Rejection strategy: `reject` | `drop` | `tarpit` | `silent`. |
+| `response.mode` | `string` | Rejection strategy for TCP: `reject` | `drop` | `tarpit` | `silent`. (Blocked UDP datagrams are always dropped silently). |
+| `udp.session_timeout` | `duration` | Idle timeout before cleaning up a client's UDP NAT/session mapping (default: `"30s"`). |
+| `udp.max_sessions` | `int` | Maximum concurrent active UDP client sessions (`0` = unlimited). Protects against session table memory exhaustion. |
+| `udp.read_buffer_size` | `int` | Per-datagram socket read buffer in bytes (default: `65535`). |
+
+---
+
+## UDP Transport & Datagram Proxying (`udp`)
+
+TCP Warden v3.0.0 introduces native **Layer 4 UDP Proxying** alongside TCP. Services can run strictly over UDP (`transport: "udp"`) or dual-stack (`transport: "both"`), allowing a single service definition to guard both protocols (such as DNS on port 53).
+
+### Full Pipeline Protection on Every Datagram
+
+Inbound UDP datagrams pass through the complete security pipeline before forwarding:
+
+1. **Active Banlist**: Drops datagrams from IPs banned manually, via SQLite, or by auto-ban.
+2. **CrowdSec LAPI Bouncer**: Drops datagrams if CrowdSec returns an active community ban decision.
+3. **CIDR IP Filter**: Enforces service-level and global `allow` and `deny` subnets.
+4. **Geo-Blocking**: Evaluates `allow_countries` and `deny_countries` using MaxMind GeoIP.
+5. **Token Bucket Rate Limiting**: Throttles datagram rates per client IP (`connections_per_minute` and `burst`).
+6. **MaxSessions Guard**: Rejects new sessions when active concurrent client count exceeds `udp.max_sessions`.
+7. **Session Table & NAT Mapping**: Tracks client endpoints and reaps idle sessions after `udp.session_timeout`.
+8. **Deep Protocol Inspection (`UDPPlugin`)**: Analyzes datagram payloads (e.g. DNS domain filtering, BitTorrent DHT/uTP validation) with in-place mutation or drop/reject verdicts.
+
+::: tip Anti-Amplification: Silent Drops for UDP
+Unlike TCP (which can reply with a TCP `RST`, banner message, or `tarpit` delay), **blocked UDP datagrams are always dropped silently**. 
+
+Replying to unauthorized UDP packets would allow attackers with spoofed source IPs to abuse RouteWarden as a reflection/amplification vector. Silent drops guarantee zero reflection risk.
+:::
 
 ---
 
@@ -361,6 +417,8 @@ When using a modular plugin from `routewarden/plugins`, use `plugin_config` to c
 
 | Plugin | Key Options | Example Usage |
 | :--- | :--- | :--- |
+| **`dns`** | `blocked_domains`, `blocked_qtypes`, `block_private_ips`, `min_ttl`, `max_packet_size` | Intercept malicious domains, block `ANY`/`AXFR` reflection queries, prevent DNS rebinding. |
+| **`bittorrent`** | `blocked_info_hashes`, `allowed_peer_id_prefixes`, `private_tracker_mode`, `blocked_dht_methods` | Filter swarms by info-hash, enforce `-CCVVVV-` client formats, block DHT poisoning. |
 | **`http`** | `allowed_hosts`, `blocked_paths` (regex), `blocked_headers` (regex) | Intercept sensitive paths (`/\.env`), block scanner User-Agents. |
 | **`redis`** | `blocked_commands` | Intercept destructive commands (`FLUSHALL`, `CONFIG`, `SHUTDOWN`). |
 | **`mongodb`** | `blocked_ops` | Intercept collection drops (`drop`, `dropDatabase`, `shutdown`). |

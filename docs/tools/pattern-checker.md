@@ -58,7 +58,7 @@ Incoming Request
 
 ## Related Documentation
 
-- **[RouteWarden CLI (`rwarden`)](https://routewarden.github.io/cli/)**: Command-line tool for offline path evasion testing, schema validation, and config generation.
+- **[RouteWarden CLI (`rwarden`)](/cli/)**: Command-line tool for offline path evasion testing, schema validation, and config generation.
 - **[Custom Path Regex Guide](/core/custom-patterns)**: Syntax, cheat sheets, and production blueprints for popular frameworks.
 - **[Anti-Evasion Engine](/core/anti-evasion)**: Technical breakdown of defeated evasion attacks.
 - **[Response Modes Engine](/core/response-modes)**: All 13 response behaviors (JSON, Captcha, Gzip Bomb, Tarpit, etc.).

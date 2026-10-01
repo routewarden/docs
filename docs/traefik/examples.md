@@ -37,7 +37,7 @@ const r1_compose = buildSnippet({
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.middlewares=traefik-warden@docker" # [!code ++]
       - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden" # [!code ++]
-      - "--experimental.plugins.routewarden.version={{version}}" # [!code ++]
+      - "--experimental.plugins.routewarden.version={{traefik_version}}" # [!code ++]
     labels:
       - "traefik.enable=true"
       - "traefik.http.middlewares.traefik-warden.plugin.routewarden.enabled=true" # [!code ++]
