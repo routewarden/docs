@@ -148,3 +148,4 @@ Deploy the NGINX Warden Lua module into OpenResty or NGINX with `lua-nginx-modul
 | 🚀 **[Getting Started](/nginx/getting-started)** | Docker setup, OpenResty installation, and lua-nginx-module configuration. |
 | ⚙️ **[Configuration Reference](/nginx/configuration)** | Directives, options, and response configurations for `nginx.conf`. |
 | 💡 **[Recipes & Blueprints](/nginx/examples)** | Real-world NGINX configurations for API cloaking, honeypots, and allowlists. |
+| 📜 **[Changelog & Releases](/nginx/changelog)** | Complete release history, OpenResty Lua updates, and migration notes. |

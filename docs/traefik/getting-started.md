@@ -10,7 +10,7 @@ experimental:
   plugins:
     routewarden: # [!code ++]
       moduleName: github.com/routewarden/traefik-warden # [!code ++]
-      version: {{version}} # [!code ++]`,
+      version: {{traefik_version}} # [!code ++]`,
 })
 
 const inst_toml = buildSnippet({
@@ -18,14 +18,14 @@ const inst_toml = buildSnippet({
   code: `# traefik.toml (Static Configuration)
 [experimental.plugins.routewarden] # [!code ++]
   moduleName = "github.com/routewarden/traefik-warden" # [!code ++]
-  version = "{{version}}" # [!code ++]`,
+  version = "{{traefik_version}}" # [!code ++]`,
 })
 
 const inst_cli = buildSnippet({
   lang: 'bash',
   code: `traefik \\
   --experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden \\ # [!code ++]
-  --experimental.plugins.routewarden.version={{version}} # [!code ++]`,
+  --experimental.plugins.routewarden.version={{traefik_version}} # [!code ++]`,
 })
 
 const installationSnippets = computed(() => ({
@@ -103,7 +103,7 @@ const fileProviderSnippets = computed(() => ({
 const dyn_json = buildSnippet({
   lang: 'json',
   code: `{
-  "$schema": "https://routewarden.github.io/cli/schema.json",
+  "$schema": "https://routewarden.github.io/schema.json",
   "enabled": true,
   "enableDefaultPatterns": true,
   "enableDefaultAllowPatterns": true,
@@ -302,7 +302,7 @@ services:
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.websecure.http.middlewares=routewarden@file" # [!code ++]
       - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden" # [!code ++]
-      - "--experimental.plugins.routewarden.version={{version}}" # [!code ++]
+      - "--experimental.plugins.routewarden.version={{traefik_version}}" # [!code ++]
     ports:
       - "80:80"
       - "443:443"
@@ -388,7 +388,7 @@ Because `routewarden.json` adheres to the official RouteWarden JSON Schema, ever
 
 #### Using `routewarden.json` Directly via Generate Pipeline
 
-If you maintain `routewarden.json` as your single source of truth across Git repositories or multi-gateway environments, use the [RouteWarden CLI (`rwarden`)](https://routewarden.github.io/cli/) to validate rules offline and compile directly into Traefik configurations during your deployment pipeline:
+If you maintain `routewarden.json` as your single source of truth across Git repositories or multi-gateway environments, use the [RouteWarden CLI (`rwarden`)](/cli/) to validate rules offline and compile directly into Traefik configurations during your deployment pipeline:
 
 <CodeViewer :snippets="pipelineSnippets" />
 
@@ -420,6 +420,6 @@ When attached to an entryPoint, RouteWarden enforces security inspection **globa
 - Explore [Response Modes](/core/response-modes) to customize block behaviors (HTML, JSON, Captcha, Gzip Bomb).
 - Configure [Anti-Evasion Engine](/core/anti-evasion) for advanced normalization rules.
 - Check out the [Production Case Studies](/examples/overview) for real-world setups.
-- Use the [RouteWarden CLI (`rwarden`)](https://routewarden.github.io/cli/) for offline path testing and schema generation.
+- Use the [RouteWarden CLI (`rwarden`)](/cli/) for offline path testing and schema generation.
 - Check the [Examples & Wiki Cookbook](/examples/overview) for production Docker Compose & Kubernetes blueprints.
 

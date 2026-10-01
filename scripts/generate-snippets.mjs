@@ -11,9 +11,14 @@ export async function generateSetupSnippets(options = {}) {
 
   const versionFilePath = path.join(docsPackageDir, 'docs/version.json')
   let currentVersion = 'v1.1.0'
+  let traefikVersion = currentVersion
+  let caddyVersion = currentVersion
   if (fs.existsSync(versionFilePath)) {
     const vData = JSON.parse(fs.readFileSync(versionFilePath, 'utf8'))
-    currentVersion = vData.version.startsWith('v') ? vData.version : `v${vData.version}`
+    const formatV = (v) => (v ? (v.startsWith('v') ? v : `v${v}`) : null)
+    currentVersion = formatV(vData.traefik || vData.version) || 'v1.3.0'
+    traefikVersion = formatV(vData.traefik) || currentVersion
+    caddyVersion = formatV(vData.caddy) || currentVersion
   }
 
   const caddyLanguage = {
@@ -82,7 +87,7 @@ export async function generateSetupSnippets(options = {}) {
     image: traefik:v3.3
     command:
       - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden"
-      - "--experimental.plugins.routewarden.version=${currentVersion}"
+      - "--experimental.plugins.routewarden.version=${traefikVersion}"
       - "--providers.docker=true"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.middlewares=warden@docker"
@@ -119,7 +124,7 @@ experimental:
   plugins:
     routewarden:
       moduleName: github.com/routewarden/traefik-warden
-      version: ${currentVersion}
+      version: ${traefikVersion}
 
 # Dynamic Configuration:
 http:
@@ -142,7 +147,7 @@ http:
 
 [experimental.plugins.routewarden]
   moduleName = "github.com/routewarden/traefik-warden"
-  version = "${currentVersion}"
+  version = "${traefikVersion}"
 
 # Dynamic Configuration:
 [http.middlewares.warden.plugin.routewarden]
@@ -162,7 +167,7 @@ http:
       context: .
       dockerfile_inline: |
         FROM caddy:2-builder AS builder
-        RUN xcaddy build --with github.com/routewarden/caddy-warden@${currentVersion}
+        RUN xcaddy build --with github.com/routewarden/caddy-warden@${caddyVersion}
         FROM caddy:2-alpine
         COPY --from=builder /usr/bin/caddy /usr/bin/caddy
     ports:
@@ -304,7 +309,7 @@ curl -N http://127.0.0.1:9091/events`
         lang: 'bash',
         diffLines: [],
         code: `# 1. Install rwarden CLI (macOS / Linux)
-curl -fsSL https://routewarden.github.io/cli/install.sh | bash
+curl -fsSL https://routewarden.github.io/install.sh | bash
 
 # 2. Validate configuration rules offline
 rwarden validate --config routewarden.json
@@ -338,7 +343,7 @@ rwarden generate --target nginx --config routewarden.json`
         lang: 'json',
         diffLines: [],
         code: `{
-  "$schema": "https://routewarden.github.io/cli/schema.json",
+  "$schema": "https://routewarden.github.io/schema.json",
   "enabled": true,
   "enableDefaultPatterns": true,
   "enableDefaultAllowPatterns": true,

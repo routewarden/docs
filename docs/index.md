@@ -23,7 +23,7 @@ hero:
       link: /nginx/
     - theme: alt
       text: CLI & Dashboard ➔
-      link: https://routewarden.github.io/cli/
+      link: /cli/
 
 features:
   - title: Layer 4 Defense (TCP Warden)
@@ -186,6 +186,6 @@ Real-world deployment patterns demonstrating how engineering teams protect their
 - Deploy on **[Traefik Warden](/traefik/)** with Docker Compose templates.
 - Deploy on **[Caddy Warden](/caddy/)** with native Caddyfile directives.
 - Deploy on **[NGINX Warden](/nginx/)** with in-memory Lua inspection.
-- Monitor live attacks with the **[RouteWarden CLI & Dashboard](https://routewarden.github.io/cli/)**.
+- Monitor live attacks with the **[RouteWarden CLI & Dashboard](/cli/)**.
 - Learn about the [Core System Architecture](/core/architecture) and [Anti-Evasion Engine](/core/anti-evasion).
 - Browse real-world blueprints in the [Cookbook & Case Studies](/examples/overview).

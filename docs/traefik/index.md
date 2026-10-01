@@ -14,7 +14,7 @@ const install_compose = buildSnippet({
     image: traefik:v3.3
     command:
       - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden" # [!code ++]
-      - "--experimental.plugins.routewarden.version={{version}}" # [!code ++]
+      - "--experimental.plugins.routewarden.version={{traefik_version}}" # [!code ++]
       - "--providers.docker=true"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.middlewares=warden@docker" # [!code ++]
@@ -42,7 +42,7 @@ experimental: # [!code ++]
   plugins: # [!code ++]
     routewarden: # [!code ++]
       moduleName: github.com/routewarden/traefik-warden # [!code ++]
-      version: {{version}} # [!code ++]`,
+      version: {{traefik_version}} # [!code ++]`,
 })
 
 const install_toml = buildSnippet({
@@ -55,7 +55,7 @@ const install_toml = buildSnippet({
 
 [experimental.plugins.routewarden] # [!code ++]
   moduleName = "github.com/routewarden/traefik-warden" # [!code ++]
-  version = "{{version}}" # [!code ++]`,
+  version = "{{traefik_version}}" # [!code ++]`,
 })
 
 const install_cli = buildSnippet({
@@ -63,7 +63,7 @@ const install_cli = buildSnippet({
   code: `# Traefik CLI arguments
 traefik \\
   --experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden \\ # [!code ++]
-  --experimental.plugins.routewarden.version={{version}} \\ # [!code ++]
+  --experimental.plugins.routewarden.version={{traefik_version}} \\ # [!code ++]
   --entrypoints.web.http.middlewares=warden@docker # [!code ++]`,
 })
 
@@ -85,7 +85,7 @@ services:
     image: traefik:v3.3
     command:
       - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden"  # [!code ++]
-      - "--experimental.plugins.routewarden.version={{version}}" # [!code ++]
+      - "--experimental.plugins.routewarden.version={{traefik_version}}" # [!code ++]
       - "--providers.docker=true"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.middlewares=warden@docker" # [!code ++]
@@ -209,4 +209,5 @@ Declare the Traefik Warden plugin in Traefik's static configuration or container
 | 💻 **[Local Deployment](/traefik/local-deployment)** | Test and develop plugins locally using `experimental.localPlugins`. |
 | 🧪 **[Testing & CI](/traefik/testing)** | Verification routines, unit testing, and Docker Compose test suites. |
 | 💡 **[Traefik Recipes & Examples](/traefik/examples)** | Real-world blueprints (Docker Compose, Kubernetes IngressRoute, Immich). |
+| 📜 **[Changelog & Releases](/traefik/changelog)** | Complete release history, breaking changes, and migration notes. |
 

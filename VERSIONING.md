@@ -6,22 +6,51 @@ This guide explains how versioning works in RouteWarden and how to publish patch
 
 ## Architecture & Single Source of Truth
 
-RouteWarden uses [docs/version.json](file:///Users/aman/git/routewarden/docs/version.json) as the **single source of truth** for versioning:
+RouteWarden uses `docs/version.json` as the **single source of truth** for versioning across the entire ecosystem:
 
 ```json
 {
-  "version": "v0.2.2"
+  "traefik": "v1.3.0",
+  "caddy": "v1.3.0",
+  "nginx": "v1.3.0",
+  "tcp": "v3.0.0",
+  "cli": "v4.1.0"
 }
 ```
 
-Whenever this version changes, RouteWarden Docs' automated tooling synchronizes it across:
-- Docs repository `package.json` (`version: "0.2.2"`)
-- All VitePress markdown pages using `{{version}}` dynamic interpolation and the version dropdown registry
-- (The core plugin repository maintains its own version sync for `README.md` and `examples/`)
+Whenever versions change, RouteWarden Docs' automated tooling (`scripts/sync-version.mjs`) synchronizes them across:
+- All VitePress markdown pages using `{{traefik_version}}`, `{{caddy_version}}`, `{{nginx_version}}`, `{{tcp_version}}`, and `{{cli_version}}` dynamic interpolation.
+- App-specific docs directories (`docs/tcp/`, `docs/caddy/`, `docs/traefik/`, `docs/cli/`).
+- The version dropdown registry in `docs/versions.json`.
 
 ---
 
-## 1. Patch & Maintenance Updates (e.g. `v0.2.2` ➔ `v0.2.3`)
+## 1. Updating Individual App Versions
+
+You can update any individual application's version in `docs/version.json` and sync all associated documentation files in one command:
+
+```bash
+# Update TCP Warden documentation version:
+node scripts/sync-version.mjs --app tcp --version v3.0.0
+# Or using shortcut flag:
+node scripts/sync-version.mjs --tcp v3.0.0
+
+# Update Caddy Warden documentation version:
+node scripts/sync-version.mjs --caddy v1.2.2
+
+# Update Traefik Warden documentation version:
+node scripts/sync-version.mjs --traefik v1.2.2
+
+# Update CLI (rwarden) version:
+node scripts/sync-version.mjs --cli v4.0.2
+
+# Synchronize all apps using their current versions in docs/version.json:
+node scripts/sync-version.mjs
+```
+
+---
+
+## 2. Patch & Maintenance Updates (e.g. `v1.2.1` ➔ `v1.2.2`)
 
 Patch releases and minor non-breaking fixes do not require creating a new documentation snapshot. The documentation continues to serve the `v0.2.x` series.
 

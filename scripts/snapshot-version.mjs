@@ -1,6 +1,7 @@
+#!/usr/bin/env node
 import fs from 'node:fs'
 import path from 'node:path'
-import { syncVersion } from './sync-version.mjs'
+import { syncVersion, resolveDocsRootDir } from './sync-version.mjs'
 
 /**
  * Recursive copy function
@@ -38,7 +39,7 @@ export function snapshotVersion(newVersion, options = {}) {
   }
 
   const cleanNewVersion = newVersion.startsWith('v') ? newVersion : `v${newVersion}`
-  const rootDir = options.rootDir || process.cwd()
+  const rootDir = resolveDocsRootDir(options.rootDir)
 
   const versionFilePath = path.join(rootDir, 'docs/version.json')
   const versionsRegistryPath = path.join(rootDir, 'docs/versions.json')
@@ -48,7 +49,7 @@ export function snapshotVersion(newVersion, options = {}) {
   }
 
   const currentVersionData = JSON.parse(fs.readFileSync(versionFilePath, 'utf8'))
-  const currentVersion = currentVersionData.version
+  const currentVersion = currentVersionData.traefik || currentVersionData.version || 'v1.0.0'
   const registry = JSON.parse(fs.readFileSync(versionsRegistryPath, 'utf8'))
 
   if (currentVersion === cleanNewVersion) {
@@ -72,7 +73,13 @@ export function snapshotVersion(newVersion, options = {}) {
     const destDir = path.join(rootDir, `docs/${minorSnapshotDirName}/${dir}`)
     if (fs.existsSync(srcDir)) {
       copyDir(srcDir, destDir, (content) => {
-        let replaced = content.replace(/\{\{version\}\}/g, currentVersion)
+        let replaced = content
+          .replace(/\{\{version\}\}/g, currentVersion)
+          .replace(/\{\{(?:traefik_version|version_traefik)\}\}/g, currentVersionData.traefik || currentVersion)
+          .replace(/\{\{(?:caddy_version|version_caddy)\}\}/g, currentVersionData.caddy || currentVersion)
+          .replace(/\{\{(?:nginx_version|version_nginx)\}\}/g, currentVersionData.nginx || currentVersion)
+          .replace(/\{\{(?:tcp_version|version_tcp)\}\}/g, currentVersionData.tcp || currentVersion)
+          .replace(/\{\{(?:cli_version|version_cli)\}\}/g, currentVersionData.cli || currentVersion)
         if (!replaced.includes('Legacy Version Notice') && replaced.startsWith('# ')) {
           const firstLineEnd = replaced.indexOf('\n')
           const title = replaced.substring(0, firstLineEnd)
@@ -115,7 +122,13 @@ export function snapshotVersion(newVersion, options = {}) {
   fs.writeFileSync(versionsRegistryPath, JSON.stringify(registry, null, 2) + '\n', 'utf8')
 
   // 3. Update docs/version.json to new version
-  fs.writeFileSync(versionFilePath, JSON.stringify({ version: cleanNewVersion }, null, 2) + '\n', 'utf8')
+  if ('traefik' in currentVersionData) {
+    currentVersionData.traefik = cleanNewVersion
+  }
+  if ('version' in currentVersionData) {
+    currentVersionData.version = cleanNewVersion
+  }
+  fs.writeFileSync(versionFilePath, JSON.stringify(currentVersionData, null, 2) + '\n', 'utf8')
 
   // 4. Sync version across examples and README
   syncVersion({ rootDir, version: cleanNewVersion })

@@ -97,8 +97,10 @@ test('documentation structure and integrity', async (t) => {
     const versionPath = path.join(docsDir, 'version.json')
     assert.ok(fs.existsSync(versionPath), 'docs/version.json must exist')
     const vData = JSON.parse(fs.readFileSync(versionPath, 'utf8'))
-    assert.ok(typeof vData.version === 'string', 'version must be string')
-    assert.match(vData.version, /^v?\d+\.\d+\.\d+/, 'version must match semver')
+    for (const app of ['traefik', 'caddy', 'tcp', 'cli', 'nginx']) {
+      assert.ok(typeof vData[app] === 'string', `${app} version must be string`)
+      assert.match(vData[app], /^v?\d+\.\d+\.\d+/, `${app} version must match semver`)
+    }
 
     const versionsPath = path.join(docsDir, 'versions.json')
     assert.ok(fs.existsSync(versionsPath), 'docs/versions.json must exist')
@@ -124,6 +126,27 @@ test('documentation structure and integrity', async (t) => {
       assert.ok(fs.existsSync(fullPath), `Expected plugin doc: ${plugin}`)
       const stat = fs.statSync(fullPath)
       assert.ok(stat.size > 1000, `Plugin doc ${plugin} should have comprehensive content`)
+    }
+  })
+
+  await t.test('cli documentation files exist and are non-empty', () => {
+    const cliDir = path.join(docsDir, 'cli')
+    assert.ok(fs.existsSync(cliDir), 'Expected cli directory')
+
+    const expectedCliDocs = [
+      'index.md',
+      'installation.md',
+      'commands.md',
+      'dashboard.md',
+      'schema.md',
+      'changelog.md'
+    ]
+
+    for (const doc of expectedCliDocs) {
+      const fullPath = path.join(cliDir, doc)
+      assert.ok(fs.existsSync(fullPath), `Expected cli document: ${doc}`)
+      const stat = fs.statSync(fullPath)
+      assert.ok(stat.size > 0, `CLI document should not be empty: ${doc}`)
     }
   })
 })

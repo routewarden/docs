@@ -10,7 +10,7 @@ go install github.com/caddyserver/xcaddy/cmd/xcaddy@latest
 
 # Build Caddy with caddy-warden
 xcaddy build \\
-  --with github.com/routewarden/caddy-warden@{{version}}`,
+  --with github.com/routewarden/caddy-warden@{{caddy_version}}`,
 })
 
 const xcaddySnippets = computed(() => ({
@@ -26,7 +26,7 @@ const dockerfile_code = buildSnippet({
 FROM caddy:2-builder AS builder
 
 RUN xcaddy build \\ # [!code ++]
-    --with github.com/routewarden/caddy-warden@{{version}} # [!code ++]
+    --with github.com/routewarden/caddy-warden@{{caddy_version}} # [!code ++]
 
 FROM caddy:2-alpine
 
@@ -72,7 +72,7 @@ const compose_dockerfile = buildSnippet({
   code: `FROM caddy:2-builder AS builder
 
 RUN xcaddy build \\ # [!code ++]
-    --with github.com/routewarden/caddy-warden@{{version}} # [!code ++]
+    --with github.com/routewarden/caddy-warden@{{caddy_version}} # [!code ++]
 
 FROM caddy:2-alpine
 
@@ -117,7 +117,7 @@ const composeSnippets = computed(() => ({
 const config_opt1_json = buildSnippet({
   lang: 'json',
   code: `{
-  "$schema": "https://routewarden.github.io/cli/schema.json",
+  "$schema": "https://routewarden.github.io/schema.json",
   "enabled": true,
   "enableDefaultPatterns": true,
   "enableDefaultAllowPatterns": true,
@@ -502,7 +502,7 @@ You can define RouteWarden security rules using **`routewarden.json` (Recommende
 
 #### Using `routewarden.json` Directly via Generate Pipeline
 
-If you maintain `routewarden.json` as your single source of truth across Git repositories or multi-gateway environments, use the [RouteWarden CLI (`rwarden`)](https://routewarden.github.io/cli/) to validate rules offline and compile directly into Caddyfile directive blocks during your deployment pipeline:
+If you maintain `routewarden.json` as your single source of truth across Git repositories or multi-gateway environments, use the [RouteWarden CLI (`rwarden`)](/cli/) to validate rules offline and compile directly into Caddyfile directive blocks during your deployment pipeline:
 
 <CodeViewer :snippets="pipelineSnippets" />
 
@@ -561,7 +561,7 @@ If you configure Caddy via its native JSON API:
 ## Related Links
 
 - [RouteWarden Core Architecture & Anti-Evasion Engine](/core/architecture)
-- [RouteWarden CLI Documentation ↗](https://routewarden.github.io/cli/)
+- [RouteWarden CLI Documentation](/cli/)
 - [Response Modes Deep Dive (13 Actions)](/core/response-modes)
 - [Custom Path Patterns Reference](/core/custom-patterns)
 - [Caddy-Warden GitHub Repository](https://github.com/routewarden/caddy-warden)
