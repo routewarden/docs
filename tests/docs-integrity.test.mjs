@@ -160,5 +160,25 @@ test('documentation structure and integrity', async (t) => {
     assert.ok(content.includes('Mermaid Source'), 'dashboard.md must provide Mermaid Source tab')
     assert.ok(content.includes('flowchart LR'), 'dashboard.md must include flowchart LR definition')
   })
+
+  await t.test('cli installation document matches version.json release version', () => {
+    const installDoc = path.join(docsDir, 'cli', 'installation.md')
+    const content = fs.readFileSync(installDoc, 'utf8')
+    const vData = JSON.parse(fs.readFileSync(path.join(docsDir, 'version.json'), 'utf8'))
+    const cliSemver = vData.cli.replace(/^v/, '')
+
+    assert.ok(
+      content.includes(`https://github.com/routewarden/cli/releases/download/${vData.cli}/`),
+      `installation.md download links must match CLI version ${vData.cli}`
+    )
+    assert.ok(
+      content.includes(`rwarden_${cliSemver}_`),
+      `installation.md archive filenames must match CLI semver ${cliSemver}`
+    )
+    assert.ok(
+      content.includes(`# rwarden version ${cliSemver}`),
+      `installation.md verification command must match CLI semver ${cliSemver}`
+    )
+  })
 })
 

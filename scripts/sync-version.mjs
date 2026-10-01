@@ -323,7 +323,7 @@ export function syncVersion(options = {}) {
 
   // ── 4. Synchronize CLI Files ───────────────────────────────────────────────
   if (shouldSyncCli) {
-    const { cleanVersion: cliClean } = formatVersion(appVersions.cli)
+    const { cleanVersion: cliClean, semver: cliSemver } = formatVersion(appVersions.cli)
     const cliFiles = []
     collectMarkdownFiles(path.join(rootDir, 'docs/cli'), rootDir, cliFiles)
 
@@ -335,8 +335,16 @@ export function syncVersion(options = {}) {
           `$1${cliClean}`
         )
         updated = updated.replace(
-          /(rwarden\s+v?)[0-9]+\.[0-9]+\.[0-9]+/g,
+          /(github\.com\/routewarden\/cli\/releases\/download\/)v?[0-9]+\.[0-9]+\.[0-9]+/g,
           `$1${cliClean}`
+        )
+        updated = updated.replace(
+          /(rwarden_)[0-9]+\.[0-9]+\.[0-9]+(_)/g,
+          `$1${cliSemver}$2`
+        )
+        updated = updated.replace(
+          /(rwarden\s+(?:version\s+)?v?)[0-9]+\.[0-9]+\.[0-9]+/g,
+          `$1${cliSemver}`
         )
         return updated
       })
@@ -354,6 +362,15 @@ export function syncVersion(options = {}) {
           `$1${cliClean}`
         )
         return updated
+      })
+    }
+
+    if (fs.existsSync(path.join(rootDir, 'VERSIONING.md'))) {
+      updateFileContent('VERSIONING.md', (content) => {
+        return content.replace(
+          /("cli":\s*")v?[0-9]+\.[0-9]+\.[0-9]+(")/g,
+          `$1${cliClean}$2`
+        )
       })
     }
   }
