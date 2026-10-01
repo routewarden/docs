@@ -149,5 +149,16 @@ test('documentation structure and integrity', async (t) => {
       assert.ok(stat.size > 0, `CLI document should not be empty: ${doc}`)
     }
   })
+
+  await t.test('cli dashboard architecture overview uses CodeViewer with Mermaid support', () => {
+    const dashboardDoc = path.join(docsDir, 'cli', 'dashboard.md')
+    const content = fs.readFileSync(dashboardDoc, 'utf8')
+
+    assert.ok(content.includes('<CodeViewer :snippets="archSnippets" />'), 'dashboard.md must render CodeViewer with archSnippets')
+    assert.ok(content.includes("lang: 'mermaid'"), 'dashboard.md must declare mermaid language for architecture definition')
+    assert.ok(content.includes('Architecture Graph') || content.includes('Architecture Flow'), 'dashboard.md must provide visual architecture tab')
+    assert.ok(content.includes('Mermaid Source'), 'dashboard.md must provide Mermaid Source tab')
+    assert.ok(content.includes('flowchart LR'), 'dashboard.md must include flowchart LR definition')
+  })
 })
 

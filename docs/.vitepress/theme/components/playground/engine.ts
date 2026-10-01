@@ -128,13 +128,29 @@ export function extractCandidatePaths(rawPath: string, shouldCheckQuery = false)
   }
 }
 
+export function cleanIp(raw: string): string {
+  let s = (raw || '').trim()
+  if (s.startsWith('[') && s.includes(']')) {
+    s = s.substring(1, s.indexOf(']'))
+  } else if (s.includes(':') && s.split(':').length === 2 && !s.includes('::')) {
+    // IPv4:port
+    s = s.split(':')[0]
+  }
+  return s.trim()
+}
+
 export function isIpWhitelisted(ip: string, allowedListStr: string): boolean {
   if (!ip || !allowedListStr) return false
-  const clientIp = ip.trim()
-  const entries = allowedListStr.split(',').map(s => s.trim()).filter(Boolean)
+  const clientIp = cleanIp(ip)
+  const entries = allowedListStr.split(',').map(s => cleanIp(s)).filter(Boolean)
 
   for (const entry of entries) {
     if (entry === clientIp) return true
+    if (entry.includes(':') && clientIp.includes(':') && !entry.includes('/')) {
+      const ipBig = parseIpv6(clientIp)
+      const entryBig = parseIpv6(entry)
+      if (ipBig !== null && entryBig !== null && ipBig === entryBig) return true
+    }
     if (entry.includes('/')) {
       const [subnet, bitsStr] = entry.split('/')
       const bits = parseInt(bitsStr, 10)
@@ -146,6 +162,146 @@ export function isIpWhitelisted(ip: string, allowedListStr: string): boolean {
   return false
 }
 
+export function isIpTrustedProxy(ip: string, trustedProxiesStr: string): boolean {
+  return isIpWhitelisted(ip, trustedProxiesStr)
+}
+
+export interface ClientIpResolution {
+  effectiveIp: string
+  isTrustedProxy: boolean
+  usedForwardedHeader: boolean
+  directPeerIp: string
+  reason?: string
+}
+
+export function resolveEffectiveClientIp(
+  remoteAddr: string,
+  forwardedFor?: string,
+  realIp?: string,
+  trustedProxiesStr?: string
+): ClientIpResolution {
+  const directPeer = cleanIp(remoteAddr) || '127.0.0.1'
+  const xff = (forwardedFor || '').trim()
+  const xReal = cleanIp(realIp || '')
+  const trustedProxies = (trustedProxiesStr || '').trim()
+
+  // 1. Legacy mode: no trusted proxies configured -> trust forwarding headers unconditionally
+  if (!trustedProxies) {
+    if (xff) {
+      const parts = xff.split(',')
+      const first = cleanIp(parts[0])
+      if (first) {
+        return {
+          effectiveIp: first,
+          isTrustedProxy: false,
+          usedForwardedHeader: true,
+          directPeerIp: directPeer,
+          reason: `Forwarded IP ${first} accepted (legacy mode: all proxies trusted)`
+        }
+      }
+    }
+    if (xReal) {
+      return {
+        effectiveIp: xReal,
+        isTrustedProxy: false,
+        usedForwardedHeader: true,
+        directPeerIp: directPeer,
+        reason: `X-Real-IP ${xReal} accepted (legacy mode: all proxies trusted)`
+      }
+    }
+    return {
+      effectiveIp: directPeer,
+      isTrustedProxy: false,
+      usedForwardedHeader: false,
+      directPeerIp: directPeer
+    }
+  }
+
+  // 2. Trusted proxies configured: verify direct peer
+  const isPeerTrusted = isIpWhitelisted(directPeer, trustedProxies)
+
+  if (isPeerTrusted) {
+    if (xff) {
+      const parts = xff.split(',')
+      const first = cleanIp(parts[0])
+      if (first) {
+        return {
+          effectiveIp: first,
+          isTrustedProxy: true,
+          usedForwardedHeader: true,
+          directPeerIp: directPeer,
+          reason: `Forwarded IP ${first} verified via trusted proxy ${directPeer}`
+        }
+      }
+    }
+    if (xReal) {
+      return {
+        effectiveIp: xReal,
+        isTrustedProxy: true,
+        usedForwardedHeader: true,
+        directPeerIp: directPeer,
+        reason: `X-Real-IP ${xReal} verified via trusted proxy ${directPeer}`
+      }
+    }
+    return {
+      effectiveIp: directPeer,
+      isTrustedProxy: true,
+      usedForwardedHeader: false,
+      directPeerIp: directPeer
+    }
+  }
+
+  // 3. Direct peer is UNTRUSTED: ignore forwarding headers to prevent bypass
+  const hadForwardedHeader = Boolean(xff || xReal)
+  return {
+    effectiveIp: directPeer,
+    isTrustedProxy: false,
+    usedForwardedHeader: false,
+    directPeerIp: directPeer,
+    reason: hadForwardedHeader
+      ? `Ignored unverified forwarding headers from untrusted peer ${directPeer} (spoofing prevented)`
+      : undefined
+  }
+}
+
+function parseIpv6(ip: string): bigint | null {
+  const clean = cleanIp(ip).toLowerCase()
+  if (!clean.includes(':')) return null
+
+  let sections: string[]
+  if (clean.includes('::')) {
+    const parts = clean.split('::')
+    if (parts.length > 2) return null
+    const left = parts[0] ? parts[0].split(':').filter(Boolean) : []
+    const right = parts[1] ? parts[1].split(':').filter(Boolean) : []
+    const missing = 8 - (left.length + right.length)
+    if (missing < 0) return null
+    sections = [...left, ...Array(missing).fill('0'), ...right]
+  } else {
+    sections = clean.split(':').filter(Boolean)
+  }
+
+  if (sections.length !== 8) return null
+
+  let res = 0n
+  for (const sec of sections) {
+    const val = parseInt(sec, 16)
+    if (isNaN(val) || val < 0 || val > 0xffff) return null
+    res = (res << 16n) | BigInt(val)
+  }
+  return res
+}
+
+function ipv6InSubnet(ip: string, subnet: string, maskBits: number): boolean {
+  if (maskBits < 0 || maskBits > 128) return false
+  const ipBig = parseIpv6(ip)
+  const subnetBig = parseIpv6(subnet)
+  if (ipBig === null || subnetBig === null) return false
+  if (maskBits === 0) return true
+  const mask = ((1n << 128n) - 1n) ^ ((1n << BigInt(128 - maskBits)) - 1n)
+  return (ipBig & mask) === (subnetBig & mask)
+}
+
 function ipToLong(ip: string): number {
   const parts = ip.split('.').map(p => parseInt(p, 10))
   if (parts.length !== 4 || parts.some(isNaN)) return 0
@@ -154,8 +310,12 @@ function ipToLong(ip: string): number {
 
 function ipInSubnet(ip: string, subnet: string, maskBits: number): boolean {
   try {
+    if (ip.includes(':') || subnet.includes(':')) {
+      return ipv6InSubnet(ip, subnet, maskBits)
+    }
     const ipNum = ipToLong(ip)
     const subnetNum = ipToLong(subnet)
+    if (ip.split('.').length !== 4 || subnet.split('.').length !== 4) return false
     const mask = maskBits === 0 ? 0 : (~0 << (32 - maskBits)) >>> 0
     return (ipNum & mask) === (subnetNum & mask)
   } catch {

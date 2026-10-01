@@ -47,6 +47,9 @@ export default defineConfig({
   description: 'Unified Edge & L4 Defense: Stop sensitive file leaks in Traefik, Caddy, NGINX, and protect non-HTTP services with TCP Warden.',
   base: '/',
   cleanUrls: true,
+  ignoreDeadLinks: [
+    /^https?:\/\/localhost/,
+  ],
   vite: {
     server: {
       host: true

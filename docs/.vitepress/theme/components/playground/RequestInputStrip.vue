@@ -19,6 +19,7 @@ const emit = defineEmits<{
 const testMethod = defineModel<string>('testMethod', { required: true })
 const testPath = defineModel<string>('testPath', { required: true })
 const testIp = defineModel<string>('testIp', { required: true })
+const testForwardedFor = defineModel<string>('testForwardedFor', { default: '' })
 </script>
 
 <template>
@@ -46,8 +47,14 @@ const testIp = defineModel<string>('testIp', { required: true })
         <input
           v-model="testIp"
           class="rw-ip-input"
-          placeholder="Client IP"
-          title="Simulated Client IP"
+          placeholder="Peer IP"
+          title="Direct peer IP (RemoteAddr)"
+        />
+        <input
+          v-model="testForwardedFor"
+          class="rw-ip-input rw-xff-input"
+          placeholder="X-Forwarded-For"
+          title="Simulated X-Forwarded-For header (e.g. 203.0.113.195, 10.0.0.1)"
         />
         <div class="rw-verdict-tag" :class="evaluation.badgeClass">
           {{ evaluation.verdict }}
@@ -167,7 +174,7 @@ const testIp = defineModel<string>('testIp', { required: true })
 }
 
 .rw-ip-input {
-  width: 120px;
+  width: 105px;
   flex-shrink: 0;
   border: none;
   outline: none;
@@ -178,6 +185,10 @@ const testIp = defineModel<string>('testIp', { required: true })
   padding: 4px 6px;
   border-left: 1px solid var(--vp-c-divider);
   text-align: right;
+}
+
+.rw-xff-input {
+  width: 130px;
 }
 
 .rw-verdict-tag {

@@ -316,3 +316,121 @@
   box-shadow: none !important;
 }
 
+/* ============================================================
+   Architecture Graph SVG Theme Styles (Responsive & Scalable)
+   ============================================================ */
+.rw-graph-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 12px;
+  background: var(--vp-c-bg-alt);
+  box-sizing: border-box;
+}
+
+.rw-graph-svg {
+  /* Scale to fill container width but never shrink below 640px so
+     labels/arrows always have sufficient room */
+  width: 100%;
+  min-width: 640px;
+  height: auto;
+  display: block;
+  user-select: none;
+}
+
+.rw-g-box {
+  stroke: var(--vp-c-divider);
+  stroke-dasharray: 4 4;
+}
+.dark .rw-g-box {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+.rw-g-header {
+  font-family: var(--vp-font-family-base);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  fill: var(--vp-c-text-2);
+}
+
+.rw-g-node {
+  fill: var(--vp-c-bg);
+  stroke: var(--vp-c-divider);
+}
+.dark .rw-g-node {
+  fill: #131c31;
+  stroke: rgba(255, 255, 255, 0.08);
+}
+
+.rw-g-card {
+  fill: var(--vp-c-bg);
+  stroke: var(--vp-c-divider);
+}
+.dark .rw-g-card {
+  fill: #131c31;
+  stroke: rgba(255, 255, 255, 0.08);
+}
+
+.rw-g-title {
+  font-family: var(--vp-font-family-base);
+  font-size: 11.5px;
+  font-weight: 600;
+  fill: var(--vp-c-text-1);
+}
+
+.rw-g-card-title {
+  font-family: var(--vp-font-family-base);
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--vp-c-text-1);
+}
+
+.rw-g-desc {
+  font-family: var(--vp-font-family-base);
+  font-size: 9.5px;
+  fill: var(--vp-c-text-3);
+}
+
+.rw-g-tag {
+  font-family: var(--vp-font-family-base);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.rw-g-item {
+  font-family: var(--vp-font-family-base);
+  font-size: 9.5px;
+  fill: var(--vp-c-text-2);
+}
+
+.rw-g-port-box {
+  fill: var(--vp-c-bg-soft);
+  stroke: var(--vp-c-divider);
+}
+.dark .rw-g-port-box {
+  fill: rgba(30, 41, 59, 0.6);
+  stroke: rgba(255, 255, 255, 0.08);
+}
+
+.rw-g-port-txt {
+  font-family: var(--vp-font-family-mono);
+  font-size: 8.5px;
+  font-weight: 600;
+  fill: var(--vp-c-text-3);
+}
+
+.rw-g-pill {
+  fill: var(--vp-c-bg-soft);
+  stroke: var(--vp-c-divider);
+}
+.dark .rw-g-pill {
+  fill: #1e293b;
+  stroke: rgba(255, 255, 255, 0.15);
+}
+
+.rw-g-pill-txt {
+  font-family: var(--vp-font-family-mono);
+  font-size: 9px;
+  font-weight: 700;
+}

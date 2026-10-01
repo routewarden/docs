@@ -42,6 +42,7 @@ export interface SnippetOptions {
   testMethod: string
   testPath: string
   testIp: string
+  trustedProxiesList?: string[]
 }
 
 export function generateGatewaySnippet(opts: SnippetOptions): string {
@@ -52,6 +53,7 @@ export function generateGatewaySnippet(opts: SnippetOptions): string {
     retryAfterSeconds, streamSizeMB, captchaProvider, captchaSiteKey, captchaTitle,
     testMethod, testPath, testIp
   } = opts
+  const trustedProxiesList = opts.trustedProxiesList || []
 
   if (snippetFormat === 'caddy') {
     let out = `example.com {\n  route_warden {\n`
@@ -75,6 +77,11 @@ export function generateGatewaySnippet(opts: SnippetOptions): string {
     if (ipList.length > 0) {
       out += `    allowed_ips`
       for (const ip of ipList) out += ` "${ip}"`
+      out += `\n`
+    }
+    if (trustedProxiesList.length > 0) {
+      out += `    trusted_proxies`
+      for (const ip of trustedProxiesList) out += ` "${ip}"`
       out += `\n`
     }
     if (hasCustomMethods) {
@@ -128,6 +135,11 @@ export function generateGatewaySnippet(opts: SnippetOptions): string {
     if (ipList.length > 0) {
       out += `        allowed_ips = {\n`
       for (const ip of ipList) out += `            "${ip}",\n`
+      out += `        },\n`
+    }
+    if (trustedProxiesList.length > 0) {
+      out += `        trusted_proxies = {\n`
+      for (const ip of trustedProxiesList) out += `            "${ip}",\n`
       out += `        },\n`
     }
     if (hasCustomMethods) {
@@ -193,6 +205,10 @@ export function generateGatewaySnippet(opts: SnippetOptions): string {
       out += `          allowedIps:\n`
       for (const ip of ipList) out += `            - "${ip}"\n`
     }
+    if (trustedProxiesList.length > 0) {
+      out += `          trustedProxies:\n`
+      for (const ip of trustedProxiesList) out += `            - "${ip}"\n`
+    }
     if (hasCustomMethods) {
       out += `          methods:\n`
       for (const m of methodsList) out += `            - "${m}"\n`
@@ -242,6 +258,11 @@ export function generateGatewaySnippet(opts: SnippetOptions): string {
       for (const ip of ipList) out += `  "${ip}",\n`
       out += `]\n`
     }
+    if (trustedProxiesList.length > 0) {
+      out += `trustedProxies = [\n`
+      for (const ip of trustedProxiesList) out += `  "${ip}",\n`
+      out += `]\n`
+    }
     if (hasCustomMethods) {
       out += `methods = [${methodsList.map(m => `"${m}"`).join(', ')}]\n`
     }
@@ -287,6 +308,9 @@ export function generateGatewaySnippet(opts: SnippetOptions): string {
     ipList.forEach((ip, idx) => {
       out += `      - "${prefix}.allowedIps[${idx}]=${ip}"\n`
     })
+    trustedProxiesList.forEach((ip, idx) => {
+      out += `      - "${prefix}.trustedProxies[${idx}]=${ip}"\n`
+    })
     out += `      - "${prefix}.response.mode=${responseMode}"\n`
     if (statusCode !== 403) out += `      - "${prefix}.response.statusCode=${statusCode}"\n`
     if (customBody) out += `      - "${prefix}.response.body=${customBody.replace(/"/g, '\\"')}"\n`
@@ -331,6 +355,10 @@ export function generateGatewaySnippet(opts: SnippetOptions): string {
       out += `      allowedIps:\n`
       for (const ip of ipList) out += `        - "${ip}"\n`
     }
+    if (trustedProxiesList.length > 0) {
+      out += `      trustedProxies:\n`
+      for (const ip of trustedProxiesList) out += `        - "${ip}"\n`
+    }
     out += `      response:\n        mode: ${responseMode}\n`
     if (statusCode !== 403) out += `        statusCode: ${statusCode}\n`
     if (customBody) out += `        body: "${customBody.replace(/"/g, '\\"')}"\n`
@@ -371,6 +399,11 @@ export function generateGatewaySnippet(opts: SnippetOptions): string {
     if (ipList.length > 0) {
       out += `        allowed_ips`
       for (const ip of ipList) out += ` "${ip}"`
+      out += `\n`
+    }
+    if (trustedProxiesList.length > 0) {
+      out += `        trusted_proxies`
+      for (const ip of trustedProxiesList) out += ` "${ip}"`
       out += `\n`
     }
     if (hasCustomMethods) {
@@ -428,6 +461,11 @@ export function generateGatewaySnippet(opts: SnippetOptions): string {
       for (const ip of ipList) out += `            "${ip}",\n`
       out += `          },\n`
     }
+    if (trustedProxiesList.length > 0) {
+      out += `          trusted_proxies = {\n`
+      for (const ip of trustedProxiesList) out += `            "${ip}",\n`
+      out += `          },\n`
+    }
     if (hasCustomMethods) {
       out += `          methods = { ${methodsList.map(m => `"${m}"`).join(', ')} },\n`
     }
@@ -473,6 +511,7 @@ export function generateGatewaySnippet(opts: SnippetOptions): string {
     if (blockList.length > 0) configObj.pathPatterns = blockList
     if (allowList.length > 0) configObj.allowPatterns = allowList
     if (ipList.length > 0) configObj.allowedIps = ipList
+    if (trustedProxiesList.length > 0) configObj.trustedProxies = trustedProxiesList
     if (hasCustomMethods) configObj.methods = methodsList
 
     const respObj: Record<string, any> = { mode: responseMode }

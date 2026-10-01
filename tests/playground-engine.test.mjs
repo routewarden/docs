@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import {
   extractCandidatePaths,
   isIpWhitelisted,
+  isIpTrustedProxy,
+  resolveEffectiveClientIp,
   matchRegex,
   escapeRegex,
   smartCompileRegex
@@ -23,6 +25,8 @@ function evaluateRequest(options) {
     testMethod = 'GET',
     testPath = '/',
     testIp = '203.0.113.1',
+    testForwardedFor = '',
+    trustedProxiesInput = '',
     allowedIpsInput = '',
     enableDefaultAllowPatterns = true,
     customAllowList = [],
@@ -44,8 +48,17 @@ function evaluateRequest(options) {
     return { verdict: 'BYPASS', statusCode: 200, reason: 'Method uninspected' }
   }
 
-  if (isIpWhitelisted(testIp, allowedIpsInput)) {
-    return { verdict: 'BYPASS', statusCode: 200, reason: 'IP whitelisted' }
+  const clientIpRes = resolveEffectiveClientIp(testIp, testForwardedFor, '', trustedProxiesInput)
+  const effectiveIp = clientIpRes.effectiveIp
+
+  if (isIpWhitelisted(effectiveIp, allowedIpsInput)) {
+    return {
+      verdict: 'BYPASS',
+      statusCode: 200,
+      reason: 'IP whitelisted',
+      effectiveIp,
+      clientIpRes
+    }
   }
 
   const norm = extractCandidatePaths(testPath, checkQuery)
@@ -448,7 +461,7 @@ test('playground engine & generator: comprehensive test matrix (100+ cases)', as
   })
 
   // ==========================================
-  // Section 9: Presets Sanity Check (8 tests)
+  // Section 9: Presets Sanity Check (10 tests)
   // ==========================================
   await t.test('Section 9: Built-in Playground Presets Verification', async (st) => {
     for (const preset of PRESETS) {
@@ -457,6 +470,8 @@ test('playground engine & generator: comprehensive test matrix (100+ cases)', as
           testMethod: preset.method,
           testPath: preset.path,
           testIp: preset.ip,
+          testForwardedFor: preset.xForwardedFor || '',
+          trustedProxiesInput: preset.trustedProxies || '',
           allowedIpsInput: '10.5.0.0/16' // For IP Bypass preset testing
         })
 
@@ -470,4 +485,189 @@ test('playground engine & generator: comprehensive test matrix (100+ cases)', as
       })
     }
   })
+
+  // ========================================================
+  // Section 10: Trusted Proxies Client IP Resolution Engine
+  // ========================================================
+  await t.test('Section 10: Trusted Proxies IP Resolution Engine', async (st) => {
+    await st.test('isIpTrustedProxy validates exact IPs and CIDR ranges', () => {
+      const trustedConfig = '10.0.0.0/8, 172.16.0.0/12, 192.168.1.100, 2001:db8::/32'
+
+      assert.equal(isIpTrustedProxy('10.1.2.3', trustedConfig), true)
+      assert.equal(isIpTrustedProxy('172.20.5.1', trustedConfig), true)
+      assert.equal(isIpTrustedProxy('192.168.1.100', trustedConfig), true)
+      assert.equal(isIpTrustedProxy('192.168.1.101', trustedConfig), false)
+      assert.equal(isIpTrustedProxy('203.0.113.195', trustedConfig), false)
+      assert.equal(isIpTrustedProxy('2001:db8:1::1', trustedConfig), true)
+      assert.equal(isIpTrustedProxy('2001:db9::1', trustedConfig), false)
+    })
+
+    await st.test('Legacy mode: without trustedProxies configured, XFF is trusted', () => {
+      const res = resolveEffectiveClientIp('198.51.100.42', '203.0.113.50, 10.0.0.1', '', '')
+      assert.equal(res.effectiveIp, '203.0.113.50')
+      assert.equal(res.usedForwardedHeader, true)
+      assert.equal(res.directPeerIp, '198.51.100.42')
+    })
+
+    await st.test('Legacy mode: uses X-Real-IP if XFF is empty', () => {
+      const res = resolveEffectiveClientIp('198.51.100.42', '', '203.0.113.99', '')
+      assert.equal(res.effectiveIp, '203.0.113.99')
+      assert.equal(res.usedForwardedHeader, true)
+    })
+
+    await st.test('Trusted proxy mode: honours XFF from trusted peer CIDR', () => {
+      const res = resolveEffectiveClientIp('10.0.5.12:44321', '198.51.100.77, 10.0.5.1', '', '10.0.0.0/8')
+      assert.equal(res.effectiveIp, '198.51.100.77')
+      assert.equal(res.isTrustedProxy, true)
+      assert.equal(res.usedForwardedHeader, true)
+      assert.equal(res.directPeerIp, '10.0.5.12')
+    })
+
+    await st.test('Trusted proxy mode: ignores spoofed XFF from untrusted peer', () => {
+      // Attacker at 198.51.100.42 sends XFF claiming to be whitelisted 10.5.0.25
+      const res = resolveEffectiveClientIp('198.51.100.42', '10.5.0.25', '', '10.0.0.0/8')
+      assert.equal(res.effectiveIp, '198.51.100.42')
+      assert.equal(res.isTrustedProxy, false)
+      assert.equal(res.usedForwardedHeader, false)
+      assert.ok(res.reason.includes('untrusted'))
+    })
+
+    await st.test('Trusted proxy mode: ignores spoofed X-Real-IP from untrusted peer', () => {
+      const res = resolveEffectiveClientIp('198.51.100.42', '', '127.0.0.1', '10.0.0.0/8')
+      assert.equal(res.effectiveIp, '198.51.100.42')
+      assert.equal(res.isTrustedProxy, false)
+      assert.equal(res.usedForwardedHeader, false)
+    })
+
+    await st.test('Trusted proxy mode: falls back to direct peer when trusted proxy provides no forwarding headers', () => {
+      const res = resolveEffectiveClientIp('10.0.0.1', '', '', '10.0.0.0/8')
+      assert.equal(res.effectiveIp, '10.0.0.1')
+      assert.equal(res.isTrustedProxy, true)
+      assert.equal(res.usedForwardedHeader, false)
+    })
+
+    await st.test('End-to-end evaluation: spoofed XFF does not bypass IP whitelist', () => {
+      const evalRes = evaluateRequest({
+        testPath: '/.env',
+        testIp: '198.51.100.42', // untrusted external attacker
+        testForwardedFor: '10.5.0.25', // spoofed internal whitelisted IP
+        trustedProxiesInput: '10.0.0.0/8',
+        allowedIpsInput: '10.5.0.0/16'
+      })
+      assert.equal(evalRes.verdict, 'BLOCK')
+    })
+
+    await st.test('End-to-end evaluation: verified XFF from trusted proxy successfully bypasses IP whitelist', () => {
+      const evalRes = evaluateRequest({
+        testPath: '/.env',
+        testIp: '10.0.0.1', // trusted load balancer
+        testForwardedFor: '10.5.0.25', // client IP in whitelist
+        trustedProxiesInput: '10.0.0.0/8',
+        allowedIpsInput: '10.5.0.0/16'
+      })
+      assert.equal(evalRes.verdict, 'BYPASS')
+      assert.equal(evalRes.effectiveIp, '10.5.0.25')
+    })
+  })
+
+  // ========================================================
+  // Section 11: Snippet Generation with trustedProxies
+  // ========================================================
+  await t.test('Section 11: Snippet Generation with trustedProxies Support', async (st) => {
+    const proxies = ['10.0.0.0/8', '172.16.0.0/12', '192.168.1.0/24']
+
+    await st.test('Caddyfile formats trusted_proxies properly', () => {
+      const code = generateGatewaySnippet({
+        ...DEFAULT_SNIPPET_OPTS,
+        snippetFormat: 'caddy',
+        trustedProxiesList: proxies
+      })
+      assert.ok(code.includes('trusted_proxies "10.0.0.0/8" "172.16.0.0/12" "192.168.1.0/24"'))
+    })
+
+    await st.test('NGINX Lua formats trusted_proxies table properly', () => {
+      const code = generateGatewaySnippet({
+        ...DEFAULT_SNIPPET_OPTS,
+        snippetFormat: 'nginx',
+        trustedProxiesList: proxies
+      })
+      assert.ok(code.includes('trusted_proxies = {'))
+      assert.ok(code.includes('"10.0.0.0/8",'))
+      assert.ok(code.includes('"172.16.0.0/12",'))
+    })
+
+    await st.test('Traefik YAML formats trustedProxies list properly', () => {
+      const code = generateGatewaySnippet({
+        ...DEFAULT_SNIPPET_OPTS,
+        snippetFormat: 'traefik_yaml',
+        trustedProxiesList: proxies
+      })
+      assert.ok(code.includes('trustedProxies:'))
+      assert.ok(code.includes('- "10.0.0.0/8"'))
+      assert.ok(code.includes('- "172.16.0.0/12"'))
+    })
+
+    await st.test('Traefik TOML formats trustedProxies array properly', () => {
+      const code = generateGatewaySnippet({
+        ...DEFAULT_SNIPPET_OPTS,
+        snippetFormat: 'traefik_toml',
+        trustedProxiesList: proxies
+      })
+      assert.ok(code.includes('trustedProxies = ['))
+      assert.ok(code.includes('"10.0.0.0/8",'))
+      assert.ok(code.includes('"172.16.0.0/12",'))
+    })
+
+    await st.test('Docker Compose formats trustedProxies labels properly', () => {
+      const code = generateGatewaySnippet({
+        ...DEFAULT_SNIPPET_OPTS,
+        snippetFormat: 'docker',
+        trustedProxiesList: proxies
+      })
+      assert.ok(code.includes('trustedProxies[0]=10.0.0.0/8'))
+      assert.ok(code.includes('trustedProxies[1]=172.16.0.0/12'))
+      assert.ok(code.includes('trustedProxies[2]=192.168.1.0/24'))
+    })
+
+    await st.test('Kubernetes Traefik CRD formats trustedProxies properly', () => {
+      const code = generateGatewaySnippet({
+        ...DEFAULT_SNIPPET_OPTS,
+        snippetFormat: 'k8s_traefik',
+        trustedProxiesList: proxies
+      })
+      assert.ok(code.includes('trustedProxies:'))
+      assert.ok(code.includes('- "10.0.0.0/8"'))
+    })
+
+    await st.test('Kubernetes Caddy formats trusted_proxies properly', () => {
+      const code = generateGatewaySnippet({
+        ...DEFAULT_SNIPPET_OPTS,
+        snippetFormat: 'k8s_caddy',
+        trustedProxiesList: proxies
+      })
+      assert.ok(code.includes('trusted_proxies "10.0.0.0/8" "172.16.0.0/12" "192.168.1.0/24"'))
+    })
+
+    await st.test('Kubernetes NGINX formats trusted_proxies properly', () => {
+      const code = generateGatewaySnippet({
+        ...DEFAULT_SNIPPET_OPTS,
+        snippetFormat: 'k8s_nginx',
+        trustedProxiesList: proxies
+      })
+      assert.ok(code.includes('trusted_proxies = {'))
+      assert.ok(code.includes('"10.0.0.0/8",'))
+      assert.ok(code.includes('"172.16.0.0/12",'))
+    })
+
+    await st.test('CLI routewarden.json formats trustedProxies properly', () => {
+      const code = generateGatewaySnippet({
+        ...DEFAULT_SNIPPET_OPTS,
+        snippetFormat: 'cli_json',
+        trustedProxiesList: proxies
+      })
+      assert.ok(code.includes('"trustedProxies": ['))
+      assert.ok(code.includes('"10.0.0.0/8"'))
+    })
+  })
 })
+
