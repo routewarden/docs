@@ -11,7 +11,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [v1.2.1] - 2026-09-24 (Latest)
+## [v1.3.0] - 2026-10-01 (Latest)
+
+### Key Highlights
+
+- **Trusted Proxies Support (`trustedProxies`)**:
+  - Added `trustedProxies` configuration to `IPFilter` allowing operators to declare upstream load balancers, reverse proxies, and CDN CIDR subnets.
+  - Forwarded client IP headers (`X-Forwarded-For` and `X-Real-IP`) are now **only** trusted when the direct socket connection (`RemoteAddr`) originates from a declared trusted proxy.
+  - Prevents attackers from spoofing allowlisted CIDRs by sending forged `X-Forwarded-For` headers directly to the Traefik entrypoint.
+  - Automatically falls back to socket `RemoteAddr` when the direct peer is not in `trustedProxies`.
+- **Redirect Mode Security Hardening (`response.mode: redirect`)**:
+  - Added strict validation for `redirectUrl` during middleware initialization.
+  - Restricts redirect destinations to `http://`, `https://`, or local relative paths beginning with `/`, preventing open-redirect exploitation and `javascript:` pseudo-protocol execution.
+- **Silent Drop Fallback Resilience (`response.mode: silentDrop`)**:
+  - Added robust fallback when HTTP hijacking (`http.Hijacker`) is unavailable in the execution environment (e.g., HTTP/2 connections or specific proxy handlers).
+  - Falls back to returning HTTP 200 OK with an empty body instead of leaking the blocking error status code, ensuring security scanning tools cannot infer rule triggering.
+- **Captcha Template Error Handling**:
+  - Implemented safe error recovery for custom and default CAPTCHA templates; logs render errors to stderr and emits a clean HTML challenge document to prevent empty or corrupted client responses.
+- **Query Parameter Candidate Slice Safety**:
+  - Bounded candidate slice capacities (`keyCandidates[:len:len]` and `valCandidates[:len:len]`) during query parameter evaluation to prevent slice backing-array mutation or aliasing bugs.
+
+---
+
+## [v1.2.1] - 2026-09-24
 
 ### Key Highlights
 

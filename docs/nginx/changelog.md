@@ -11,7 +11,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [v1.2.1] - 2026-09-24 (Latest)
+## [v1.3.0] - 2026-10-01 (Latest)
+
+### Key Highlights
+
+- **Trusted Proxies Support (`trusted_proxies`)**:
+  - Added support for `trusted_proxies` in `ip_filter.lua` and `config.lua` supporting exact IP addresses and CIDR subnets across both IPv4 and IPv6.
+  - Forwarded headers (`X-Forwarded-For` and `X-Real-IP`) are now **only** trusted when `ngx.var.remote_addr` matches a declared trusted proxy.
+  - Neutralizes IP spoofing vectors where attackers attempt to bypass `allowed_ips` restrictions by injecting forged headers directly into NGINX.
+- **Redirect Mode Security Hardening**:
+  - Restricts redirect destination targets to safe protocols (`http`, `https`) or relative paths starting with `/`.
+  - Malformed or dangerous URI schemes (such as `javascript:`) are safely discarded and fallback to `/`.
+- **RFC 1951 DEFLATE Gzip Bomb Compliance**:
+  - Standardized `gzipbomb` response generation with valid RFC 1951 uncompressed DEFLATE blocks, explicit block lengths, final block markers, and gzip trailers.
+  - Resolves decompression errors across strict HTTP clients and vulnerability scanners while maximizing memory consumption on attacker tooling.
+- **Structured Log Escaping**:
+  - Enhanced JSON escaping in `logger.lua` to convert all ASCII control characters (`[\1-\31%z]`) into standard `\u00XX` unicode escape sequences.
+  - Prevents log corruptions and malformed JSONL outputs when handling malicious binary payloads or control-character injection attempts.
+- **Response Content-Type Headers**:
+  - Explicitly sets `Content-Type` headers for `gzipbomb` and `infinitestream` response modes.
+- **Normalizer Scope Fix**:
+  - Resolved local variable scoping issue for `raw_uri_path` in `normalizer.lua`.
+
+---
+
+## [v1.2.1] - 2026-09-24
 
 ### Key Highlights
 

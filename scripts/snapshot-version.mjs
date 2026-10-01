@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs'
 import path from 'node:path'
-import { syncVersion } from './sync-version.mjs'
+import { syncVersion, resolveDocsRootDir } from './sync-version.mjs'
 
 /**
  * Recursive copy function
@@ -39,7 +39,7 @@ export function snapshotVersion(newVersion, options = {}) {
   }
 
   const cleanNewVersion = newVersion.startsWith('v') ? newVersion : `v${newVersion}`
-  const rootDir = options.rootDir || process.cwd()
+  const rootDir = resolveDocsRootDir(options.rootDir)
 
   const versionFilePath = path.join(rootDir, 'docs/version.json')
   const versionsRegistryPath = path.join(rootDir, 'docs/versions.json')

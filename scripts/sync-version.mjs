@@ -68,18 +68,32 @@ function collectMarkdownFiles(dir, rootDir, bucket) {
 }
 
 /**
+ * Resolves rootDir to the docs repository root, accommodating execution from
+ * either inside the docs repository or from a parent monorepo workspace.
+ * @param {string} [customDir]
+ * @returns {string}
+ */
+export function resolveDocsRootDir(customDir) {
+  let rootDir = customDir || process.cwd()
+  if (path.basename(rootDir) !== 'docs' && fs.existsSync(path.join(rootDir, 'docs/docs/version.json'))) {
+    return path.join(rootDir, 'docs')
+  }
+  return rootDir
+}
+
+/**
  * Core version syncing logic with support for individual apps or entire ecosystem.
  *
  * @param {Object} options
  * @param {string} [options.rootDir] - Root directory of the repository
- * @param {string} [options.app] - Target application ('traefik' | 'caddy' | 'tcp' | 'cli' | 'all')
+ * @param {string} [options.app] - Target application ('traefik' | 'caddy' | 'tcp' | 'cli' | 'nginx' | 'all')
  * @param {string} [options.version] - New version string (e.g. 'v3.0.0')
  * @param {Record<string, string>} [options.versions] - Map of multiple app versions to update
  * @param {boolean} [options.writeVersionFile=true] - Persist changes back to docs/version.json
  * @returns {{ updatedFiles: string[], targetVersion: string, appVersions: Record<string, string> }}
  */
 export function syncVersion(options = {}) {
-  const rootDir = options.rootDir || process.cwd()
+  const rootDir = resolveDocsRootDir(options.rootDir)
   const versionFilePath = path.join(rootDir, 'docs/version.json')
 
   if (!fs.existsSync(versionFilePath)) {
@@ -161,6 +175,7 @@ export function syncVersion(options = {}) {
   const shouldSyncCaddy = !targetApp || targetApp === 'all' || targetApp === 'caddy'
   const shouldSyncTcp = !targetApp || targetApp === 'all' || targetApp === 'tcp'
   const shouldSyncCli = !targetApp || targetApp === 'all' || targetApp === 'cli'
+  const shouldSyncNginx = !targetApp || targetApp === 'all' || targetApp === 'nginx'
 
   // Helper to safely replace and track updated file
   const updateFileContent = (relPath, updater) => {
@@ -343,6 +358,28 @@ export function syncVersion(options = {}) {
     }
   }
 
+  // ── 5. Synchronize NGINX Warden Files ──────────────────────────────────────
+  if (shouldSyncNginx) {
+    const { cleanVersion: nginxClean } = formatVersion(appVersions.nginx)
+    const nginxFiles = []
+    collectMarkdownFiles(path.join(rootDir, 'docs/nginx'), rootDir, nginxFiles)
+
+    for (const relPath of nginxFiles) {
+      updateFileContent(relPath, (content) => {
+        let updated = content
+        updated = updated.replace(
+          /(github\.com\/routewarden\/nginx-warden@)v?[0-9]+\.[0-9]+\.[0-9]+/g,
+          `$1${nginxClean}`
+        )
+        updated = updated.replace(
+          /(nginx-warden@)v?[0-9]+\.[0-9]+\.[0-9]+/g,
+          `$1${nginxClean}`
+        )
+        return updated
+      })
+    }
+  }
+
   return { updatedFiles, targetVersion: returnedTargetVersion, appVersions }
 }
 
@@ -354,6 +391,7 @@ export function syncVersion(options = {}) {
 function parseArgs(args) {
   let app
   let version
+  let rootDir
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]
@@ -389,6 +427,16 @@ function parseArgs(args) {
     } else if (arg === '--cli' && args[i + 1]) {
       app = 'cli'
       version = args[++i]
+    } else if (arg.startsWith('--nginx=')) {
+      app = 'nginx'
+      version = arg.split('=')[1]
+    } else if (arg === '--nginx' && args[i + 1]) {
+      app = 'nginx'
+      version = args[++i]
+    } else if (arg.startsWith('--rootDir=') || arg.startsWith('--root=')) {
+      rootDir = arg.split('=')[1]
+    } else if ((arg === '--rootDir' || arg === '--root') && args[i + 1]) {
+      rootDir = args[++i]
     } else if (!arg.startsWith('-')) {
       // Positional args: [app, version] or [version]
       if (['tcp', 'caddy', 'traefik', 'cli', 'nginx', 'all'].includes(arg.toLowerCase())) {
@@ -399,7 +447,7 @@ function parseArgs(args) {
     }
   }
 
-  return { app, version }
+  return { app, version, rootDir }
 }
 
 // Auto-run when executed directly via CLI
@@ -418,7 +466,7 @@ if (process.argv[1] && (path.resolve(process.argv[1]) === currentScriptPath || p
 
   try {
     const { generateSetupSnippets } = await import('./generate-snippets.mjs')
-    await generateSetupSnippets()
+    await generateSetupSnippets({ rootDir: cliArgs.rootDir })
     console.log(`Regenerated setup code snippets`)
   } catch (err) {
     console.warn(`Could not regenerate setup snippets: ${err.message}`)

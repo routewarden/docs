@@ -4,11 +4,11 @@ Release notes for the RouteWarden security ecosystem are maintained independentl
 
 | Component | Target Runtime / Technology | Latest Version | Dedicated Changelog |
 | :--- | :--- | :--- | :--- |
-| **Traefik Warden** | Traefik v2 / v3 Middleware Plugin (Go) | `v1.2.1` | [Traefik Changelog](/traefik/changelog) |
-| **Caddy Warden** | Caddy v2 HTTP Module (Go) | `v1.2.1` | [Caddy Changelog](/caddy/changelog) |
-| **NGINX Warden** | NGINX / OpenResty Module (Lua) | `v1.2.1` | [NGINX Changelog](/nginx/changelog) |
-| **TCP Warden** | L4 TCP/UDP Reverse Proxy & Shield (Go) | `v3.0.0` | [TCP Warden Changelog](/tcp/changelog) |
-| **RouteWarden CLI** | Policy Compiler & Generator (`rwarden`) | `v4.0.1` | [CLI Changelog](/cli/changelog) |
+| **Traefik Warden** | Traefik v2 / v3 Middleware Plugin (Go) | `{{traefik_version}}` | [Traefik Changelog](/traefik/changelog) |
+| **Caddy Warden** | Caddy v2 HTTP Module (Go) | `{{caddy_version}}` | [Caddy Changelog](/caddy/changelog) |
+| **NGINX Warden** | NGINX / OpenResty Module (Lua) | `{{nginx_version}}` | [NGINX Changelog](/nginx/changelog) |
+| **TCP Warden** | L4 TCP/UDP Reverse Proxy & Shield (Go) | `{{tcp_version}}` | [TCP Warden Changelog](/tcp/changelog) |
+| **RouteWarden CLI** | Policy Compiler & Generator (`rwarden`) | `{{cli_version}}` | [CLI Changelog](/cli/changelog) |
 
 ---
 

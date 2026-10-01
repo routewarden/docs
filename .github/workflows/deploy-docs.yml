@@ -26,7 +26,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: github-pages   # needed to access environment-scod variables (vars.*)
+    environment: github-pages   # needed to access environment-scoped variables (vars.*)
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -41,6 +41,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Run test suites
+        run: npm test
 
       - name: Build VitePress documentation
         run: npm run docs:build

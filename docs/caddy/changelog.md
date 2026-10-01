@@ -11,7 +11,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [v1.2.1] - 2026-09-24 (Latest)
+## [v1.3.0] - 2026-10-01 (Latest)
+
+### Key Highlights
+
+- **Trusted Proxies Support (`trusted_proxies` / `trusted_proxy`)**:
+  - Added native Caddyfile directives `trusted_proxies <ips/cidrs...>` and `trusted_proxy <ips/cidrs...>` alongside JSON configuration support.
+  - Forwarded headers (`X-Forwarded-For` and `X-Real-IP`) are now strictly honored **only** when the direct socket connection (`RemoteAddr`) originates from an explicitly trusted proxy or subnet.
+  - Eliminates client IP spoofing risks and ensures unauthorized clients directly reaching Caddy cannot bypass `allowed_ips` filters by injecting forwarding headers.
+- **Redirect Mode Security Hardening (`redirectUrl`)**:
+  - Added strict validation for `redirectUrl` in response handlers, enforcing `http://`, `https://`, or root-relative paths (`/...`).
+  - Blocks unsafe URL schemes (e.g. `javascript:`) to eliminate open-redirect and client-side execution vectors.
+- **Silent Drop Connection Fallback**:
+  - Added non-hijackable connection fallback for `silentDrop`: if Caddy's HTTP hijacker cannot acquire the raw connection (e.g. over HTTP/2, HTTP/3, or wrapped response writers), RouteWarden responds with HTTP 200 OK and an empty body rather than leaking the blocking status code.
+- **Captcha Template Error Handling**:
+  - Added Zap structured error logging when CAPTCHA template rendering encounters an error, with an immediate fallback to a clean, well-formed HTML security challenge document.
+- **Flexible Silent Drop Directives**:
+  - Recognized case-insensitive aliases `silent_drop`, `silentdrop`, and `drop` in both Caddyfile and JSON configurations, canonicalizing automatically to `silentDrop`.
+- **Header Candidate Path Expansion**:
+  - Automatically includes raw header values in candidate path evaluation before tokenization for complete inspection parity across reverse-proxy headers.
+
+---
+
+## [v1.2.1] - 2026-09-24
 
 ### Key Highlights
 

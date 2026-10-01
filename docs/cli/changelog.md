@@ -4,7 +4,21 @@ All notable changes to the RouteWarden CLI (`rwarden`) are documented here. The 
 
 ---
 
-## [v4.0.1] - 2026-09-26 (Latest)
+## [v4.1.0] - 2026-10-01 (Latest)
+
+### Added
+- **Centralized Documentation & Universal Installer Integration**:
+  - Centralized CLI documentation and guide hosted at [RouteWarden Documentation](/cli/).
+  - Integrated with the unified ecosystem installation script served directly at `https://routewarden.github.io/install.sh`.
+- **Multi-Architecture Docker Container Build Optimization**:
+  - Upgraded Dockerfile with BuildKit cache mounting (`--mount=type=cache`) for Go package modules and build caches, substantially speeding up container build times.
+  - Added native cross-compilation support utilizing `BUILDPLATFORM`, `TARGETOS`, and `TARGETARCH` with automatic fallback to `linux`.
+- **Dashboard Docker Discovery Test Suites**:
+  - Added comprehensive test suites in `dashboard/docker_test.go` covering Docker socket container discovery, real-time log tailing, and configuration label parsing.
+
+---
+
+## [v4.0.1] - 2026-09-26
 
 ### Added
 - **Multi-App Version Sync**:

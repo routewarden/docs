@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
-import { syncVersion, normalizeAppName } from '../scripts/sync-version.mjs'
+import { syncVersion, normalizeAppName, resolveDocsRootDir } from '../scripts/sync-version.mjs'
 import { snapshotVersion } from '../scripts/snapshot-version.mjs'
 
 /**
@@ -77,6 +77,13 @@ function createMockWorkspace() {
   fs.writeFileSync(
     path.join(tempDir, 'docs/caddy/getting-started.md'),
     'RUN xcaddy build --with github.com/routewarden/caddy-warden@v1.0.0\n'
+  )
+
+  // Setup sample nginx files
+  fs.mkdirSync(path.join(tempDir, 'docs/nginx'), { recursive: true })
+  fs.writeFileSync(
+    path.join(tempDir, 'docs/nginx/getting-started.md'),
+    '# Clone: https://github.com/routewarden/nginx-warden@v1.0.0\n'
   )
 
   return tempDir
@@ -176,6 +183,26 @@ test('syncVersion allows updating caddy version without touching tcp or traefik'
 
   const caddyDoc = fs.readFileSync(path.join(ws, 'docs/caddy/getting-started.md'), 'utf8')
   assert.match(caddyDoc, /caddy-warden@v1\.2\.0/)
+})
+
+test('syncVersion allows updating nginx version without touching other apps', (t) => {
+  const ws = createMockWorkspace()
+  t.after(() => fs.rmSync(ws, { recursive: true, force: true }))
+
+  const res = syncVersion({ rootDir: ws, app: 'nginx', version: 'v1.3.0' })
+
+  assert.equal(res.targetVersion, 'v1.3.0')
+  assert.equal(res.appVersions.nginx, 'v1.3.0')
+  assert.ok(res.updatedFiles.includes('docs/version.json'))
+  assert.ok(res.updatedFiles.includes('docs/nginx/getting-started.md'))
+  assert.ok(!res.updatedFiles.includes('docs/caddy/getting-started.md'))
+
+  const nginxDoc = fs.readFileSync(path.join(ws, 'docs/nginx/getting-started.md'), 'utf8')
+  assert.match(nginxDoc, /nginx-warden@v1\.3\.0/)
+})
+
+test('resolveDocsRootDir returns custom directory when specified', () => {
+  assert.equal(resolveDocsRootDir('/tmp/custom-test'), '/tmp/custom-test')
 })
 
 test('syncVersion supports updating multiple apps via options.versions', (t) => {
