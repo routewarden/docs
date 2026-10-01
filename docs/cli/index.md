@@ -1,3 +1,104 @@
+---
+title: RouteWarden CLI (rwarden)
+description: Developer CLI, policy compiler, configuration validator, and real-time security dashboard for RouteWarden.
+---
+
+<script setup>
+import { computed } from 'vue'
+import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
+
+// ─── 1. Installation ────────────────────────────────────────────────────────
+const install_script = buildSnippet({
+  lang: 'bash',
+  code: `curl -fsSL https://routewarden.github.io/install.sh | bash`,
+})
+
+const install_docker = buildSnippet({
+  lang: 'bash',
+  code: `docker run --rm ghcr.io/routewarden/cli:latest version`,
+})
+
+const installSnippets = computed(() => ({
+  cli: [
+    { filename: 'Universal Script (curl)', lang: 'bash', code: install_script.cleanCode, html: install_script.html, hasDiff: false },
+    { filename: 'Docker', lang: 'bash', code: install_docker.cleanCode, html: install_docker.html, hasDiff: false },
+  ],
+}))
+
+// ─── 2. Test Path Simulation ────────────────────────────────────────────────
+const test_cmd = buildSnippet({
+  lang: 'bash',
+  code: `rwarden test "/static/%252e%252e/.env"`,
+})
+
+const test_docker = buildSnippet({
+  lang: 'bash',
+  code: `docker run --rm ghcr.io/routewarden/cli:latest test "/static/%252e%252e/.env"`,
+})
+
+const test_output = buildSnippet({
+  lang: 'plaintext',
+  code: `🔍 Testing: GET /static/%252e%252e/.env
+  Candidate paths extracted (2):
+    - /static/%252e%252e/.env
+    - /.env
+
+Result: 🛑 BLOCKED (HTTP Status 403)
+  Reason:  block_pattern_match
+  Target:  /.env
+  Pattern: (?i)\\.env`,
+})
+
+const testCmdSnippets = computed(() => ({
+  cli: [
+    { filename: 'rwarden test', lang: 'bash', code: test_cmd.cleanCode, html: test_cmd.html, hasDiff: false },
+    { filename: 'Docker', lang: 'bash', code: test_docker.cleanCode, html: test_docker.html, hasDiff: false },
+  ],
+}))
+
+const testOutputSnippets = computed(() => ({
+  cli: [
+    { filename: 'Simulation Output', lang: 'plaintext', code: test_output.cleanCode, html: test_output.html, hasDiff: false },
+  ],
+}))
+
+// ─── 3. Validate Policy ─────────────────────────────────────────────────────
+const validate_cmd = buildSnippet({
+  lang: 'bash',
+  code: `rwarden validate routewarden.json`,
+})
+
+const validate_docker = buildSnippet({
+  lang: 'bash',
+  code: `docker run --rm -v $(pwd):/work -w /work ghcr.io/routewarden/cli:latest validate routewarden.json`,
+})
+
+const validateSnippets = computed(() => ({
+  cli: [
+    { filename: 'rwarden validate', lang: 'bash', code: validate_cmd.cleanCode, html: validate_cmd.html, hasDiff: false },
+    { filename: 'Docker', lang: 'bash', code: validate_docker.cleanCode, html: validate_docker.html, hasDiff: false },
+  ],
+}))
+
+// ─── 4. Launch Dashboard ────────────────────────────────────────────────────
+const dashboard_cmd = buildSnippet({
+  lang: 'bash',
+  code: `rwarden dashboard`,
+})
+
+const dashboard_docker = buildSnippet({
+  lang: 'bash',
+  code: `docker run -d --name rwarden-dashboard -p 9090:9090 -v /var/run/docker.sock:/var/run/docker.sock:ro ghcr.io/routewarden/cli:latest dashboard`,
+})
+
+const dashboardSnippets = computed(() => ({
+  cli: [
+    { filename: 'rwarden dashboard', lang: 'bash', code: dashboard_cmd.cleanCode, html: dashboard_cmd.html, hasDiff: false },
+    { filename: 'Docker', lang: 'bash', code: dashboard_docker.cleanCode, html: dashboard_docker.html, hasDiff: false },
+  ],
+}))
+</script>
+
 # RouteWarden CLI (`rwarden`)
 
 `rwarden` is the official developer CLI, policy compiler, configuration validator, and real-time observability dashboard for the RouteWarden security suite.
@@ -32,54 +133,31 @@ It enables security and platform teams to evaluate path rules offline, validate 
 
 ### 1. Install `rwarden`
 
-Install the latest pre-compiled binary via the universal one-liner script:
+Install the latest pre-compiled binary via the universal one-liner script, or run without installation using Docker:
 
-```bash
-curl -fsSL https://routewarden.github.io/install.sh | bash
-```
-
-Alternatively, run without installation using the multi-arch Docker image:
-
-```bash
-docker run --rm ghcr.io/routewarden/cli:latest version
-```
+<CodeViewer :snippets="installSnippets" />
 
 ### 2. Test a Sensitive Path
 
 Simulate candidate path extraction and anti-evasion matching on an encoded exploit string:
 
-```bash
-rwarden test "/static/%252e%252e/.env"
-```
+<CodeViewer :snippets="testCmdSnippets" />
 
 Output:
-```text
-🔍 Testing: GET /static/%252e%252e/.env
-  Candidate paths extracted (2):
-    - /static/%252e%252e/.env
-    - /.env
 
-Result: 🛑 BLOCKED (HTTP Status 403)
-  Reason:  block_pattern_match
-  Target:  /.env
-  Pattern: (?i)\.env
-```
+<CodeViewer :snippets="testOutputSnippets" />
 
 ### 3. Validate Policy Offline
 
 Verify your policy before committing or deploying:
 
-```bash
-rwarden validate routewarden.json
-```
+<CodeViewer :snippets="validateSnippets" />
 
 ### 4. Launch the Security Dashboard
 
 Start the live monitoring dashboard with automatic Docker gateway discovery:
 
-```bash
-rwarden dashboard
-```
+<CodeViewer :snippets="dashboardSnippets" />
 
 Open `http://127.0.0.1:9090` to observe live blocked probes, attack analytics, and threat intelligence.
 
