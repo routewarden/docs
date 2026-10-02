@@ -192,6 +192,59 @@ const authSnippets = computed(() => ({
     { filename: 'Auth Failure Tracking', lang: 'go', code: auth_guard_go.cleanCode, html: auth_guard_go.html, hasDiff: false },
   ]
 }))
+
+// ─── Step 5: UDP Plugin & Inspector (udp.go) ────────────────────────────────
+const udp_plugin_go = buildSnippet({
+  lang: 'go',
+  code: `package my_udp_plugin
+
+import (
+	"strings"
+
+	"github.com/routewarden/tcp-warden/plugins/sdk"
+)
+
+// 1. Opt into UDP support by implementing sdk.UDPPlugin
+type Plugin struct{}
+
+func (p *Plugin) UDPManifest() sdk.Manifest {
+	return manifest
+}
+
+func (p *Plugin) CreateUDPInspector(cfg map[string]any) (sdk.UDPInspector, error) {
+	return &UDPInspector{}, nil
+}
+
+// 2. Implement sdk.UDPInspector for per-session packet inspection
+type UDPInspector struct{}
+
+func (u *UDPInspector) InspectPacket(ctx sdk.Context, pkt *sdk.UDPPacket) (sdk.UDPVerdict, string, error) {
+	// pkt.Payload: raw datagram bytes (mutable in-place)
+	// pkt.ClientAddr: original client's *net.UDPAddr
+	// pkt.IsReply: true if traveling upstream -> client
+
+	if !pkt.IsReply && strings.Contains(string(pkt.Payload), "BLOCKED_KEYWORD") {
+		if ctx != nil {
+			ctx.OnSecurityEvent("blocked", "blocked UDP payload keyword")
+		}
+		// Return UDPVerdictDrop to discard without reply (safest against reflection attacks)
+		return sdk.UDPVerdictDrop, "blocked keyword in datagram", nil
+	}
+
+	return sdk.UDPVerdictAllow, "", nil
+}
+
+func (u *UDPInspector) Close() error {
+	// Clean up session resources when UDP session table reaps this client
+	return nil
+}`,
+})
+
+const udpSnippets = computed(() => ({
+  tcp: [
+    { filename: 'udp_inspector.go', lang: 'go', code: udp_plugin_go.cleanCode, html: udp_plugin_go.html, hasDiff: false },
+  ]
+}))
 </script>
 
 # Plugin SDK & Lifecycle
@@ -261,6 +314,26 @@ One of TCP Warden's key features is automatic brute-force defense. Plugins do no
 2. The inspector calls `ctx.OnAuthFailure()`.
 3. TCP Warden increments the failure counter for that client IP.
 4. If failures exceed `max_auth_failures` within the sliding time window, TCP Warden adds the IP to its SQLite database and bans it across all services.
+
+---
+
+## 5. Implementing `sdk.UDPPlugin` & `sdk.UDPInspector` (UDP Protocols)
+
+TCP Warden v3.0.0 introduces datagram-level protocol inspection for UDP services. Because UDP is stateless and connectionless, inspection differs from stream-based TCP:
+
+<CodeViewer :snippets="udpSnippets" />
+
+### Core UDP Architecture
+
+- **Optional Interface Extension**: Plugins declare UDP capability by implementing `sdk.UDPPlugin`. The host daemon uses Go type assertions at runtime (`plugin.(sdk.UDPPlugin)`), so existing TCP-only plugins remain 100% compatible without changes.
+- **Session Tables & NAT Mappings**: TCP Warden maintains an internal `UDPSessionTable` tracking client address keys (`IP:port`). One `UDPInspector` instance is instantiated per unique client session via `CreateUDPInspector()`.
+- **Bidirectional Packet Inspection**: `InspectPacket()` is called on every datagram in both directions. The `pkt.IsReply` boolean indicates whether the packet is traveling client → upstream or upstream → client.
+- **In-Place Payload Mutation**: Inspectors can mutate `pkt.Payload` directly in-place (e.g. rewriting DNS answers, TTL values, or filtering DHT fields) before the datagram is forwarded.
+- **Verdicts (`sdk.UDPVerdict`)**:
+  - `UDPVerdictAllow`: Datagram is forwarded to destination.
+  - `UDPVerdictDrop`: Datagram is silently discarded. (Recommended for security drops to prevent UDP reflection and amplification attacks).
+  - `UDPVerdictReject`: Generates a protocol-level rejection where supported.
+- **Session Cleanup (`Close()`)**: Invoked when the client session is reaped after `udp.session_timeout` or daemon shutdown.
 
 ---
 

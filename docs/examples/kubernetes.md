@@ -12,7 +12,7 @@ const helmStatic = buildSnippet({
   code: `# values.yaml (Traefik Helm Chart)
 additionalArguments:
   - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden"
-  - "--experimental.plugins.routewarden.version={{version}}"`,
+  - "--experimental.plugins.routewarden.version={{traefik_version}}"`,
 })
 
 const helmSnippets = computed(() => ({

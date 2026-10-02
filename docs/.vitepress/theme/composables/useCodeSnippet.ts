@@ -29,6 +29,7 @@ export type SnippetLang =
   | 'smtp'
   | 'ftp'
   | 'sse'
+  | 'mermaid'
   | 'plaintext'
 
 function esc(str: string): string {
@@ -712,6 +713,86 @@ function highlightPlaintextLine(line: string): string {
   return esc(line)
 }
 
+function highlightMermaidLine(line: string): string {
+  // Comments: %% ...
+  if (/^\s*%%/.test(line)) {
+    return `<span class="tok-comment">${esc(line)}</span>`
+  }
+
+  const indentMatch = line.match(/^(\s*)(.*)$/)
+  if (!indentMatch) return esc(line)
+  const [, indent, rest] = indentMatch
+  if (!rest) return ''
+
+  // Flowchart/Graph declaration: flowchart LR, graph TD, sequenceDiagram, etc.
+  const headerMatch = rest.match(/^(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram(?:-v2)?|erDiagram|gantt|pie|gitGraph|mindmap|quadrantChart)\s+([A-Za-z0-9_-]+)?$/i)
+  if (headerMatch) {
+    const [, kw, dir] = headerMatch
+    return `${indent}<span class="tok-keyword">${esc(kw)}</span>${dir ? ` <span class="tok-verb">${esc(dir)}</span>` : ''}`
+  }
+
+  // Subgraph declaration: subgraph ID ["Label"]
+  const subMatch = rest.match(/^(subgraph)\s+([A-Za-z0-9_.-]+)(?:\s+(\[.*?\]|\(.*?\)))?$/)
+  if (subMatch) {
+    const [, kw, id, label] = subMatch
+    let labelHtml = ''
+    if (label) {
+      labelHtml = ' ' + label.replace(
+        /^(\[|\()(.*?)(\]|\))$/,
+        (_, open, inner, close) => `<span class="tok-punct">${esc(open)}</span><span class="tok-str">${esc(inner)}</span><span class="tok-punct">${esc(close)}</span>`
+      )
+    }
+    return `${indent}<span class="tok-keyword">${esc(kw)}</span> <span class="tok-key">${esc(id)}</span>${labelHtml}`
+  }
+
+  // Subgraph end
+  if (/^end\b/.test(rest)) {
+    return `${indent}<span class="tok-keyword">end</span>${esc(rest.slice(3))}`
+  }
+
+  // Tokenize connections, nodes, labels, and keywords
+  const tokenRegex = /(\"(?:\\.|[^\"\\])*\"|\|[^|]+\||-->|---|-.->|==>|<-->|<==>|--o|--x|--|\[\[|\]\]|\[\(|\)\]|\(\(|\)\)|\[\/|\/\]|\[\\|\\\]|[\[\]\(\){}]|\b(?:subgraph|end|direction|classDef|class|style|click|linkStyle|fill|stroke)\b|\b(?:LR|RL|TD|TB|BT)\b|[a-zA-Z0-9_.-]+|[^\s\"a-zA-Z0-9_.-]+|\s+)/g
+
+  const tokens = rest.replace(tokenRegex, (m) => {
+    // String literal
+    if (/^\"(?:\\.|[^\"\\])*\"$/.test(m)) {
+      return `<span class="tok-str">${esc(m)}</span>`
+    }
+    // Edge label |...|
+    if (/^\|[^|]+\|$/.test(m)) {
+      const inner = m.slice(1, -1)
+      return `<span class="tok-punct">|</span><span class="tok-section">${esc(inner)}</span><span class="tok-punct">|</span>`
+    }
+    // Arrows / connectors
+    if (/^(?:-->|---|-.->|==>|<-->|<==>|--o|--x|--)$/.test(m)) {
+      return `<span class="tok-punct" style="color: var(--vp-c-brand-1, #6366f1); font-weight: 700;">${esc(m)}</span>`
+    }
+    // Brackets and delimiters
+    if (/^[\[\]\(\){}]|\[\[|\]\]|\[\(|\)\]|\(\(|\)\)|\[\/|\/\]|\[\\|\\\]$/.test(m)) {
+      return `<span class="tok-punct">${esc(m)}</span>`
+    }
+    // Keywords
+    if (/^(subgraph|end|direction|classDef|class|style|click|linkStyle|fill|stroke)$/.test(m)) {
+      return `<span class="tok-keyword">${esc(m)}</span>`
+    }
+    // Orientations
+    if (/^(LR|RL|TD|TB|BT)$/.test(m)) {
+      return `<span class="tok-verb">${esc(m)}</span>`
+    }
+    // Whitespace
+    if (/^\s+$/.test(m)) {
+      return m
+    }
+    // Node identifier or words
+    if (/^[a-zA-Z0-9_.-]+$/.test(m)) {
+      return `<span class="tok-key">${esc(m)}</span>`
+    }
+    return esc(m)
+  })
+
+  return indent + tokens
+}
+
 function highlightLine(line: string, lang: SnippetLang): string {
   switch (lang) {
     case 'yaml': return highlightYamlLine(line)
@@ -733,6 +814,7 @@ function highlightLine(line: string, lang: SnippetLang): string {
     case 'smtp': return highlightSmtpLine(line)
     case 'ftp': return highlightFtpLine(line)
     case 'sse': return highlightSseLine(line)
+    case 'mermaid': return highlightMermaidLine(line)
     case 'plaintext': return highlightPlaintextLine(line)
     default: return esc(line)
   }

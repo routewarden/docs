@@ -194,7 +194,66 @@ const tlsSniSnippets = computed(() => ({
   ]
 }))
 
-// ─── 8. Docker Cache Snippets ───────────────────────────────────────────────
+// ─── 8. DNS Firewall Snippets ───────────────────────────────────────────────
+const dns_yaml = buildSnippet({
+  lang: 'yaml',
+  code: `services:
+  dns_firewall:
+    listen: ":53"
+    upstream: "1.1.1.1:53"
+    transport: "both"         # Intercepts both UDP and TCP DNS queries
+    protocol: "dns"
+    rate_limit:
+      connections_per_minute: 1200
+      burst: 200
+    udp:
+      session_timeout: "15s"
+      max_sessions: 20000
+    plugin_config:
+      blocked_domains:
+        - "*.badware.test"
+        - "c2.threat.org"
+      blocked_qtypes:
+        - "ANY"               # Stop ANY query amplification floods
+        - "AXFR"              # Block unauthorized zone transfers
+      block_private_ips: true # Prevent DNS rebinding attacks`
+})
+
+const dnsSnippets = computed(() => ({
+  tcp: [
+    { filename: 'tcp-warden.yaml', lang: 'yaml', code: dns_yaml.cleanCode, html: dns_yaml.html, hasDiff: false },
+  ]
+}))
+
+// ─── 9. BitTorrent Guard Snippets ───────────────────────────────────────────
+const bittorrent_yaml = buildSnippet({
+  lang: 'yaml',
+  code: `services:
+  torrent_guard:
+    listen: ":6881"
+    upstream: "10.0.0.50:6881"
+    transport: "both"         # Peer Wire (TCP) + DHT/uTP (UDP)
+    protocol: "bittorrent"
+    plugin_config:
+      blocked_info_hashes:
+        - "aabbccddeeff00112233445566778899aabbccdd"
+      require_peer_id_format: true
+      allowed_peer_id_prefixes:
+        - "-qB-"              # qBittorrent
+        - "-TR-"              # Transmission
+        - "-DE-"              # Deluge
+      blocked_dht_methods:
+        - "announce_peer"     # Mitigate DHT poisoning
+      max_dht_packet_size: 1500`
+})
+
+const bittorrentSnippets = computed(() => ({
+  tcp: [
+    { filename: 'tcp-warden.yaml', lang: 'yaml', code: bittorrent_yaml.cleanCode, html: bittorrent_yaml.html, hasDiff: false },
+  ]
+}))
+
+// ─── 10. Docker Cache Snippets ──────────────────────────────────────────────
 const docker_cache_yaml = buildSnippet({
   lang: 'yaml',
   code: `services:
@@ -233,10 +292,12 @@ All protocol-specific security inspectors (`ssh`, `smtp`, `pop3`, `imap`, `postg
 
 ## Official Plugins
 
-TCP Warden provides **19 official plugins** in the [`routewarden/plugins`](https://github.com/routewarden/plugins) repository, covering database servers, mail systems, remote access, web services, caches, message brokers, and game servers. All plugins can be installed instantly with `tcp-warden plugins install <name>`.
+TCP Warden provides **21 official plugins** in the [`routewarden/plugins`](https://github.com/routewarden/plugins) repository, covering DNS resolvers, P2P networks, database servers, mail systems, remote access, web services, caches, message brokers, and game servers. All plugins can be installed instantly with `tcp-warden plugins install <name>`.
 
 | Plugin | Protocol(s) | Documentation | What it does |
 | :--- | :--- | :--- | :--- |
+| **`dns`** | `dns` | [DNS Guide](./plugins/dns) | High-performance DNS firewall for UDP & TCP. Blocks malicious domains, restricts query types (`ANY`/`AXFR`), and prevents DNS rebinding attacks. |
+| **`bittorrent`** | `bittorrent`, `bittorrent-tcp`, `bittorrent-dht`, `bittorrent-utp` | [BitTorrent Guide](./plugins/bittorrent) | Multi-transport BitTorrent guard inspecting Peer Wire (TCP), DHT (UDP), and uTP (UDP) with info-hash filtering and anti-amplification. |
 | **`ssh`** | `ssh` | [SSH Guide](./plugins/ssh) | SSH handshake inspector with banner validation, version checks, and `SSH_MSG_USERAUTH_FAILURE` brute-force detection. |
 | **`postgres`** | `postgres`, `postgresql` | [PostgreSQL Guide](./plugins/postgres) | Catches failed password attempts (`28P01`) and automatically bans brute-force bots targeting PostgreSQL. |
 | **`mysql`** | `mysql`, `mariadb` | [MySQL Guide](./plugins/mysql) | Detects Access Denied errors (`1045`) and mitigates credential brute-forcing against MySQL and MariaDB. |
@@ -294,6 +355,18 @@ Use built-in CLI subcommands to inspect active plugins, enable or disable inspec
 ## Plugin Configuration Examples
 
 Below are common service configurations using official plugins:
+
+### DNS Firewall (`dns`)
+
+Protects DNS resolvers across UDP and TCP against malicious domains, query amplification, and DNS rebinding:
+
+<CodeViewer :snippets="dnsSnippets" />
+
+### BitTorrent Guard (`bittorrent`)
+
+Enforces info-hash filtering, verified peer ID formats, and anti-amplification controls across TCP and UDP:
+
+<CodeViewer :snippets="bittorrentSnippets" />
 
 ### HTTP Guard (`http`)
 

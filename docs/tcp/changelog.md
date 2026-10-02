@@ -11,7 +11,75 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [v2.1.0] - 2026-09-30 (Latest)
+## [v3.1.0] - 2026-10-02 (Latest)
+
+### 🚀 Minor Release: Leveled Security Events & RouteWarden Observability Integration
+
+TCP Warden v3.1.0 introduces native log severity classification directly into the structured `SecurityEvent` pipeline, enabling seamless ingestion, filtering, and visual correlation within the RouteWarden Observability Stack (Grafana, Loki, and Alloy).
+
+#### 1. Structured Security Event Log Levels (`Level`)
+- **First-Class `Level` Field**: Added `Level` (`json:"level,omitempty"`) to `SecurityEvent` payloads emitted across all active listeners and bastions.
+- **Automatic Pipeline Severity Assignment**:
+  - `warn`: Automatically assigned to blocked requests, banned IPs (`ip_denied`, `crowdsec_ban`), and rate-limited traffic (`throttled`).
+  - `error`: Assigned to pipeline or internal proxy failures.
+  - `info`: Assigned to clean, allowed TCP and UDP connections.
+- **Alloy & Loki Stream Labeling**: Grafana Alloy automatically indexes `level` as a primary Loki stream label, allowing instant querying via `{app="routewarden", level="warn"}`.
+
+#### 2. Enhanced L4 Event Metadata for SIEM Correlation
+- Emits comprehensive connection metadata on all security triggers:
+  - `client_ip`: Remote socket address (IPv4 and IPv6).
+  - `country_code`, `country_name`, and `flag_emoji`: MaxMind GeoIP resolution (e.g. `🇩🇪 Germany`, `🏠 Local Network`).
+  - `service`, `protocol`, and `transport`: Protocol context (`ssh`, `postgres`, `dns`, `smtp`, `udp`, `tcp`).
+  - `action` and `reason`: Specific defense rule or trigger (`ip_denied`, `rate_limit_exceeded`, `blocked_domain`).
+- Full compatibility with the **Pure Opt-In** logging model via Docker label `routewarden.logs=true`.
+
+#### 3. Plugin SDK v3.1.0 Synchronization
+- Synchronized Plugin SDK version constant to `3.1.0` (`plugins/sdk/sdk.go`).
+- Retained full backward compatibility with manifest schema version `1.0.0`.
+
+---
+
+## [v3.0.0] - 2026-09-30
+
+### 🚀 Major Release: Layer 4 UDP Transport Engine & Multi-Protocol Expansion (DNS & BitTorrent)
+
+TCP Warden v3.0.0 introduces native **Layer 4 UDP Proxying**, enabling multi-transport protection across both TCP and UDP. It introduces two major official plugins—**DNS Guard** and **BitTorrent Guard**—and extends the Plugin SDK with datagram-level protocol inspection.
+
+#### 1. Native UDP Transport & Multi-Stage Datagram Pipeline
+- **Dual-Transport Listeners (`transport: "both"`)**: A single service definition can bind both TCP and UDP sockets on the same port (ideal for DNS on `:53` or BitTorrent on `:6881`).
+- **Full Pipeline Defense for Datagrams**: Inbound UDP datagrams pass through the complete security pipeline before reaching upstreams:
+  - **Stage 1 (Active Banlist)**: Drops datagrams from banned IPs immediately.
+  - **Stage 2 (CrowdSec LAPI Bouncer)**: Enforces real-time community ban decisions.
+  - **Stage 3 (CIDR IP Filter)**: Enforces service-level and global subnet allow/denylists.
+  - **Stage 4 (GeoIP Blocking)**: Filters countries using MaxMind GeoIP (`allow_countries` & `deny_countries`).
+  - **Stage 5 (Token Bucket Rate Limiting)**: Throttles datagram rates per client IP (`connections_per_minute` and `burst`).
+  - **Stage 6 (Session Table & Concurrency Caps)**: `udp.max_sessions` caps active unique client sessions; `udp.session_timeout` reaps idle NAT states.
+- **Zero-Reflection Anti-Amplification Architecture**: Blocked UDP datagrams are discarded silently rather than sending error responses, guaranteeing RouteWarden cannot be weaponized as a reflection/amplification vector for spoofed attacks.
+
+#### 2. Plugin SDK v3.0.0 & UDP Datagram Inspector
+- **`sdk.UDPPlugin` & `sdk.UDPInspector`**: New optional interfaces for protocol plugins handling datagram traffic.
+- **`sdk.UDPPacket`**: Inspects raw datagram payloads, client address metadata, and traffic direction (`IsReply`).
+- **In-Place Payload Mutation**: Inspectors can mutate packet payloads in-place (e.g. rewriting DNS records or stripping metadata) before forwarding.
+- **`sdk.UDPVerdict`**: Explicit inspection verdicts (`UDPVerdictAllow`, `UDPVerdictDrop`, `UDPVerdictReject`).
+- **100% Backward Compatible**: Type-asserted at runtime (`plugin.(sdk.UDPPlugin)`). Existing TCP plugins continue operating without modification; manifest schema remains `1.0.0`.
+
+#### 3. Official DNS Guard Plugin (`plugins/all/dns`)
+- **Dual UDP & TCP Inspection**: Full RFC 1035 inspection for resolvers and authoritatives.
+- **Malicious Domain Blocking**: Regex and wildcard domain pattern filtering (`blocked_domains` / `allowed_domains`).
+- **Query Type Filtering**: Block dangerous query types (`blocked_qtypes: ["ANY", "AXFR"]`) to mitigate amplification and unauthorized zone transfers.
+- **DNS Rebinding Defense**: `block_private_ips` scans upstream answers and blocks responses resolving to RFC1918 or loopback addresses.
+- **Cache Poisoning & Amplification Defense**: Enforces `min_ttl` response rewriting and caps EDNS0 buffer sizes with `max_packet_size`.
+
+#### 4. Official BitTorrent Guard Plugin (`plugins/all/bittorrent`)
+- **Three-Transport Protocol Coverage**: Inspects Peer Wire Protocol (TCP), Mainline DHT (UDP), and Micro Transport Protocol (uTP over UDP).
+- **Info-Hash Enforcement**: Filter swarms by 40-character SHA-1 info-hash (`blocked_info_hashes` / `allowed_info_hashes`).
+- **Client Identity Validation**: Enforces standard Azureus peer ID convention (`require_peer_id_format`) and filters client prefixes (`allowed_peer_id_prefixes` e.g. `-qB-`, `-TR-`, `-DE-`).
+- **Private Tracker Protection**: `private_tracker_mode` blocks peers advertising DHT capability in their handshake flags.
+- **DHT Abuse Defense**: Block specific DHT methods (`announce_peer` to stop swarm poisoning), cap packet sizes (`max_dht_packet_size`), and toggle discovery transports (`block_dht`, `block_utp`).
+
+---
+
+## [v2.1.0] - 2026-09-30
 
 ### 🚀 Feature Release: Configurable Log Levels & Dual-Stream Filtering
 

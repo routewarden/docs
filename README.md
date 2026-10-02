@@ -11,12 +11,12 @@
   <a href="https://github.com/routewarden/traefik-warden/actions/workflows/ci.yml"><img src="https://github.com/routewarden/traefik-warden/actions/workflows/ci.yml/badge.svg" alt="Traefik CI Status"></a>
   <a href="https://github.com/routewarden/caddy-warden/actions/workflows/ci.yml"><img src="https://github.com/routewarden/caddy-warden/actions/workflows/ci.yml/badge.svg" alt="Caddy CI Status"></a>
   <a href="https://github.com/routewarden/nginx-warden/actions/workflows/ci.yml"><img src="https://github.com/routewarden/nginx-warden/actions/workflows/ci.yml/badge.svg" alt="NGINX CI Status"></a>
-  <a href="https://github.com/routewarden/docs/actions/workflows/deploy-docs.yml"><img src="https://github.com/routewarden/docs/actions/workflows/deploy-docs.yml/badge.svg" alt="Docs Deployment"></a>
+  <a href="https://github.com/routewarden/routewarden.github.io/actions/workflows/deploy-docs.yml"><img src="https://github.com/routewarden/routewarden.github.io/actions/workflows/deploy-docs.yml/badge.svg" alt="Docs Deployment"></a>
   <a href="https://plugins.traefik.io/plugins/6aae41dd5b5ee35d8bd24ca5/route-warden"><img src="https://img.shields.io/badge/Traefik-v2%20%7C%20v3-blue.svg" alt="Traefik v2/v3 Compatible"></a>
   <a href="https://caddyserver.com"><img src="https://img.shields.io/badge/Caddy-v2-22b573.svg" alt="Caddy v2 Compatible"></a>
   <a href="https://openresty.org"><img src="https://img.shields.io/badge/OpenResty-Lua-009900.svg" alt="OpenResty Lua Compatible"></a>
-  <a href="https://routewarden.github.io/docs/?playground=open"><img src="https://img.shields.io/badge/Playground-Simulation-blue.svg" alt="Security Playground"></a>
-  <a href="https://routewarden.github.io/docs/"><img src="https://img.shields.io/badge/docs-vitepress-6366f1.svg" alt="Documentation Site"></a>
+  <a href="https://routewarden.github.io/?playground=open"><img src="https://img.shields.io/badge/Playground-Simulation-blue.svg" alt="Security Playground"></a>
+  <a href="https://routewarden.github.io/"><img src="https://img.shields.io/badge/docs-vitepress-6366f1.svg" alt="Documentation Site"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
 </p>
 
@@ -26,8 +26,8 @@
 
 This repository contains the documentation, deployment guides, examples, and release references for RouteWarden across **[TCP Warden](https://github.com/routewarden/tcp-warden)**, **[Traefik](https://github.com/routewarden/traefik-warden)**, **[Caddy](https://github.com/routewarden/caddy-warden)**, and **[NGINX & OpenResty](https://github.com/routewarden/nginx-warden)**.
 
-- **Documentation Portal**: [https://routewarden.github.io/docs/](https://routewarden.github.io/docs/)
-- **Interactive Playground**: [https://routewarden.github.io/docs/?playground=open](https://routewarden.github.io/docs/?playground=open)
+- **Documentation Portal**: [https://routewarden.github.io/](https://routewarden.github.io/)
+- **Interactive Playground**: [https://routewarden.github.io/?playground=open](https://routewarden.github.io/?playground=open)
 
 ---
 
@@ -39,10 +39,10 @@ This repository contains the documentation, deployment guides, examples, and rel
 | **Traefik Plugin (traefik-warden)** | [github.com/routewarden/traefik-warden](https://github.com/routewarden/traefik-warden) | Pure Go Traefik plugin with Yaegi compatibility |
 | **Caddy Plugin (caddy-warden)** | [github.com/routewarden/caddy-warden](https://github.com/routewarden/caddy-warden) | Official Caddy v2 security module and Caddyfile directive |
 | **NGINX Plugin (nginx-warden)** | [github.com/routewarden/nginx-warden](https://github.com/routewarden/nginx-warden) | High-performance Lua security module for NGINX & OpenResty |
-| **Interactive Playground** | [routewarden.github.io/docs/?playground=open](https://routewarden.github.io/docs/?playground=open) | Test URLs against normalization rules and generate gateway configs |
+| **Interactive Playground** | [routewarden.github.io/?playground=open](https://routewarden.github.io/?playground=open) | Test URLs against normalization rules and generate gateway configs |
 | **Traefik Plugin Catalog** | [plugins.traefik.io](https://plugins.traefik.io/plugins/6aae41dd5b5ee35d8bd24ca5/route-warden) | Official Traefik Plugin listing |
-| **Documentation Portal** | [routewarden.github.io/docs](https://routewarden.github.io/docs/) | Installation guides, architecture, and configuration options |
-| **Examples Cookbook** | [Documentation Examples](https://routewarden.github.io/docs/examples/overview) | Ready-to-use Docker Compose and Kubernetes configurations |
+| **Documentation Portal** | [routewarden.github.io](https://routewarden.github.io/) | Installation guides, architecture, and configuration options |
+| **Examples Cookbook** | [Documentation Examples](https://routewarden.github.io/examples/overview) | Ready-to-use Docker Compose and Kubernetes configurations |
 | **Issue Tracker** | [RouteWarden Issues](https://github.com/routewarden/traefik-warden/issues) | Bug reports and feature discussions |
 
 ---
@@ -61,11 +61,11 @@ This repository contains the documentation, deployment guides, examples, and rel
 
 You can test how RouteWarden processes and normalizes requests using these sample links:
 
-- [Double URL-Encoded Traversal (`/%252e%252e/.env`)](https://routewarden.github.io/docs/?playground=open&path=%2F%25252e%25252e%2F.env)
-- [Matrix Semicolon Evasion (`/static;p=1/.git/config`)](https://routewarden.github.io/docs/?playground=open&path=%2Fstatic%3Bp%3D1%2F.git%2Fconfig)
-- [Allowlist Override (`/robots.txt`)](https://routewarden.github.io/docs/?playground=open&path=%2Frobots.txt)
-- [Gzip Bomb Active Response (`/backup.sql`)](https://routewarden.github.io/docs/?playground=open&path=%2Fbackup.sql&mode=gzipBomb&gzipMB=15)
-- [IP Allowlist Bypass (`/.env` from `10.5.0.25`)](https://routewarden.github.io/docs/?playground=open&path=%2F.env&ip=10.5.0.25)
+- [Double URL-Encoded Traversal (`/%252e%252e/.env`)](https://routewarden.github.io/?playground=open&path=%2F%25252e%25252e%2F.env)
+- [Matrix Semicolon Evasion (`/static;p=1/.git/config`)](https://routewarden.github.io/?playground=open&path=%2Fstatic%3Bp%3D1%2F.git%2Fconfig)
+- [Allowlist Override (`/robots.txt`)](https://routewarden.github.io/?playground=open&path=%2Frobots.txt)
+- [Gzip Bomb Active Response (`/backup.sql`)](https://routewarden.github.io/?playground=open&path=%2Fbackup.sql&mode=gzipBomb&gzipMB=15)
+- [IP Allowlist Bypass (`/.env` from `10.5.0.25`)](https://routewarden.github.io/?playground=open&path=%2F.env&ip=10.5.0.25)
 
 ### Quick Usage
 
@@ -77,7 +77,7 @@ experimental:
   plugins:
     routewarden:
       moduleName: github.com/routewarden/traefik-warden
-      version: v1.2.1
+      version: v1.3.1
 ```
 
 ```yaml
@@ -199,7 +199,7 @@ The documentation is powered by **[VitePress](https://vitepress.dev/)**.
 ### Quick Start
 ```bash
 # 1. Clone the docs repository
-git clone https://github.com/routewarden/docs.git routewarden-docs
+git clone https://github.com/routewarden/routewarden.github.io.git routewarden-docs
 cd routewarden-docs
 
 # 2. Install dependencies
@@ -208,7 +208,7 @@ npm install
 # 3. Start local development server
 npm run docs:dev
 ```
-Open **`http://localhost:5173/docs/`** in your browser.
+Open **`http://localhost:5173/`** in your browser.
 
 ### Available Scripts
 

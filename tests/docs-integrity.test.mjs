@@ -97,8 +97,10 @@ test('documentation structure and integrity', async (t) => {
     const versionPath = path.join(docsDir, 'version.json')
     assert.ok(fs.existsSync(versionPath), 'docs/version.json must exist')
     const vData = JSON.parse(fs.readFileSync(versionPath, 'utf8'))
-    assert.ok(typeof vData.version === 'string', 'version must be string')
-    assert.match(vData.version, /^v?\d+\.\d+\.\d+/, 'version must match semver')
+    for (const app of ['traefik', 'caddy', 'tcp', 'cli', 'nginx']) {
+      assert.ok(typeof vData[app] === 'string', `${app} version must be string`)
+      assert.match(vData[app], /^v?\d+\.\d+\.\d+/, `${app} version must match semver`)
+    }
 
     const versionsPath = path.join(docsDir, 'versions.json')
     assert.ok(fs.existsSync(versionsPath), 'docs/versions.json must exist')
@@ -126,5 +128,83 @@ test('documentation structure and integrity', async (t) => {
       assert.ok(stat.size > 1000, `Plugin doc ${plugin} should have comprehensive content`)
     }
   })
+
+  await t.test('cli documentation files exist and are non-empty', () => {
+    const cliDir = path.join(docsDir, 'cli')
+    assert.ok(fs.existsSync(cliDir), 'Expected cli directory')
+
+    const expectedCliDocs = [
+      'index.md',
+      'installation.md',
+      'commands.md',
+      'dashboard.md',
+      'schema.md',
+      'changelog.md'
+    ]
+
+    for (const doc of expectedCliDocs) {
+      const fullPath = path.join(cliDir, doc)
+      assert.ok(fs.existsSync(fullPath), `Expected cli document: ${doc}`)
+      const stat = fs.statSync(fullPath)
+      assert.ok(stat.size > 0, `CLI document should not be empty: ${doc}`)
+    }
+  })
+
+  await t.test('cli dashboard architecture overview uses CodeViewer with Mermaid support', () => {
+    const dashboardDoc = path.join(docsDir, 'cli', 'dashboard.md')
+    const content = fs.readFileSync(dashboardDoc, 'utf8')
+
+    assert.ok(content.includes('<CodeViewer :snippets="archSnippets" />'), 'dashboard.md must render CodeViewer with archSnippets')
+    assert.ok(content.includes("lang: 'mermaid'"), 'dashboard.md must declare mermaid language for architecture definition')
+    assert.ok(content.includes('Architecture Graph') || content.includes('Architecture Flow'), 'dashboard.md must provide visual architecture tab')
+    assert.ok(content.includes('Mermaid Source'), 'dashboard.md must provide Mermaid Source tab')
+    assert.ok(content.includes('flowchart LR'), 'dashboard.md must include flowchart LR definition')
+  })
+
+  await t.test('cli installation document matches version.json release version', () => {
+    const installDoc = path.join(docsDir, 'cli', 'installation.md')
+    const content = fs.readFileSync(installDoc, 'utf8')
+    const vData = JSON.parse(fs.readFileSync(path.join(docsDir, 'version.json'), 'utf8'))
+    const cliSemver = vData.cli.replace(/^v/, '')
+
+    assert.ok(
+      content.includes(`https://github.com/routewarden/cli/releases/download/${vData.cli}/`),
+      `installation.md download links must match CLI version ${vData.cli}`
+    )
+    assert.ok(
+      content.includes(`rwarden_${cliSemver}_`),
+      `installation.md archive filenames must match CLI semver ${cliSemver}`
+    )
+    assert.ok(
+      content.includes(`# rwarden version ${cliSemver}`),
+      `installation.md verification command must match CLI semver ${cliSemver}`
+    )
+  })
+
+  await t.test('cli config.alloy is synchronized and imported as single source of truth', () => {
+    const docsAlloy = path.join(docsDir, 'cli', 'dashboard', 'config.alloy')
+    assert.ok(fs.existsSync(docsAlloy), 'Expected docs/cli/dashboard/config.alloy to exist')
+    const alloyContent = fs.readFileSync(docsAlloy, 'utf8')
+    assert.ok(alloyContent.length > 0, 'config.alloy must not be empty')
+    assert.ok(alloyContent.includes('discovery.relabel "routewarden_containers"'), 'must include relabel block')
+    assert.ok(alloyContent.includes('stage.json'), 'must include stage.json block')
+
+    // Verify existing-stack.md imports raw config.alloy rather than hardcoding it
+    const existingStackDoc = path.join(docsDir, 'cli', 'dashboard', 'existing-stack.md')
+    assert.ok(fs.existsSync(existingStackDoc), 'Expected existing-stack.md to exist')
+    const existingStackContent = fs.readFileSync(existingStackDoc, 'utf8')
+    assert.ok(
+      existingStackContent.includes("import alloyConfigRaw from './config.alloy?raw'"),
+      'existing-stack.md must import alloyConfigRaw directly from config.alloy?raw as single source of truth'
+    )
+
+    // When running inside monorepo, verify it exactly matches canonical cli repo file
+    const canonicalCliAlloy = path.join(rootDir, '../cli/observability/config.alloy')
+    if (fs.existsSync(canonicalCliAlloy)) {
+      const canonicalContent = fs.readFileSync(canonicalCliAlloy, 'utf8')
+      assert.equal(alloyContent, canonicalContent, 'docs/cli/dashboard/config.alloy must match cli/observability/config.alloy byte-for-byte')
+    }
+  })
 })
+
 

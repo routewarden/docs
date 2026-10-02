@@ -67,7 +67,7 @@ const installSnippets = computed(() => ({
 const dyn_json = buildSnippet({
   lang: 'json',
   code: `{
-  "$schema": "https://routewarden.github.io/cli/schema.json",
+  "$schema": "https://routewarden.github.io/schema.json",
   "enabled": true,
   "enableDefaultPatterns": true,
   "enableDefaultAllowPatterns": true,
@@ -258,7 +258,7 @@ RouteWarden can be configured directly in OpenResty's `init_by_lua_block` or def
 
 ### Using `routewarden.json` Directly via Generate Pipeline
 
-If you maintain `routewarden.json` as your single source of truth across Git repositories or multi-gateway environments, use the [RouteWarden CLI (`rwarden`)](https://routewarden.github.io/cli/) to validate rules offline and compile directly into OpenResty Lua configuration tables during your deployment pipeline:
+If you maintain `routewarden.json` as your single source of truth across Git repositories or multi-gateway environments, use the [RouteWarden CLI (`rwarden`)](/cli/) to validate rules offline and compile directly into OpenResty Lua configuration tables during your deployment pipeline:
 
 <CodeViewer :snippets="pipelineSnippets" />
 
@@ -274,6 +274,6 @@ Test edge security enforcement against benign requests, sensitive file probes, d
 
 ## Next Steps
 
-- Use the [RouteWarden CLI (`rwarden`)](https://routewarden.github.io/cli/) to validate schemas and test paths offline.
+- Use the [RouteWarden CLI (`rwarden`)](/cli/) to validate schemas and test paths offline.
 - Review [NGINX Configuration Reference](/nginx/configuration) for all directives and options.
 - Read [Production Recipes & Blueprints](/nginx/examples) for Kubernetes Ingress and Docker configurations.

@@ -12,7 +12,7 @@ const s = {
 //   CLI:    rwarden generate --target traefik-yaml --config routewarden.json > dynamic_conf.yml
 //   Docker: docker run --rm -v $(pwd)/routewarden.json:/routewarden.json ghcr.io/routewarden/cli:latest generate --target traefik-yaml --config /routewarden.json > dynamic_conf.yml
 {
-  "$schema": "https://routewarden.github.io/cli/schema.json",
+  "$schema": "https://routewarden.github.io/schema.json",
   "enabled": true,
   "enableDefaultPatterns": true,
   "allowedIps": [
@@ -82,7 +82,7 @@ traefik \\
   --entrypoints.web.address=:80 \\
   --entrypoints.web.http.middlewares=global-warden@docker \\
   --experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden \\
-  --experimental.plugins.routewarden.version={{version}}` }),
+  --experimental.plugins.routewarden.version={{traefik_version}}` }),
 
   caddy: buildSnippet({ lang: 'caddy', code: `# Caddyfile: Global RouteWarden Snippet applied across all sites
 (global_warden_shield) {
@@ -160,7 +160,7 @@ http {
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--experimental.plugins.routewarden.modulename=github.com/routewarden/traefik-warden" # [!code ++]
-      - "--experimental.plugins.routewarden.version={{version}}" # [!code ++]
+      - "--experimental.plugins.routewarden.version={{traefik_version}}" # [!code ++]
       - "--entrypoints.web.http.middlewares=global-warden@docker" # [!code ++]
     ports:
       - "80:80"
@@ -196,7 +196,7 @@ http {
       context: .
       dockerfile_inline: |
         FROM caddy:2-builder AS builder
-        RUN xcaddy build --with github.com/routewarden/caddy-warden@{{version}} # [!code ++]
+        RUN xcaddy build --with github.com/routewarden/caddy-warden@{{caddy_version}} # [!code ++]
         FROM caddy:2-alpine
         COPY --from=builder /usr/bin/caddy /usr/bin/caddy
     ports:
