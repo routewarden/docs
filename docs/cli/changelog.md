@@ -2,7 +2,24 @@
 
 All notable changes to the RouteWarden CLI (`rwarden`) are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and the CLI adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v4.1.1] - 2026-10-01 (Latest)
+## [v4.1.1] - 2026-10-02 (Latest)
+
+### Fixed
+- **Alloy Multi-Label Relabel Matching (`config.alloy`)**:
+  - Fixed an issue in `discovery.relabel` where multi-source label evaluation with semicolon separators failed when evaluating `routewarden.logs=true` alongside legacy `routewarden=true` labels (`regex = ".*(true|1|yes).*"`).
+- **Premature Security Log Drop in Pipeline (`config.alloy`)**:
+  - Eliminated a duplicate `stage.drop` rule running before the verdict template normalization. Gateways emitting `type="routewarden_block"` (Traefik) and `action="blocked"` (TCP Warden) now properly normalize to `verdict="BLOCK"` before unparseable noise is dropped.
+- **HTTP Gateway Log Normalization (`config.alloy`)**:
+  - Mapped `type="routewarden_block"` to `verdict="BLOCK"` and `type="routewarden_allow"` to `verdict="ALLOW"` across Traefik, Caddy, and NGINX logs.
+- **TCP Warden Metadata Extraction (`config.alloy`)**:
+  - Extracted full Layer 4 metadata (`service`, `protocol`, `transport`, `client_ip`, `country_code`, `flag_emoji`, `level`, and `reason`) for unified dashboard correlation.
+- **Runtime Grafana Environment Overrides (`rwarden dashboard up`)**:
+  - Added repeatable `--env` / `-e` flags to `rwarden dashboard up` (e.g. `--env GF_SECURITY_ADMIN_PASSWORD=secret`).
+  - Added `${GF_*:-default}` parameter fallbacks across `docker-compose.yml` so custom environment variables, SMTP credentials, and OAuth SSO settings are respected at runtime.
+- **TCP Warden Sample Configuration & Obsolete Flags**:
+  - Fixed `samples/tcp-warden/docker-compose.yaml`, `README.md`, and `tcp-warden.yaml` by removing non-existent flags (`--tcp-warden`, `--host`, `--no-docker`) and adding the proper `routewarden.logs=true` label for the RouteWarden Observability Stack.
+- **UDP Port Exposure in Docker Image**:
+  - Added `1514/udp` to the `EXPOSE` directive in `Dockerfile` for network UDP syslog ingestion.
 
 ### Changed
 - **Pure Opt-In Container Discovery & Self-Logging Protection (`config.alloy`)**:

@@ -180,5 +180,31 @@ test('documentation structure and integrity', async (t) => {
       `installation.md verification command must match CLI semver ${cliSemver}`
     )
   })
+
+  await t.test('cli config.alloy is synchronized and imported as single source of truth', () => {
+    const docsAlloy = path.join(docsDir, 'cli', 'dashboard', 'config.alloy')
+    assert.ok(fs.existsSync(docsAlloy), 'Expected docs/cli/dashboard/config.alloy to exist')
+    const alloyContent = fs.readFileSync(docsAlloy, 'utf8')
+    assert.ok(alloyContent.length > 0, 'config.alloy must not be empty')
+    assert.ok(alloyContent.includes('discovery.relabel "routewarden_containers"'), 'must include relabel block')
+    assert.ok(alloyContent.includes('stage.json'), 'must include stage.json block')
+
+    // Verify existing-stack.md imports raw config.alloy rather than hardcoding it
+    const existingStackDoc = path.join(docsDir, 'cli', 'dashboard', 'existing-stack.md')
+    assert.ok(fs.existsSync(existingStackDoc), 'Expected existing-stack.md to exist')
+    const existingStackContent = fs.readFileSync(existingStackDoc, 'utf8')
+    assert.ok(
+      existingStackContent.includes("import alloyConfigRaw from './config.alloy?raw'"),
+      'existing-stack.md must import alloyConfigRaw directly from config.alloy?raw as single source of truth'
+    )
+
+    // When running inside monorepo, verify it exactly matches canonical cli repo file
+    const canonicalCliAlloy = path.join(rootDir, '../cli/observability/config.alloy')
+    if (fs.existsSync(canonicalCliAlloy)) {
+      const canonicalContent = fs.readFileSync(canonicalCliAlloy, 'utf8')
+      assert.equal(alloyContent, canonicalContent, 'docs/cli/dashboard/config.alloy must match cli/observability/config.alloy byte-for-byte')
+    }
+  })
 })
+
 

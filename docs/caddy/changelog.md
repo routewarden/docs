@@ -9,9 +9,22 @@ All notable changes to the **Caddy Warden** module (`github.com/routewarden/cadd
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and Caddy Warden adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.1] - 2026-10-02 (Latest)
+
+### Key Highlights
+
+- **Protocol-Relative Open Redirect Prevention (`redirectUrl`)**:
+  - Hardened redirect URL validation in `response_handler.go` against protocol-relative URL evasion vectors (e.g. `//attacker.com`).
+  - Restricts relative redirects strictly to single-slash prefixes (`/...`) and safely falls back to `/` if protocol-relative destinations are specified, mitigating open-redirect exploitation.
+- **Security Log Schema Normalization (`level: "warn"`)**:
+  - Added `"level": "warn"`, `"status_code"`, and `"matched_pattern"` across both Caddy's Zap logger and stdout JSONL logs.
+  - Ensures full schema alignment with Traefik Warden, NGINX Warden, TCP Warden, and Grafana Loki/Alloy observability stacks.
+- **CI / Version Scripting Portability**:
+  - Improved in-place sed editing in `scripts/update-version.sh` for reliable multi-platform execution across macOS (BSD) and Linux (GNU).
+
 ---
 
-## [v1.3.0] - 2026-10-01 (Latest)
+## [v1.3.0] - 2026-10-01
 
 ### Key Highlights
 

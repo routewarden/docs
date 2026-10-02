@@ -11,7 +11,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [v3.0.0] - 2026-09-30 (Latest)
+## [v3.1.0] - 2026-10-02 (Latest)
+
+### 🚀 Minor Release: Leveled Security Events & RouteWarden Observability Integration
+
+TCP Warden v3.1.0 introduces native log severity classification directly into the structured `SecurityEvent` pipeline, enabling seamless ingestion, filtering, and visual correlation within the RouteWarden Observability Stack (Grafana, Loki, and Alloy).
+
+#### 1. Structured Security Event Log Levels (`Level`)
+- **First-Class `Level` Field**: Added `Level` (`json:"level,omitempty"`) to `SecurityEvent` payloads emitted across all active listeners and bastions.
+- **Automatic Pipeline Severity Assignment**:
+  - `warn`: Automatically assigned to blocked requests, banned IPs (`ip_denied`, `crowdsec_ban`), and rate-limited traffic (`throttled`).
+  - `error`: Assigned to pipeline or internal proxy failures.
+  - `info`: Assigned to clean, allowed TCP and UDP connections.
+- **Alloy & Loki Stream Labeling**: Grafana Alloy automatically indexes `level` as a primary Loki stream label, allowing instant querying via `{app="routewarden", level="warn"}`.
+
+#### 2. Enhanced L4 Event Metadata for SIEM Correlation
+- Emits comprehensive connection metadata on all security triggers:
+  - `client_ip`: Remote socket address (IPv4 and IPv6).
+  - `country_code`, `country_name`, and `flag_emoji`: MaxMind GeoIP resolution (e.g. `🇩🇪 Germany`, `🏠 Local Network`).
+  - `service`, `protocol`, and `transport`: Protocol context (`ssh`, `postgres`, `dns`, `smtp`, `udp`, `tcp`).
+  - `action` and `reason`: Specific defense rule or trigger (`ip_denied`, `rate_limit_exceeded`, `blocked_domain`).
+- Full compatibility with the **Pure Opt-In** logging model via Docker label `routewarden.logs=true`.
+
+#### 3. Plugin SDK v3.1.0 Synchronization
+- Synchronized Plugin SDK version constant to `3.1.0` (`plugins/sdk/sdk.go`).
+- Retained full backward compatibility with manifest schema version `1.0.0`.
+
+---
+
+## [v3.0.0] - 2026-09-30
 
 ### 🚀 Major Release: Layer 4 UDP Transport Engine & Multi-Protocol Expansion (DNS & BitTorrent)
 
