@@ -2,19 +2,66 @@
 
 All notable changes to the RouteWarden CLI (`rwarden`) are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and the CLI adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v4.1.1] - 2026-10-02 (Latest)
+
+### Fixed
+- **Alloy Multi-Label Relabel Matching (`config.alloy`)**:
+  - Fixed an issue in `discovery.relabel` where multi-source label evaluation with semicolon separators failed when evaluating `routewarden.logs=true` alongside legacy `routewarden=true` labels (`regex = ".*(true|1|yes).*"`).
+- **Premature Security Log Drop in Pipeline (`config.alloy`)**:
+  - Eliminated a duplicate `stage.drop` rule running before the verdict template normalization. Gateways emitting `type="routewarden_block"` (Traefik) and `action="blocked"` (TCP Warden) now properly normalize to `verdict="BLOCK"` before unparseable noise is dropped.
+- **HTTP Gateway Log Normalization (`config.alloy`)**:
+  - Mapped `type="routewarden_block"` to `verdict="BLOCK"` and `type="routewarden_allow"` to `verdict="ALLOW"` across Traefik, Caddy, and NGINX logs.
+- **TCP Warden Metadata Extraction (`config.alloy`)**:
+  - Extracted full Layer 4 metadata (`service`, `protocol`, `transport`, `client_ip`, `country_code`, `flag_emoji`, `level`, and `reason`) for unified dashboard correlation.
+- **Runtime Grafana Environment Overrides (`rwarden dashboard up`)**:
+  - Added repeatable `--env` / `-e` flags to `rwarden dashboard up` (e.g. `--env GF_SECURITY_ADMIN_PASSWORD=secret`).
+  - Added `${GF_*:-default}` parameter fallbacks across `docker-compose.yml` so custom environment variables, SMTP credentials, and OAuth SSO settings are respected at runtime.
+- **TCP Warden Sample Configuration & Obsolete Flags**:
+  - Fixed `samples/tcp-warden/docker-compose.yaml`, `README.md`, and `tcp-warden.yaml` by removing non-existent flags (`--tcp-warden`, `--host`, `--no-docker`) and adding the proper `routewarden.logs=true` label for the RouteWarden Observability Stack.
+- **UDP Port Exposure in Docker Image**:
+  - Added `1514/udp` to the `EXPOSE` directive in `Dockerfile` for network UDP syslog ingestion.
+
+### Changed
+- **Pure Opt-In Container Discovery & Self-Logging Protection (`config.alloy`)**:
+  - Replaced broad container name regex matching (`.*(routewarden|traefik|caddy|nginx|tcp-warden).*`) with a strict, label-based **Pure Opt-In** model (`routewarden.logs=true` or `routewarden=true`).
+  - Completely prevents the observability stack (`routewarden-loki`, `routewarden-alloy`, `routewarden-grafana`) from capturing its own internal logs or scraping unrelated host containers (databases, web applications, or unmanaged proxies).
+  - Added stream-level log noise filtering in `loki.process` (`stage.drop`) to automatically discard plain-text container startup banners, health check probes, and ordinary proxy access lines lacking structured RouteWarden security fields (`verdict` or `action`).
+  - Simplified `docker-compose.yml` by eliminating negative exclusion labels across all observability services.
+
 ---
 
-## [v4.1.0] - 2026-10-01 (Latest)
+## [v4.1.0] - 2026-10-01
 
 ### Added
+- **Grafana, Loki & Alloy Observability Stack (`rwarden dashboard`)**:
+  - Replaced the embedded monolithic web dashboard with a production-grade cloud-native telemetry stack powered by Grafana, Grafana Loki, and Grafana Alloy.
+  - Added `rwarden dashboard up` (default) to orchestrate and launch the full stack via Docker Compose with pre-provisioned data sources and security dashboards on port 3000.
+  - Added `rwarden dashboard down` to cleanly stop and remove running stack containers.
+  - Added `rwarden dashboard status` to inspect container health, active port bindings, and endpoint URLs.
+  - Added `rwarden dashboard export [dir]` (and `--dir <path>`) to extract `docker-compose.yml`, `config.alloy`, `loki-config.yaml`, and Grafana provisioning dashboards to disk for standalone customization and GitOps workflows.
+- **Trusted Proxies Support Across All Generators (`trustedProxies`)**:
+  - Full code generator support for `trustedProxies` across all supported targets:
+    - Traefik Dynamic File Provider YAML (`http.middlewares.routewarden.plugin.routewarden.ipFilter.trustedProxies`)
+    - Traefik Dynamic File Provider TOML (`[http.middlewares.routewarden.plugin.routewarden.ipFilter] trustedProxies = [...]`)
+    - Traefik Docker Compose Labels (`traefik.http.middlewares.<name>.plugin.routewarden.ipfilter.trustedproxies=...`)
+    - Caddyfile (`trusted_proxies <ips/cidrs...>`)
+    - NGINX OpenResty Lua (`trusted_proxies = { ... }`)
+- **Redirect Mode Security Hardening (`redirectUrl`)**:
+  - Strict URL scheme validation in `rwarden validate` and `engine.NewEngine`, restricting `redirectUrl` to `http://`, `https://`, or root-relative paths (`/...`) to eliminate open-redirect and `javascript:` attack vectors.
 - **Centralized Documentation & Universal Installer Integration**:
   - Centralized CLI documentation and guide hosted at [RouteWarden Documentation](/cli/).
   - Integrated with the unified ecosystem installation script served directly at `https://routewarden.github.io/install.sh`.
 - **Multi-Architecture Docker Container Build Optimization**:
   - Upgraded Dockerfile with BuildKit cache mounting (`--mount=type=cache`) for Go package modules and build caches, substantially speeding up container build times.
   - Added native cross-compilation support utilizing `BUILDPLATFORM`, `TARGETOS`, and `TARGETARCH` with automatic fallback to `linux`.
-- **Dashboard Docker Discovery Test Suites**:
-  - Added comprehensive test suites in `dashboard/docker_test.go` covering Docker socket container discovery, real-time log tailing, and configuration label parsing.
+
+### Fixed
+- **Dashboard Export `--dir` Flag Parsing**:
+  - Fixed an issue where passing `rwarden dashboard export --dir <dir>` treated the literal flag `"--dir"` as the destination folder. The export command now seamlessly accepts both flag and positional arguments.
+- **Dashboard Subcommand Routing**:
+  - Disallowed implicit fallback on unknown dashboard subcommands; invalid subcommands now report a helpful error with valid choices rather than silently launching containers.
+- **TCP Warden YAML Detection in `validate`**:
+  - Tightened heuristics in `rwarden validate` to require a `.yaml`/`.yml` extension or a top-level `version:` key, preventing false-positive skips for JSON configs containing nested version fields.
 
 ---
 

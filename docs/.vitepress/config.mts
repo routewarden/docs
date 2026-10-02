@@ -47,6 +47,9 @@ export default defineConfig({
   description: 'Unified Edge & L4 Defense: Stop sensitive file leaks in Traefik, Caddy, NGINX, and protect non-HTTP services with TCP Warden.',
   base: '/',
   cleanUrls: true,
+  ignoreDeadLinks: [
+    /^https?:\/\/localhost/,
+  ],
   vite: {
     server: {
       host: true
@@ -554,9 +557,20 @@ export default defineConfig({
             { text: 'Overview & Features', link: '/cli/' },
             { text: 'Installation', link: '/cli/installation' },
             { text: 'Commands Reference', link: '/cli/commands' },
-            { text: 'Security Dashboard', link: '/cli/dashboard' },
             { text: 'JSON Schema & CI/CD', link: '/cli/schema' },
             { text: 'Changelog & Releases', link: '/cli/changelog' }
+          ]
+        },
+        {
+          text: 'Security Dashboard',
+          collapsed: false,
+          items: [
+            { text: 'Overview & Architecture', link: '/cli/dashboard' },
+            { text: 'Container Discovery & Logging', link: '/cli/dashboard/discovery-and-logging' },
+            { text: 'Pre-Configured Dashboard', link: '/cli/dashboard/prebuilt-dashboard' },
+            { text: 'Standalone Deployment', link: '/cli/dashboard/deployment' },
+            { text: 'Reusing Existing Stack', link: '/cli/dashboard/existing-stack' },
+            { text: 'LogQL & Alerting Reference', link: '/cli/dashboard/logql-reference' }
           ]
         },
         {

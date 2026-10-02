@@ -1,181 +1,290 @@
-# Security Dashboard (`rwarden dashboard`)
-
-`rwarden dashboard` is a self-hosted, real-time web interface embedded directly inside the `rwarden` Go binary via `go:embed`. It provides unified observability across Traefik, Caddy, NGINX, and TCP Warden with zero external dependencies, no Node.js runtime, and no external database.
-
-![RouteWarden Dashboard - Live Event Feed](/dashboard-feed.png)
-
+---
+title: Security Observability Stack (Grafana, Loki & Alloy) — RouteWarden CLI
+description: Turnkey cloud-native security dashboard and log parsing with Grafana, Loki, and Alloy for Traefik, Caddy, NGINX, and TCP Warden.
 ---
 
-## Key Capabilities
+<script setup>
+import { computed } from 'vue'
+import { buildSnippet } from '../.vitepress/theme/composables/useCodeSnippet'
 
-- **Zero-Config Docker Discovery**: Attaches directly to the local Docker daemon socket (`/var/run/docker.sock`) to auto-discover and stream logs from running Traefik, Caddy, and NGINX gateway containers in real time.
-- **Log File Tailing**: Tail local log files or wildcard patterns (e.g. `/var/log/routewarden/*.log`) with automatic log rotation handling.
-- **Real-Time Live Feed**: Low-latency WebSocket / SSE stream of blocked requests, client IPs with flag emojis, matched URI patterns, HTTP methods, and triggered response modes.
-- **Visual Analytics**: Interactive 24-hour attack timelines, blocks per minute, top attacked endpoints, top offender IPs, response mode breakdown (`block`, `tarpit`, `gzipBomb`, `silentDrop`, `fakeSuccess`), and gateway distribution.
-- **v1.2 Config Viewer**: Inspect running container configuration and `routewarden.json` labels directly from the UI without leaving the dashboard.
-- **GeoIP & Autonomous System Intelligence**: Country resolution with flag emojis via embedded MaxMind GeoLite2 MMDB or live fallback, including ASN, ISP, and location metadata.
-- **Tailscale & NetBird Mesh Auto-Detection**: Native identification for Tailscale (`100.64.0.0/10`, `fd7a:115c:a1e0::/48`) and NetBird (`100.64.0.0/16`, `fd00::/8`) overlay networks as well as RFC 5737 testnets (`203.0.113.0/24`).
-- **Deep IP Intelligence View**: Comprehensive threat risk scoring (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`), payload patterns, targeted gateways, and paginated event histories per IP.
-- **Zero-Dependency Single Binary**: The modern React SPA frontend is pre-compiled and embedded directly inside the `rwarden` Go binary (`go:embed`). No Node.js runtime, external database, or cloud dependencies required.
+// ─── 0. Architecture Overview Mermaid & Diagram Snippet ─────────────────────
+const mermaid_raw = `flowchart LR
+    subgraph Gateways ["RouteWarden Gateways"]
+        T["Traefik"]
+        C["Caddy"]
+        N["NGINX"]
+        TCP["TCP Warden"]
+    end
 
----
+    subgraph Shipper ["Log Collector"]
+        A["Grafana Alloy\\n(Container & File Discovery)"]
+    end
 
-## Dashboard Views
+    subgraph Engine ["Log Storage"]
+        L["Grafana Loki\\n(LogQL Indexing)"]
+    end
 
-### 1. Live Event Feed
+    subgraph UI ["Observability & SIEM"]
+        G["Grafana\\n(Pre-configured Dashboard)"]
+    end
 
-Stream security events from all gateways with instant search, container filtering, pause/resume, and server-assisted pagination.
+    T -->|JSON logs| A
+    C -->|JSON logs| A
+    N -->|JSON logs| A
+    TCP -->|JSON logs| A
 
-![RouteWarden Dashboard - Live Event Feed](/dashboard-feed.png)
+    A -->|loki.write| L
+    L -->|LogQL| G`
 
-### 2. Analytics & Attack Trends
+const arch_mermaid = buildSnippet({
+  lang: 'mermaid',
+  code: mermaid_raw,
+})
 
-Inspect 24-hour, 6-hour, and 1-hour attack timelines, rolling block rates, and distribution charts for endpoints, offender IPs, and defense actions.
+const arch_graph_svg = `<div class="rw-graph-container">
+  <svg viewBox="0 0 1280 272" fill="none" xmlns="http://www.w3.org/2000/svg" class="rw-graph-svg">
+    <defs>
+      <linearGradient id="grad-gateways" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#6366f1" stop-opacity="0.08"/>
+        <stop offset="100%" stop-color="#6366f1" stop-opacity="0.01"/>
+      </linearGradient>
+      <linearGradient id="grad-alloy" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.12"/>
+        <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.02"/>
+      </linearGradient>
+      <linearGradient id="grad-loki" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#f97316" stop-opacity="0.12"/>
+        <stop offset="100%" stop-color="#f97316" stop-opacity="0.02"/>
+      </linearGradient>
+      <linearGradient id="grad-grafana" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ec4899" stop-opacity="0.12"/>
+        <stop offset="100%" stop-color="#ec4899" stop-opacity="0.02"/>
+      </linearGradient>
+      <!-- Arrow markers -->
+      <marker id="arrow-indigo" viewBox="-2 -2 16 14" refX="10" refY="5" markerWidth="10" markerHeight="10" orient="auto" overflow="visible">
+        <path d="M 0 1 L 11 5 L 0 9 z" fill="#6366f1"/>
+      </marker>
+      <marker id="arrow-amber" viewBox="-2 -2 16 14" refX="10" refY="5" markerWidth="10" markerHeight="10" orient="auto" overflow="visible">
+        <path d="M 0 1 L 11 5 L 0 9 z" fill="#f59e0b"/>
+      </marker>
+      <marker id="arrow-orange" viewBox="-2 -2 16 14" refX="10" refY="5" markerWidth="10" markerHeight="10" orient="auto" overflow="visible">
+        <path d="M 0 1 L 11 5 L 0 9 z" fill="#f97316"/>
+      </marker>
+    </defs>
 
-![RouteWarden Dashboard - Attack Analytics & Statistics](/dashboard-stats.png)
+    <!-- 1. GATEWAYS -->
+    <rect x="12" y="12" width="200" height="248" rx="10" class="rw-g-box" fill="url(#grad-gateways)"/>
+    <text x="24" y="32" class="rw-g-header">ROUTEWARDEN GATEWAYS</text>
 
-### 3. Sources & Container Management
+    <rect x="22" y="44" width="180" height="44" rx="6" class="rw-g-node"/>
+    <circle cx="38" cy="66" r="5" fill="#00a8cc"/>
+    <text x="52" y="62" class="rw-g-title">Traefik</text>
+    <text x="52" y="77" class="rw-g-desc">HTTP/S Reverse Proxy</text>
 
-Monitor all discovered Docker containers and tailed log files. Inspect the active `routewarden.json` configuration for any gateway with a single click.
+    <rect x="22" y="94" width="180" height="44" rx="6" class="rw-g-node"/>
+    <circle cx="38" cy="116" r="5" fill="#14b8a6"/>
+    <text x="52" y="112" class="rw-g-title">Caddy</text>
+    <text x="52" y="127" class="rw-g-desc">Auto-HTTPS Gateway</text>
 
-![RouteWarden Dashboard - Active Log Sources & Containers](/dashboard-sources.png)
+    <rect x="22" y="144" width="180" height="44" rx="6" class="rw-g-node"/>
+    <circle cx="38" cy="166" r="5" fill="#10b981"/>
+    <text x="52" y="162" class="rw-g-title">NGINX</text>
+    <text x="52" y="177" class="rw-g-desc">OpenResty Lua Edge</text>
 
-### 4. Deep IP Intelligence & Risk Scoring
+    <rect x="22" y="194" width="180" height="44" rx="6" class="rw-g-node"/>
+    <circle cx="38" cy="216" r="5" fill="#6366f1"/>
+    <text x="52" y="212" class="rw-g-title">TCP Warden</text>
+    <text x="52" y="227" class="rw-g-desc">Layer 4 TCP &amp; UDP Shield</text>
 
-Analyze any IP address with behavioral profiling, ASN/ISP lookup, geographic location, and threat risk assessment.
+    <!-- Connector 1: fan-in -> Alloy -->
+    <circle cx="212" cy="66"  r="3.5" fill="#6366f1"/>
+    <circle cx="212" cy="116" r="3.5" fill="#6366f1"/>
+    <circle cx="212" cy="166" r="3.5" fill="#6366f1"/>
+    <circle cx="212" cy="216" r="3.5" fill="#6366f1"/>
+    <path d="M 212 66  C 245 66,  245 142, 265 142" stroke="#6366f1" stroke-width="2" fill="none" opacity="0.75"/>
+    <path d="M 212 116 C 242 116, 245 142, 265 142" stroke="#6366f1" stroke-width="2" fill="none" opacity="0.75"/>
+    <path d="M 212 166 C 242 166, 245 142, 265 142" stroke="#6366f1" stroke-width="2" fill="none" opacity="0.75"/>
+    <path d="M 212 216 C 245 216, 245 142, 265 142" stroke="#6366f1" stroke-width="2" fill="none" opacity="0.75"/>
+    <line x1="265" y1="142" x2="328" y2="142" stroke="#6366f1" stroke-width="3" marker-end="url(#arrow-indigo)"/>
+    <rect x="237" y="116" width="70" height="22" rx="6" class="rw-g-pill"/>
+    <text x="272" y="131" text-anchor="middle" class="rw-g-pill-txt" fill="#6366f1">JSON logs</text>
 
-![RouteWarden Dashboard - IP Threat Intelligence](/dashboard-ip-details.png)
+    <!-- 2. ALLOY -->
+    <rect x="332" y="12" width="185" height="248" rx="10" class="rw-g-box" fill="url(#grad-alloy)"/>
+    <text x="344" y="32" class="rw-g-header" fill="#d97706">LOG COLLECTOR</text>
 
-### 5. Mesh VPN & Private Overlay Recognition
+    <rect x="342" y="44" width="165" height="198" rx="8" class="rw-g-card"/>
+    <rect x="342" y="44" width="165" height="36" rx="8" fill="#f59e0b" fill-opacity="0.12"/>
+    <circle cx="360" cy="62" r="6" fill="#f59e0b"/>
+    <text x="372" y="67" class="rw-g-card-title">Grafana Alloy</text>
 
-Automatic recognition of Tailscale and NetBird mesh peers (`100.64.0.0/10` CGNAT, `fd7a:115c:a1e0::/48`, and `fd00::/8` ULA) with dedicated `🔒` indicator badges.
+    <text x="354" y="102" class="rw-g-tag" fill="#d97706">OpenTelemetry Shipper</text>
+    <text x="354" y="124" class="rw-g-item">• Docker socket discovery</text>
+    <text x="354" y="143" class="rw-g-item">• loki.process JSON parse</text>
+    <text x="354" y="162" class="rw-g-item">• Structured label index</text>
+    <text x="354" y="181" class="rw-g-item">• UDP Syslog (1514/udp)</text>
 
-![RouteWarden Dashboard - Tailscale & NetBird VPN Intelligence](/dashboard-ip-vpn.png)
+    <rect x="354" y="200" width="141" height="24" rx="4" class="rw-g-port-box"/>
+    <text x="424" y="216" text-anchor="middle" class="rw-g-port-txt">HTTP :12345 · UDP :1514</text>
 
----
+    <!-- Connector 2: Alloy -> Loki -->
+    <circle cx="517" cy="142" r="3.5" fill="#f59e0b"/>
+    <line x1="517" y1="142" x2="633" y2="142" stroke="#f59e0b" stroke-width="3" marker-end="url(#arrow-amber)"/>
+    <rect x="542" y="116" width="70" height="22" rx="6" class="rw-g-pill"/>
+    <text x="577" y="131" text-anchor="middle" class="rw-g-pill-txt" fill="#d97706">loki.write</text>
 
-## CLI Usage Examples
+    <!-- 3. LOKI -->
+    <rect x="637" y="12" width="185" height="248" rx="10" class="rw-g-box" fill="url(#grad-loki)"/>
+    <text x="649" y="32" class="rw-g-header" fill="#ea580c">LOG STORAGE</text>
 
-::: code-group
+    <rect x="647" y="44" width="165" height="198" rx="8" class="rw-g-card"/>
+    <rect x="647" y="44" width="165" height="36" rx="8" fill="#f97316" fill-opacity="0.12"/>
+    <circle cx="665" cy="62" r="6" fill="#f97316"/>
+    <text x="677" y="67" class="rw-g-card-title">Grafana Loki</text>
 
-```bash [CLI]
-# 1. Start dashboard with Docker auto-discovery and open browser automatically
+    <text x="659" y="102" class="rw-g-tag" fill="#ea580c">High-Perf Chunk Storage</text>
+    <text x="659" y="124" class="rw-g-item">• TSDB index &amp; retention</text>
+    <text x="659" y="143" class="rw-g-item">• Fast stream metadata</text>
+    <text x="659" y="162" class="rw-g-item">• LogQL query execution</text>
+    <text x="659" y="181" class="rw-g-item">• Zero-config container</text>
+
+    <rect x="659" y="200" width="141" height="24" rx="4" class="rw-g-port-box"/>
+    <text x="729" y="216" text-anchor="middle" class="rw-g-port-txt">HTTP API :3100</text>
+
+    <!-- Connector 3: Loki -> Grafana -->
+    <circle cx="822" cy="142" r="3.5" fill="#f97316"/>
+    <line x1="822" y1="142" x2="938" y2="142" stroke="#f97316" stroke-width="3" marker-end="url(#arrow-orange)"/>
+    <rect x="847" y="116" width="70" height="22" rx="6" class="rw-g-pill"/>
+    <text x="882" y="131" text-anchor="middle" class="rw-g-pill-txt" fill="#ea580c">LogQL</text>
+
+    <!-- 4. GRAFANA -->
+    <rect x="942" y="12" width="210" height="248" rx="10" class="rw-g-box" fill="url(#grad-grafana)"/>
+    <text x="954" y="32" class="rw-g-header" fill="#db2777">OBSERVABILITY &amp; SIEM</text>
+
+    <rect x="952" y="44" width="190" height="198" rx="8" class="rw-g-card"/>
+    <rect x="952" y="44" width="190" height="36" rx="8" fill="#ec4899" fill-opacity="0.12"/>
+    <circle cx="970" cy="62" r="6" fill="#ec4899"/>
+    <text x="982" y="67" class="rw-g-card-title">Grafana</text>
+
+    <text x="964" y="102" class="rw-g-tag" fill="#db2777">Security SIEM UI</text>
+    <text x="964" y="124" class="rw-g-item">• Live Threat Matrix</text>
+    <text x="964" y="143" class="rw-g-item">• GeoIP World Map</text>
+    <text x="964" y="162" class="rw-g-item">• HTTP &amp; UDP metrics</text>
+    <text x="964" y="181" class="rw-g-item">• Pre-built dashboard</text>
+
+    <rect x="964" y="200" width="158" height="24" rx="4" class="rw-g-port-box"/>
+    <text x="1043" y="216" text-anchor="middle" class="rw-g-port-txt">Web UI :3000</text>
+  </svg>
+</div>`
+
+const archSnippets = computed(() => ({
+  cli: [
+    { filename: 'Architecture Graph', lang: 'mermaid', code: mermaid_raw, html: arch_graph_svg, hasDiff: false },
+    { filename: 'Mermaid Source', lang: 'mermaid', code: arch_mermaid.cleanCode, html: arch_mermaid.html, hasDiff: false },
+  ],
+}))
+
+// ─── 1. CLI Management Snippets ─────────────────────────────────────────────
+const dashboard_up = buildSnippet({
+  lang: 'bash',
+  code: `# 1. Start the observability stack (launches Grafana at http://localhost:3000)
 rwarden dashboard
 
-# 2. Bind to a custom port without auto-opening the browser
-rwarden dashboard --port 8080 --no-open
+# 2. Start on custom ports without auto-opening the browser
+rwarden dashboard up --port 8080 --loki-port 3100 --no-open`,
+})
 
-# 3. Tail one or more local RouteWarden log files
-rwarden dashboard --log /var/log/routewarden.log
+const dashboard_status = buildSnippet({
+  lang: 'bash',
+  code: `# View running status of Grafana, Loki, and Alloy containers
+rwarden dashboard status`,
+})
 
-# 4. Tail wildcard patterns and multiple log sources simultaneously
-rwarden dashboard --log "/var/log/routewarden/*.log" --log /var/log/nginx/access.log
+const dashboard_down = buildSnippet({
+  lang: 'bash',
+  code: `# Stop the observability stack
+rwarden dashboard down`,
+})
 
-# 5. Standalone file-only mode (disable Docker socket discovery)
-rwarden dashboard --no-docker --log /var/log/routewarden.log
+const dashboard_export = buildSnippet({
+  lang: 'bash',
+  code: `# Export docker-compose.yml, config.alloy, and Grafana dashboard files to a local directory
+rwarden dashboard export ./deploy/observability`,
+})
 
-# 6. Customize memory retention (number of past events loaded)
-rwarden dashboard --history 2500 --port 9090
+const cliSnippets = computed(() => ({
+  cli: [
+    { filename: 'Launch Stack', lang: 'bash', code: dashboard_up.cleanCode, html: dashboard_up.html, hasDiff: false },
+    { filename: 'Check Status', lang: 'bash', code: dashboard_status.cleanCode, html: dashboard_status.html, hasDiff: false },
+    { filename: 'Stop Stack', lang: 'bash', code: dashboard_down.cleanCode, html: dashboard_down.html, hasDiff: false },
+    { filename: 'Export Configs', lang: 'bash', code: dashboard_export.cleanCode, html: dashboard_export.html, hasDiff: false },
+  ],
+}))
+</script>
 
-# 7. Ingest structured logs from RouteWarden TCP Warden
-rwarden dashboard --log /var/log/routewarden/tcp-warden.jsonl
+# Security Observability Stack (Grafana, Loki & Alloy)
 
-# 8. Connect directly to running TCP Warden daemon via SSE API (auto-reconnects)
-rwarden dashboard --tcp-warden http://127.0.0.1:9091
-```
+RouteWarden includes a complete, cloud-native security observability stack powered by **Grafana**, **Grafana Loki**, and **Grafana Alloy**.
 
-```bash [Docker]
-# Auto-discover gateway containers (Traefik, Caddy, NGINX, TCP Warden) via Docker socket
-docker run -d \
-  --name routewarden-dashboard \
-  --restart unless-stopped \
-  -p 9090:9090 \
-  -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  ghcr.io/routewarden/cli:latest
+It continuously ingests, parses, indexes, and visualizes structured security events across all your RouteWarden gateways (**Traefik**, **Caddy**, **NGINX**, and **TCP Warden**) with zero manual dashboard setup.
 
-# Or tail log files from a host volume
-docker run -d \
-  --name routewarden-dashboard \
-  --restart unless-stopped \
-  -p 9090:9090 \
-  -v /var/log/routewarden:/logs:ro \
-  ghcr.io/routewarden/cli:latest \
-  dashboard --host 0.0.0.0 --no-docker --log "/logs/*.log"
-```
+---
 
-```yaml [Docker Compose]
-version: "3.8"
+## Architecture Overview
 
-services:
-  traefik:
-    image: traefik:v3.3
-    container_name: traefik
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+<CodeViewer :snippets="archSnippets" />
 
-  tcp-warden:
-    image: ghcr.io/routewarden/tcp-warden:latest
-    container_name: tcp-warden
-    restart: unless-stopped
-    ports:
-      - "9091:9091"
-      - "2222:2222"
-    volumes:
-      - ./tcp-warden.yaml:/etc/routewarden/tcp-warden.yaml:ro
-      - tcp-warden-data:/var/lib/routewarden
+### Core Components
 
-  routewarden-dashboard:
-    image: ghcr.io/routewarden/cli:latest
-    container_name: routewarden-dashboard
-    restart: unless-stopped
-    ports:
-      - "9090:9090"
-    environment:
-      - TCP_WARDEN_URL=http://tcp-warden:9091
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    command: ["dashboard", "--host", "0.0.0.0", "--no-open", "--tcp-warden", "http://tcp-warden:9091"]
+1. **Grafana Alloy**: Modern OpenTelemetry-based collector. Discovers Docker containers via `/var/run/docker.sock` and host logs, normalizes RouteWarden JSON events (`loki.process`), extracts indexed stream labels (`verdict`, `status_code`, `gateway`, `method`, `protocol`, `transport`), and attaches structured metadata (`client_ip`, `path`, `matched_pattern`, `rule_id`, `service`).
+2. **Grafana Loki**: Scalable, high-efficiency log aggregation engine that indexes metadata and provides lightning-fast LogQL queries.
+3. **Grafana**: Pre-provisioned with the **"RouteWarden — Threat & Security Intelligence"** dashboard, pre-configured Loki data source, and ready-to-use threat panels.
 
-volumes:
-  tcp-warden-data:
-```
+---
 
+## Quick Start CLI Management (`rwarden dashboard`)
+
+The RouteWarden CLI embeds all Docker Compose, Alloy, and Grafana dashboard templates directly in the binary. You can launch, inspect, and stop the stack with single commands:
+
+<CodeViewer :snippets="cliSnippets" />
+
+---
+
+## Dashboard Documentation Subsections
+
+Explore the specialized guides below to configure logging, customize deployment, reuse existing infrastructure, or query events:
+
+::: tip [Container Discovery & Opt-In Logging](/cli/dashboard/discovery-and-logging)
+Configure container discovery via `/var/run/docker.sock`, understand the **pure opt-in model** (`routewarden.logs=true`), and inspect Layer 4 UDP protocol logs and network syslog (port 1514).
+:::
+
+::: tip [Pre-Configured Dashboard & Panels](/cli/dashboard/prebuilt-dashboard)
+Detailed walkthrough of all built-in panels: KPI threat counters, multi-series attack timelines, top offender IPs with GeoIP flags, top probed targets, and interactive filter variables.
+:::
+
+::: tip [Standalone Docker Compose Deployment](/cli/dashboard/deployment)
+Deploy in production without the CLI binary using standalone Docker Compose, configure `GF_*` environment variables, set up `docker-compose.override.yml`, and enable OAuth SSO (GitHub/Google).
+:::
+
+::: tip [Reusing an Existing Grafana & Loki Stack](/cli/dashboard/existing-stack)
+Avoid redundant containers by importing the RouteWarden dashboard into your existing Grafana, integrating the parsing pipeline into your existing Alloy or Promtail, or running a lightweight shipper-only container.
+:::
+
+::: tip [LogQL Queries & Alerting Reference](/cli/dashboard/logql-reference)
+LogQL cheat sheet for security operations (SOC), stream label specifications, high-cardinality metadata reference, and ready-to-use Grafana alert rule definitions.
 :::
 
 ---
 
-## Command Flags
+## Command Reference
 
-| Flag | Type | Default | Description |
+| Subcommand / Flag | Type | Default | Description |
 |:---|:---|:---|:---|
-| `--port` | int | `9090` | Port to serve the dashboard web interface |
-| `--host` | string | `127.0.0.1` | Host address to bind (`0.0.0.0` in Docker / remote access) |
-| `--log` | string | `""` | Path or glob pattern to log file(s) to tail (repeatable) |
-| `--no-docker` | bool | `false` | Disable Docker daemon socket discovery |
-| `--socket` | string | `/var/run/docker.sock` | Path to Docker daemon Unix socket |
-| `--tcp-warden` | string | `"http://127.0.0.1:9091"` | URL or socket to TCP Warden management API (or set `TCP_WARDEN_URL`) |
-| `--history` | int | `1000` | Number of events retained in memory and loaded on startup |
-| `--no-open` | bool | `false` | Do not automatically launch the system default browser |
-
----
-
-## Built-in REST & WebSocket Endpoints
-
-The dashboard server exposes an HTTP API for external integrations, status checks, and monitoring systems:
-
-| Endpoint | Method | Description |
-|:---|:---|:---|
-| `/api/health` | `GET` | Health check returning status, version, and active client count |
-| `/api/events?n=500` | `GET` | Fetch the last `n` recorded security events as JSON |
-| `/api/stats?hours=24` | `GET` | Aggregated analytics snapshot (rates, top IPs, top paths, response modes, gateway distribution) |
-| `/api/sources` | `GET` | List of active log sources (Docker containers & tailed files) and their statuses |
-| `/api/sources/clear` | `POST` | Remove stopped or disconnected log sources from memory |
-| `/api/config/:id` | `GET` | Retrieve and parse `routewarden.json` configuration from a Docker container |
-| `/api/geoip?ip=...` | `GET` | Resolve IP geolocation, country code, flag emoji, and ISP details |
-| `/api/ip/:ip` | `GET` | Deep intelligence summary for a specific IP (threat score, top paths, methods, history) |
-| `/ws/events` | `GET` | Real-time WebSocket connection for live event streaming |
+| `up` | subcommand | — | Launch Grafana, Loki, and Alloy stack via Docker Compose (default) |
+| `down` | subcommand | — | Stop and tear down running observability stack containers |
+| `status` | subcommand | — | Display status of Grafana, Loki, and Alloy containers |
+| `export [dir]` | subcommand | `./observability` | Export compose, Alloy, and Grafana configs to disk |
+| `--port` | int | `3000` | Port for Grafana dashboard UI |
+| `--loki-port` | int | `3100` | Port for Loki log engine |
+| `--dir` | string | `~/.routewarden/observability` | Working directory storing the stack files |
+| `--no-open` | bool | `false` | Do not automatically launch the browser upon startup |

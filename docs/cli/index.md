@@ -83,12 +83,18 @@ const validateSnippets = computed(() => ({
 // ─── 4. Launch Dashboard ────────────────────────────────────────────────────
 const dashboard_cmd = buildSnippet({
   lang: 'bash',
-  code: `rwarden dashboard`,
+  code: `# Launch Grafana, Loki, and Alloy stack via Docker Compose
+rwarden dashboard
+
+# Or export stack files for standalone customization
+rwarden dashboard export ./observability`,
 })
 
 const dashboard_docker = buildSnippet({
   lang: 'bash',
-  code: `docker run -d --name rwarden-dashboard -p 9090:9090 -v /var/run/docker.sock:/var/run/docker.sock:ro ghcr.io/routewarden/cli:latest dashboard`,
+  code: `# Export and launch observability stack using container
+docker run --rm -v $(pwd):/work -w /work ghcr.io/routewarden/cli:latest dashboard export ./observability
+cd ./observability && docker compose up -d`,
 })
 
 const dashboardSnippets = computed(() => ({
@@ -122,8 +128,8 @@ It enables security and platform teams to evaluate path rules offline, validate 
   - TCP Warden YAML configuration
 - **Ephemeral Gateway Sandbox (`sandbox`)**:
   Launch isolated, pre-configured Traefik, Caddy, or NGINX containers in Docker to verify your rules and response modes live against automated attack test suites.
-- **Embedded Real-Time Security Dashboard (`dashboard`)**:
-  Self-hosted real-time web UI pre-compiled and embedded inside the Go binary (`go:embed`). Features Docker socket auto-discovery, live event feeds, 24-hour attack analytics, deep IP threat scoring, and Tailscale/NetBird mesh VPN detection.
+- **Cloud-Native Observability Stack (`dashboard`)**:
+  Turnkey Docker Compose monitoring stack powered by Grafana, Grafana Loki, and Grafana Alloy. Includes pre-provisioned dashboards for live blocked threat telemetry, LogQL analytics, top probed endpoints, and offender IP risk scoring.
 - **Official JSON Schema Export (`schema`)**:
   Export official JSON Schemas for instant IDE autocomplete (VS Code, JetBrains, Neovim) and CI/CD automated linting.
 
@@ -153,13 +159,14 @@ Verify your policy before committing or deploying:
 
 <CodeViewer :snippets="validateSnippets" />
 
-### 4. Launch the Security Dashboard
+### 4. Launch the Security Observability Stack
 
-Start the live monitoring dashboard with automatic Docker gateway discovery:
+Start the Grafana, Loki, and Alloy stack with automated gateway container log discovery:
 
 <CodeViewer :snippets="dashboardSnippets" />
 
-Open `http://127.0.0.1:9090` to observe live blocked probes, attack analytics, and threat intelligence.
+Open `http://localhost:3000` to observe live blocked probes, attack analytics, and threat intelligence in Grafana.
+
 
 ---
 

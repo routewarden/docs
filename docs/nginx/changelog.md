@@ -9,9 +9,22 @@ All notable changes to **NGINX Warden** (`github.com/routewarden/nginx-warden`) 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and NGINX Warden adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.1] - 2026-10-02 (Latest)
+
+### Key Highlights
+
+- **Protocol-Relative Open Redirect Prevention (`response.lua`)**:
+  - Hardened redirect destination validation against protocol-relative URL evasion vectors (e.g., `//attacker.com`).
+  - Protocol-relative destinations are safely detected, discarded, and fallback to root `/`, preventing open-redirect exploitation.
+- **Security Log Schema Normalization (`level: "warn"`)**:
+  - Added `"level": "warn"`, `"status_code"`, and `"matched_pattern"` across both standard JSON logger (`logger.lua`) and emergency fallback logging (`init.lua`).
+  - Ensures field parity with Grafana Loki and Alloy observability stacks.
+- **CI / Version Scripting Portability**:
+  - Improved in-place sed editing in `scripts/update-version.sh` for reliable multi-platform execution across macOS (BSD) and Linux (GNU).
+
 ---
 
-## [v1.3.0] - 2026-10-01 (Latest)
+## [v1.3.0] - 2026-10-01
 
 ### Key Highlights
 

@@ -106,6 +106,8 @@ export interface PresetItem {
   method: string
   path: string
   ip: string
+  xForwardedFor?: string
+  trustedProxies?: string
 }
 
 export const PRESETS: PresetItem[] = [
@@ -116,7 +118,9 @@ export const PRESETS: PresetItem[] = [
   { label: 'POST Bypass', method: 'POST', path: '/.env', ip: '198.51.100.42' },
   { label: 'robots.txt', method: 'GET', path: '/robots.txt', ip: '198.51.100.42' },
   { label: '.well-known', method: 'GET', path: '/.well-known/acme-challenge/token', ip: '198.51.100.42' },
-  { label: 'IP Bypass', method: 'GET', path: '/.env', ip: '10.5.0.25' }
+  { label: 'IP Bypass', method: 'GET', path: '/.env', ip: '10.5.0.25' },
+  { label: 'Trusted Proxy', method: 'GET', path: '/.env', ip: '10.0.0.1', xForwardedFor: '198.51.100.42', trustedProxies: '10.0.0.0/8' },
+  { label: 'Spoofed Proxy', method: 'GET', path: '/.env', ip: '198.51.100.42', xForwardedFor: '10.5.0.25', trustedProxies: '10.0.0.0/8' }
 ]
 
 export const STANDARD_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'] as const

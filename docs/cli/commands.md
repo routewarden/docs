@@ -244,6 +244,29 @@ const versionSnippets = computed(() => ({
     { filename: 'rwarden version', lang: 'bash', code: version_cmd.cleanCode, html: version_cmd.html, hasDiff: false },
   ],
 }))
+
+// ─── 8. Dashboard Command ───────────────────────────────────────────────────
+const dashboard_cmd = buildSnippet({
+  lang: 'bash',
+  code: `# Launch Grafana, Loki, and Alloy stack via Docker Compose (default: port 3000)
+rwarden dashboard
+rwarden dashboard up
+
+# Check status of running observability stack containers
+rwarden dashboard status
+
+# Stop and tear down the observability stack
+rwarden dashboard down
+
+# Export Docker Compose, Alloy, and Grafana config files to disk
+rwarden dashboard export ./observability`,
+})
+
+const dashboardSnippets = computed(() => ({
+  cli: [
+    { filename: 'rwarden dashboard', lang: 'bash', code: dashboard_cmd.cleanCode, html: dashboard_cmd.html, hasDiff: false },
+  ],
+}))
 </script>
 
 # Commands Reference
@@ -342,3 +365,26 @@ Stop and remove all running or detached RouteWarden sandbox test containers:
 Check installed binary version:
 
 <CodeViewer :snippets="versionSnippets" />
+
+---
+
+## 8. Observability Stack (`dashboard`)
+
+Launch and manage a turnkey cloud-native observability stack (Grafana, Grafana Loki, and Grafana Alloy) using Docker Compose to visualize real-time blocked threats, attack rates, and top offender IPs:
+
+<CodeViewer :snippets="dashboardSnippets" />
+
+### Subcommands & Flags
+
+| Subcommand / Flag | Type | Default | Description |
+|:---|:---|:---|:---|
+| `up`, `start` | subcommand | — | Spin up Grafana, Loki, and Alloy stack (default) |
+| `down`, `stop` | subcommand | — | Stop and tear down running stack containers |
+| `status`, `ps` | subcommand | — | Check container health and service URLs |
+| `export [dir]` | subcommand | `./observability` | Export compose, Alloy, and Grafana assets to disk |
+| `--port` | int | `3000` | Port for Grafana dashboard UI |
+| `--loki-port` | int | `3100` | Port for Loki log engine |
+| `--dir` | string | `~/.routewarden/observability` | Working directory storing stack files |
+| `--no-open` | bool | `false` | Do not launch system default browser |
+
+👉 For full configuration, LogQL query cheat sheets, and custom alerts, see the [Security Observability Stack Guide](/cli/dashboard).

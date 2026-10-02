@@ -10,6 +10,7 @@ import {
 import {
   extractCandidatePaths,
   isIpWhitelisted,
+  resolveEffectiveClientIp,
   matchRegex,
   smartCompileRegex
 } from './playground/engine'
@@ -31,6 +32,7 @@ import ExportEditorCard, { type FormatTab } from './playground/ExportEditorCard.
 const testMethod = ref('GET')
 const testPath = ref('/%252e%252e/.env')
 const testIp = ref('198.51.100.42')
+const testForwardedFor = ref('')
 
 // 2. Patterns state
 const pathPatternsInput = ref('')
@@ -47,6 +49,7 @@ const enableDefaultAllowPatterns = ref(true)
 const checkQuery = ref(false)
 const checkHeadersInput = ref('')
 const allowedIpsInput = ref('127.0.0.1, 10.0.0.0/8')
+const trustedProxiesInput = ref('')
 const methodsInput = ref('GET')
 
 const inspectedMethods = computed(() => {
@@ -174,6 +177,10 @@ watch(snippetFormat, (fmt) => {
 function applyPreset(p: PresetItem) {
   testPath.value = p.path
   testIp.value = p.ip
+  testForwardedFor.value = p.xForwardedFor || ''
+  if (p.trustedProxies !== undefined) {
+    trustedProxiesInput.value = p.trustedProxies
+  }
   if (p.method) testMethod.value = p.method
   trackPlaygroundEvent('apply_preset', { label: p.label || p.path })
 }
@@ -255,15 +262,21 @@ function evaluateForVerb(methodName: string): VerbEvalResult {
     }
   }
 
-  if (isIpWhitelisted(testIp.value, allowedIpsInput.value)) {
+  const clientIpRes = resolveEffectiveClientIp(testIp.value, testForwardedFor.value, '', trustedProxiesInput.value)
+  const effectiveIp = clientIpRes.effectiveIp
+
+  if (isIpWhitelisted(effectiveIp, allowedIpsInput.value)) {
+    const reasonMsg = clientIpRes.usedForwardedHeader
+      ? `Client IP ${effectiveIp} (via trusted proxy ${clientIpRes.directPeerIp}) matches allowedIps.`
+      : `Client IP ${effectiveIp} matches allowedIps.`
     return {
       method: m,
       verdict: 'BYPASS',
-      statusTitle: `Bypassed by IP (${testIp.value})`,
+      statusTitle: `Bypassed by IP (${effectiveIp})`,
       badgeClass: 'verdict-bypass',
       statusCode: 200,
       statusText: 'OK (IP Whitelisted)',
-      reason: `Client IP ${testIp.value} matches allowedIps.`,
+      reason: reasonMsg,
       isInspected
     }
   }
@@ -614,6 +627,7 @@ const generatedSnippet = computed(() => {
   const blockList = customBlockList.value
   const allowList = customAllowList.value
   const ipList = allowedIpsInput.value.split(',').map(s => s.trim()).filter(Boolean)
+  const trustedProxiesList = trustedProxiesInput.value.split(',').map(s => s.trim()).filter(Boolean)
   const methodsList = inspectedMethods.value
   const hasCustomMethods = methodsList.length > 0 && !(methodsList.length === 1 && methodsList[0] === 'GET')
 
@@ -628,6 +642,7 @@ const generatedSnippet = computed(() => {
     blockList,
     allowList,
     ipList,
+    trustedProxiesList,
     methodsList,
     hasCustomMethods,
     responseMode: responseMode.value,
@@ -694,6 +709,9 @@ function buildShareUrl(): string {
   if (testIp.value && testIp.value !== '198.51.100.42') {
     url.searchParams.set('ip', testIp.value)
   }
+  if (testForwardedFor.value.trim()) {
+    url.searchParams.set('forwardedFor', testForwardedFor.value.trim())
+  }
   if (pathPatternsInput.value.trim()) {
     url.searchParams.set('block', pathPatternsInput.value.trim())
   }
@@ -709,6 +727,9 @@ function buildShareUrl(): string {
   if (checkHeadersInput.value.trim()) url.searchParams.set('checkHeaders', checkHeadersInput.value.trim())
   if (allowedIpsInput.value.trim() && allowedIpsInput.value.trim() !== '127.0.0.1, 10.0.0.0/8') {
     url.searchParams.set('allowedIps', allowedIpsInput.value.trim())
+  }
+  if (trustedProxiesInput.value.trim()) {
+    url.searchParams.set('trustedProxies', trustedProxiesInput.value.trim())
   }
   if (methodsInput.value.trim() && methodsInput.value.trim() !== 'GET') {
     url.searchParams.set('methods', methodsInput.value.trim())
@@ -770,6 +791,9 @@ onMounted(() => {
     const pIp = params.get('ip')
     if (pIp) testIp.value = pIp
 
+    const pForwarded = params.get('forwardedFor') || params.get('xff')
+    if (pForwarded) testForwardedFor.value = pForwarded
+
     const pBlock = params.get('block') || params.get('pathPatterns')
     if (pBlock) pathPatternsInput.value = pBlock
 
@@ -799,6 +823,9 @@ onMounted(() => {
     }
     if (params.has('allowedIps')) {
       allowedIpsInput.value = params.get('allowedIps') || ''
+    }
+    if (params.has('trustedProxies') || params.has('proxies')) {
+      trustedProxiesInput.value = params.get('trustedProxies') || params.get('proxies') || ''
     }
     if (params.has('methods')) {
       methodsInput.value = params.get('methods') || 'GET'
@@ -868,6 +895,7 @@ onMounted(() => {
       v-model:testMethod="testMethod"
       v-model:testPath="testPath"
       v-model:testIp="testIp"
+      v-model:testForwardedFor="testForwardedFor"
       :evaluation="evaluation"
       :shareFeedback="shareFeedback"
       @apply-preset="applyPreset"
@@ -917,6 +945,7 @@ onMounted(() => {
       v-model:securityLog="securityLog"
       v-model:checkHeadersInput="checkHeadersInput"
       v-model:allowedIpsInput="allowedIpsInput"
+      v-model:trustedProxiesInput="trustedProxiesInput"
       v-model:methodsInput="methodsInput"
       :inspectedMethods="inspectedMethods"
       :allStandardMethodsSelected="allStandardMethodsSelected"

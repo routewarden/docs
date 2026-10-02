@@ -323,7 +323,7 @@ export function syncVersion(options = {}) {
 
   // ── 4. Synchronize CLI Files ───────────────────────────────────────────────
   if (shouldSyncCli) {
-    const { cleanVersion: cliClean } = formatVersion(appVersions.cli)
+    const { cleanVersion: cliClean, semver: cliSemver } = formatVersion(appVersions.cli)
     const cliFiles = []
     collectMarkdownFiles(path.join(rootDir, 'docs/cli'), rootDir, cliFiles)
 
@@ -335,8 +335,16 @@ export function syncVersion(options = {}) {
           `$1${cliClean}`
         )
         updated = updated.replace(
-          /(rwarden\s+v?)[0-9]+\.[0-9]+\.[0-9]+/g,
+          /(github\.com\/routewarden\/cli\/releases\/download\/)v?[0-9]+\.[0-9]+\.[0-9]+/g,
           `$1${cliClean}`
+        )
+        updated = updated.replace(
+          /(rwarden_)[0-9]+\.[0-9]+\.[0-9]+(_)/g,
+          `$1${cliSemver}$2`
+        )
+        updated = updated.replace(
+          /(rwarden\s+(?:version\s+)?v?)[0-9]+\.[0-9]+\.[0-9]+/g,
+          `$1${cliSemver}`
         )
         return updated
       })
@@ -354,6 +362,15 @@ export function syncVersion(options = {}) {
           `$1${cliClean}`
         )
         return updated
+      })
+    }
+
+    if (fs.existsSync(path.join(rootDir, 'VERSIONING.md'))) {
+      updateFileContent('VERSIONING.md', (content) => {
+        return content.replace(
+          /("cli":\s*")v?[0-9]+\.[0-9]+\.[0-9]+(")/g,
+          `$1${cliClean}$2`
+        )
       })
     }
   }
@@ -471,4 +488,47 @@ if (process.argv[1] && (path.resolve(process.argv[1]) === currentScriptPath || p
   } catch (err) {
     console.warn(`Could not regenerate setup snippets: ${err.message}`)
   }
+
+  if (syncObservabilityAssets(cliArgs.rootDir)) {
+    console.log(`Synchronized observability assets from CLI repository`)
+  }
+}
+
+/**
+ * Synchronizes observability assets (like config.alloy) from the canonical CLI repository
+ * into docs when running in a multi-repo workspace.
+ * @param {string} [customDir]
+ * @returns {boolean}
+ */
+export function syncObservabilityAssets(customDir) {
+  const docsRoot = resolveDocsRootDir(customDir)
+  const candidateCliDirs = [
+    path.join(docsRoot, '../cli/observability'),
+    path.join(process.cwd(), '../cli/observability'),
+    path.join(process.cwd(), 'cli/observability')
+  ]
+
+  for (const cliObsDir of candidateCliDirs) {
+    const srcAlloy = path.join(cliObsDir, 'config.alloy')
+    if (fs.existsSync(srcAlloy)) {
+      const alloyContent = fs.readFileSync(srcAlloy, 'utf8')
+      const targetLocations = [
+        path.join(docsRoot, 'docs/cli/dashboard/config.alloy'),
+        path.join(docsRoot, 'docs/public/config.alloy')
+      ]
+
+      for (const targetLoc of targetLocations) {
+        const targetDir = path.dirname(targetLoc)
+        if (!fs.existsSync(targetDir)) {
+          fs.mkdirSync(targetDir, { recursive: true })
+        }
+        const existing = fs.existsSync(targetLoc) ? fs.readFileSync(targetLoc, 'utf8') : ''
+        if (existing !== alloyContent) {
+          fs.writeFileSync(targetLoc, alloyContent, 'utf8')
+        }
+      }
+      return true
+    }
+  }
+  return false
 }

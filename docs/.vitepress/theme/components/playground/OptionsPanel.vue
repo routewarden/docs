@@ -19,6 +19,7 @@ const debug = defineModel<boolean>('debug', { required: true })
 const securityLog = defineModel<boolean>('securityLog', { required: true })
 const checkHeadersInput = defineModel<string>('checkHeadersInput', { required: true })
 const allowedIpsInput = defineModel<string>('allowedIpsInput', { required: true })
+const trustedProxiesInput = defineModel<string>('trustedProxiesInput', { default: '' })
 const methodsInput = defineModel<string>('methodsInput', { required: true })
 </script>
 
@@ -57,9 +58,13 @@ const methodsInput = defineModel<string>('methodsInput', { required: true })
         <span>Check Headers:</span>
         <input v-model="checkHeadersInput" placeholder="X-Forwarded-Uri, X-Rewrite-URL" />
       </div>
-      <div class="rw-inline-ip">
+      <div class="rw-inline-ip" title="Allowed client IP addresses or CIDR subnets that bypass inspection">
         <span>Allowed IPs:</span>
         <input v-model="allowedIpsInput" placeholder="127.0.0.1, 10.0.0.0/8" />
+      </div>
+      <div class="rw-inline-ip" title="Trusted reverse proxies or CIDRs permitted to supply X-Forwarded-For / X-Real-IP">
+        <span>Trusted Proxies:</span>
+        <input v-model="trustedProxiesInput" placeholder="10.0.0.0/8, 172.16.0.0/12" />
       </div>
     </div>
 

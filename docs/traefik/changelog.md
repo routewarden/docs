@@ -9,9 +9,21 @@ All notable changes to the **Traefik Warden** plugin (`github.com/routewarden/tr
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and Traefik Warden adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.1] - 2026-10-02 (Latest)
+
+### Key Highlights
+
+- **Security Log Schema Normalization (`level: "warn"`)**:
+  - Embedded `"level": "warn"` directly into structured JSON `routewarden_block` log outputs.
+  - Ensures seamless compatibility with log forwarders (Grafana Alloy, Promtail, Vector, Fluentbit) and SIEM pipelines that filter and colorize security events based on log severity level.
+- **HTTP Status Code Telemetry (`status_code`)**:
+  - Added `"status_code"` field to security events representing the effective HTTP response status code dispatched to the client (`403` for forbidden, `429` for rate limit, `302` for redirect, or `0` for silent drop).
+- **Dashboard Telemetry Field Parity (`matched_pattern`)**:
+  - Emitted `"matched_pattern"` alongside `"pattern"` in log events to guarantee 100% out-of-the-box compatibility with Grafana Loki overview dashboards and top blocked pattern metrics.
+
 ---
 
-## [v1.3.0] - 2026-10-01 (Latest)
+## [v1.3.0] - 2026-10-01
 
 ### Key Highlights
 
