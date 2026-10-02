@@ -128,6 +128,105 @@ const existingStackSnippets = computed(() => ({
     { filename: '4. Shipper-Only Container', lang: 'bash', code: existing_shipper.cleanCode, html: existing_shipper.html, hasDiff: false },
   ],
 }))
+
+// ─── Step 3: Container Tagging Snippets ─────────────────────────────────────
+const tag_compose = buildSnippet({
+  lang: 'yaml',
+  code: `# Tag your gateway containers in docker-compose.yml
+services:
+  # Traefik example
+  traefik:
+    image: traefik:v3.3
+    container_name: traefik
+    labels:
+      - "routewarden.logs=true" # [!code ++]
+    ports:
+      - "80:80"
+      - "443:443"
+
+  # Caddy example
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    labels:
+      - "routewarden.logs=true" # [!code ++]
+    ports:
+      - "80:80"
+      - "443:443"
+
+  # NGINX / OpenResty example
+  nginx:
+    image: openresty/openresty:alpine
+    container_name: nginx
+    labels:
+      - "routewarden.logs=true" # [!code ++]
+    ports:
+      - "80:80"
+      - "443:443"
+
+  # TCP Warden example
+  tcp-warden:
+    image: ghcr.io/routewarden/tcp-warden:latest
+    container_name: tcp-warden
+    labels:
+      - "routewarden.logs=true" # [!code ++]
+    ports:
+      - "2222:2222"`,
+})
+
+const tag_cli = buildSnippet({
+  lang: 'bash',
+  code: `# Run Traefik with RouteWarden logging enabled
+docker run -d \\
+  --name traefik \\
+  --label routewarden.logs=true \\ # [!code ++]
+  -p 80:80 -p 443:443 \\
+  traefik:v3.3
+
+# Run Caddy with RouteWarden logging enabled
+docker run -d \\
+  --name caddy \\
+  --label routewarden.logs=true \\ # [!code ++]
+  -p 80:80 -p 443:443 \\
+  caddy:2-alpine
+
+# Run NGINX with RouteWarden logging enabled
+docker run -d \\
+  --name nginx \\
+  --label routewarden.logs=true \\ # [!code ++]
+  -p 80:80 -p 443:443 \\
+  openresty/openresty:alpine
+
+# Run TCP Warden daemon with RouteWarden logging enabled
+docker run -d \\
+  --name tcp-warden \\
+  --label routewarden.logs=true \\ # [!code ++]
+  -p 2222:2222 \\
+  ghcr.io/routewarden/tcp-warden:latest`,
+})
+
+const tag_k8s = buildSnippet({
+  lang: 'yaml',
+  code: `# Add label to Pod or Deployment metadata in Kubernetes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: routewarden-gateway
+spec:
+  template:
+    metadata:
+      labels:
+        app: gateway
+        routewarden.logs: "true" # [!code ++]`,
+})
+
+const taggingSnippets = computed(() => ({
+  cli: [
+    { filename: 'Docker Compose', lang: 'yaml', code: tag_compose.cleanCode, html: tag_compose.html, hasDiff: false },
+    { filename: 'Docker CLI', lang: 'bash', code: tag_cli.cleanCode, html: tag_cli.html, hasDiff: false },
+    { filename: 'Kubernetes', lang: 'yaml', code: tag_k8s.cleanCode, html: tag_k8s.html, hasDiff: false },
+  ],
+}))
 </script>
 
 # Reusing an Existing Grafana & Loki Stack
@@ -172,9 +271,8 @@ Depending on what collector you run on your gateway host:
 
 ### Step 3: Tag Reverse Proxy Containers
 
-Ensure your gateway containers carry the label:
-```yaml
-labels:
-  - "routewarden.logs=true"
-```
+Ensure your gateway containers carry the label `routewarden.logs=true` (or `routewarden=true`) so the discovery relabeling pipeline includes them:
+
+<CodeViewer :snippets="taggingSnippets" />
+
 Logs will immediately begin flowing into your existing Loki instance and appearing in your Grafana dashboard.
