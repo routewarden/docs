@@ -114,20 +114,18 @@ onUnmounted(() => {
         type="button"
         class="rw-nav-trigger"
         title="Open Pattern &amp; Response Playground"
+        aria-label="Open Pattern &amp; Response Playground"
         @click="toggle"
       >
+        <span class="rw-pulse-dot" aria-hidden="true"></span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+          fill="currentColor"
           class="rw-nav-icon"
+          aria-hidden="true"
         >
-          <path d="M12 20h9" />
-          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+          <path d="M8 5v14l11-7z" />
         </svg>
         <span class="rw-nav-label">Playground</span>
       </button>
@@ -169,49 +167,107 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* Navbar Trigger Button (Premium Pill) */
+/* Sleek Modern Accent Playground Pill */
 .rw-nav-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   margin-left: 10px;
-  padding: 0 14px;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 20px;
-  background: var(--vp-c-bg-soft);
-  color: var(--vp-c-text-1);
-  font-size: 12.5px;
+  padding: 0 12px;
+  height: 32px;
+  border-radius: 16px;
+  background: var(--vp-c-brand-soft);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: var(--vp-c-brand-1);
+  font-size: 12px;
   font-weight: 600;
+  letter-spacing: -0.01em;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
-  height: 36px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.dark .rw-nav-trigger {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(129, 140, 248, 0.3);
+  color: #a5b4fc;
 }
 
 .rw-nav-trigger:hover {
+  background: var(--vp-c-brand-1);
   border-color: var(--vp-c-brand-1);
-  color: var(--vp-c-brand-1);
-  background: var(--vp-c-brand-soft);
+  color: #ffffff !important;
   transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.28);
+}
+
+.rw-nav-trigger:hover .rw-nav-icon {
+  fill: #ffffff;
 }
 
 .rw-nav-icon {
-  width: 14px;
-  height: 14px;
+  width: 10px;
+  height: 10px;
   flex-shrink: 0;
-  stroke: var(--vp-c-brand-1);
+  fill: var(--vp-c-brand-1);
+  transition: fill 0.2s ease;
 }
 
-@media (max-width: 768px) {
+.dark .rw-nav-icon {
+  fill: #a5b4fc;
+}
+
+/* Subtle live pulse indicator */
+.rw-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: rwPulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+@keyframes rwPulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@media (max-width: 960px) {
   .rw-nav-label {
     display: none;
   }
 
+  .rw-pulse-dot {
+    display: none;
+  }
+
   .rw-nav-trigger {
-    padding: 4px 8px;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    padding: 0;
+    justify-content: center;
+    align-items: center;
     margin-left: 4px;
+    gap: 0;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .rw-nav-icon {
+    width: 11px;
+    height: 11px;
   }
 }
 

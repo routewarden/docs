@@ -172,40 +172,29 @@ export default defineConfig({
         text: 'Gateways',
         activeMatch: '^/(traefik|caddy|nginx|tcp)/',
         items: [
-          { text: 'TCP Warden (L4)', link: '/tcp/' },
+          { text: 'TCP Warden (L4 Firewall)', link: '/tcp/' },
           { text: 'Traefik Warden', link: '/traefik/' },
           { text: 'Caddy Warden', link: '/caddy/' },
           { text: 'NGINX Warden', link: '/nginx/' }
         ]
       },
       {
-        text: 'Core Engine',
-        activeMatch: '^/core/',
+        text: 'Docs',
+        activeMatch: '^/(core|examples|reference|tools)/',
         items: [
           { text: 'Architecture & Threat Model', link: '/core/architecture' },
           { text: 'Anti-Evasion Normalization', link: '/core/anti-evasion' },
           { text: 'Response Modes (13 Actions)', link: '/core/response-modes' },
-          { text: 'Custom Regex Patterns', link: '/core/custom-patterns' }
-        ]
-      },
-      {
-        text: 'Solutions',
-        activeMatch: '^/(examples|reference)/',
-        items: [
+          { text: 'Custom Regex Patterns', link: '/core/custom-patterns' },
           { text: 'Production Case Studies', link: '/examples/case-study-immich' },
           { text: 'Common Recipes & Compose', link: '/examples/basic-sensitive-files' },
-          { text: 'Custom Paths & Regex Guide', link: '/reference/custom-paths' },
-          { text: 'Response Modes Reference', link: '/reference/response-modes' },
-          { text: 'Anti-Evasion Engine', link: '/reference/anti-evasion' }
+          { text: 'Interactive Pattern Checker', link: '/tools/pattern-checker' }
         ]
       },
       {
-        text: 'Tools',
-        activeMatch: '^/(tools|cli)/',
-        items: [
-          { text: 'RouteWarden CLI (`rwarden`)', link: '/cli/' },
-          { text: 'Pattern & Response Playground', link: '/tools/pattern-checker' }
-        ]
+        text: 'CLI',
+        link: '/cli/',
+        activeMatch: '^/cli/'
       },
       {
         text: versionsRegistry.current,
