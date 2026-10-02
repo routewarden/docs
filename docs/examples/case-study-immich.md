@@ -726,6 +726,127 @@ const testPublicShareSnippets = computed(() => ({
 const testInternalLoginSnippets = computed(() => ({
   traefik: [{ filename: 'Shell(Bash)', lang: 'bash', code: testInternalLogin.cleanCode, html: testInternalLogin.html, hasDiff: false }],
 }))
+
+// ─── Dual-Router Architecture Diagram Snippets ──────────────────────────────
+const immich_mermaid_raw = `flowchart TD
+    CLIENT(["<b>Internet / Public Traffic</b>"]):::startNode --> EDGE["<b>Traefik Reverse Proxy</b><br/>Port 443 / EntryPoints: websecure &amp; internal"]:::edgeNode
+
+    EDGE -->|Host: photos.domain| PUB["<b>Public Router</b><br/>EntryPoint: websecure"]:::routerNode
+    EDGE -->|Host: photos-lan.vpn| PRIV["<b>Private / VPN Router</b><br/>EntryPoint: internal (Tailscale / WireGuard)"]:::vpnNode
+
+    PUB --> SHIELD["<b>RouteWarden Shield</b><br/>• Intercepts: /api/auth/login*, /api/users*, /api/admin*<br/>• Enforces 403 Forbidden or silent TCP drop"]:::shieldNode
+
+    PRIV -->|Direct Full Admin Access| BACKEND["<b>Immich Server</b><br/>Upstream Backend Application"]:::upstreamNode
+    SHIELD -->|Allowed Public Assets /share/*| BACKEND
+
+    classDef startNode fill:#0284c7,stroke:#0369a1,color:#ffffff,stroke-width:2px;
+    classDef edgeNode fill:#1e293b,stroke:#00a8cc,color:#f8fafc,stroke-width:2px;
+    classDef routerNode fill:#1e293b,stroke:#f59e0b,color:#f8fafc,stroke-width:2px;
+    classDef vpnNode fill:#1e293b,stroke:#10b981,color:#f8fafc,stroke-width:2px;
+    classDef shieldNode fill:#1e293b,stroke:#ef4444,color:#f8fafc,stroke-width:2px;
+    classDef upstreamNode fill:#0f172a,stroke:#6366f1,color:#ffffff,stroke-width:2px;`
+
+const immich_graph_svg = `<div class="rw-graph-container">
+  <svg viewBox="0 0 960 480" fill="none" xmlns="http://www.w3.org/2000/svg" class="rw-graph-svg">
+    <defs>
+      <linearGradient id="immich-grad-pub" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.14"/>
+        <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.02"/>
+      </linearGradient>
+      <linearGradient id="immich-grad-priv" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#10b981" stop-opacity="0.14"/>
+        <stop offset="100%" stop-color="#10b981" stop-opacity="0.02"/>
+      </linearGradient>
+      <linearGradient id="immich-grad-shield" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ef4444" stop-opacity="0.14"/>
+        <stop offset="100%" stop-color="#ef4444" stop-opacity="0.02"/>
+      </linearGradient>
+      <linearGradient id="immich-grad-backend" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#6366f1" stop-opacity="0.14"/>
+        <stop offset="100%" stop-color="#6366f1" stop-opacity="0.03"/>
+      </linearGradient>
+      <marker id="immich-arr-cyan" viewBox="-2 -2 16 14" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto" overflow="visible">
+        <path d="M 0 1 L 11 5 L 0 9 z" fill="#00a8cc"/>
+      </marker>
+      <marker id="immich-arr-amber" viewBox="-2 -2 16 14" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto" overflow="visible">
+        <path d="M 0 1 L 11 5 L 0 9 z" fill="#f59e0b"/>
+      </marker>
+      <marker id="immich-arr-emerald" viewBox="-2 -2 16 14" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto" overflow="visible">
+        <path d="M 0 1 L 11 5 L 0 9 z" fill="#10b981"/>
+      </marker>
+      <marker id="immich-arr-rose" viewBox="-2 -2 16 14" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto" overflow="visible">
+        <path d="M 0 1 L 11 5 L 0 9 z" fill="#ef4444"/>
+      </marker>
+      <marker id="immich-arr-indigo" viewBox="-2 -2 16 14" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto" overflow="visible">
+        <path d="M 0 1 L 11 5 L 0 9 z" fill="#6366f1"/>
+      </marker>
+    </defs>
+
+    <!-- 0. Inbound Public & LAN Traffic -->
+    <rect x="340" y="16" width="280" height="40" rx="20" class="rw-g-node"/>
+    <circle cx="362" cy="36" r="7" fill="#0284c7"/>
+    <text x="380" y="41" class="rw-g-card-title">Inbound Client Requests</text>
+    <line x1="480" y1="56" x2="480" y2="82" stroke="#00a8cc" stroke-width="2" marker-end="url(#immich-arr-cyan)"/>
+
+    <!-- 1. Traefik Reverse Proxy -->
+    <rect x="290" y="82" width="380" height="56" rx="10" class="rw-g-node"/>
+    <circle cx="316" cy="110" r="8" fill="#00a8cc"/>
+    <text x="334" y="106" class="rw-g-card-title">Traefik Ingress Router (Port 443)</text>
+    <text x="334" y="124" class="rw-g-desc">TLS Termination • Host SNI Matching • EntryPoint Routing</text>
+
+    <!-- Connectors: Traefik -> Routers -->
+    <path d="M 380 138 C 380 160, 230 155, 230 178" stroke="#f59e0b" stroke-width="2" fill="none" marker-end="url(#immich-arr-amber)"/>
+    <path d="M 580 138 C 580 160, 730 155, 730 178" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#immich-arr-emerald)"/>
+
+    <!-- 2. Public Router -->
+    <rect x="60" y="178" width="340" height="74" rx="10" class="rw-g-box" fill="url(#immich-grad-pub)"/>
+    <circle cx="86" cy="204" r="7" fill="#f59e0b"/>
+    <text x="104" y="202" class="rw-g-card-title">Public Router (Internet Access)</text>
+    <text x="86" y="224" class="rw-g-desc">Rule: Host(\`photos.domain.com\`) • EntryPoint: websecure</text>
+    <text x="86" y="240" class="rw-g-desc">Intended for public photo galleries, album sharing &amp; uploads</text>
+
+    <!-- 3. Private / VPN Router -->
+    <rect x="560" y="178" width="340" height="74" rx="10" class="rw-g-box" fill="url(#immich-grad-priv)"/>
+    <circle cx="586" cy="204" r="7" fill="#10b981"/>
+    <text x="604" y="202" class="rw-g-card-title">Private Router (Admin / LAN / VPN)</text>
+    <text x="586" y="224" class="rw-g-desc">Rule: Host(\`photos-lan.domain.com\`) • EntryPoint: internal</text>
+    <text x="586" y="240" class="rw-g-desc">Direct admin panel, background jobs, user management access</text>
+
+    <!-- Connector: Public Router -> RouteWarden Shield -->
+    <line x1="230" y1="252" x2="230" y2="284" stroke="#ef4444" stroke-width="2" marker-end="url(#immich-arr-rose)"/>
+
+    <!-- 4. RouteWarden Shield -->
+    <rect x="60" y="284" width="340" height="88" rx="10" class="rw-g-box" fill="url(#immich-grad-shield)"/>
+    <circle cx="86" cy="310" r="7" fill="#ef4444"/>
+    <text x="104" y="308" class="rw-g-card-title">RouteWarden Middleware Shield</text>
+    <text x="86" y="328" class="rw-g-desc">• Strictly intercepts: /api/auth/login*, /api/users*, /api/admin*</text>
+    <text x="86" y="344" class="rw-g-desc">• Blocks sensitive probing with 403 Forbidden or silent TCP drop</text>
+    <text x="86" y="360" class="rw-g-desc">• Allowed paths pass safely: /share/*, /api/asset/*</text>
+
+    <!-- Connectors to Upstream Backend -->
+    <!-- From RouteWarden Shield to Immich (Allowed Public Traffic) -->
+    <path d="M 230 372 L 230 408" stroke="#0284c7" stroke-width="2" fill="none" marker-end="url(#immich-arr-cyan)"/>
+    <rect x="155" y="380" width="150" height="18" rx="4" class="rw-g-pill"/>
+    <text x="230" y="393" text-anchor="middle" class="rw-g-pill-txt" fill="#0284c7">Allowed Public Assets</text>
+
+    <!-- From Private Router directly to Immich (Full Admin Access) -->
+    <path d="M 730 252 L 730 408" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#immich-arr-emerald)"/>
+    <rect x="660" y="324" width="140" height="18" rx="4" class="rw-g-pill"/>
+    <text x="730" y="337" text-anchor="middle" class="rw-g-pill-txt" fill="#10b981">Full Admin Access</text>
+
+    <!-- 5. Immich Server (Upstream Backend) -->
+    <rect x="60" y="412" width="840" height="54" rx="10" class="rw-g-box" fill="url(#immich-grad-backend)"/>
+    <circle cx="86" cy="439" r="8" fill="#6366f1"/>
+    <text x="104" y="435" class="rw-g-card-title" fill="#6366f1">Immich Server (Upstream Backend Application)</text>
+    <text x="104" y="453" class="rw-g-desc">Single upstream container receiving clean public requests and authorized internal admin connections</text>
+  </svg>
+</div>`
+
+const immichArchSnippets = computed(() => ({
+  traefik: [
+    { filename: 'Dual-Router Architecture', lang: 'mermaid', code: immich_mermaid_raw, html: immich_graph_svg, hasDiff: false },
+  ],
+}))
 </script>
 
 # Case Study: Dual-Router Security for Immich Self-Hosted Photos
@@ -754,38 +875,7 @@ However, exposing Immich directly to the public web introduces significant attac
 
 ## Architecture Diagram
 
-```
-                              Internet / Public Traffic
-                                         │
-                                         ▼
-                             ┌───────────────────────┐
-                             │    Traefik (Port 443) │
-                             └───────────┬───────────┘
-                                         │
-                 ┌───────────────────────┴───────────────────────┐
-                 │                                               │
-                 ▼                                               ▼
-     ┌───────────────────────┐                       ┌───────────────────────┐
-     │ Public Router         │                       │ Private / VPN Router  │
-     │ Host(`photos.domain`) │                       │ Host(`photos-lan.vpn`)│
-     │ EntryPoint: websecure │                       │ EntryPoint: internal  │
-     └───────────┬───────────┘                       └───────────┬───────────┘
-                 │                                               │
-                 ▼                                               │ (Full Access)
-     ┌───────────────────────┐                                   │
-     │ RouteWarden Shield    │                                   │
-     │ - /api/auth/login*    │                                   │
-     │ - /api/auth/admin*    │                                   │
-     │ - /api/users*         │                                   │
-     │ - /api/admin*         │                                   │
-     │ - /api/server-info/*  │                                   │
-     └───────────┬───────────┘                                   │
-                 │ (Passed: /share/*, /api/asset/*)              │
-                 ▼                                               ▼
-     ┌───────────────────────────────────────────────────────────────┐
-     │               Immich Server (Upstream Backend)                │
-     └───────────────────────────────────────────────────────────────┘
-```
+<CodeViewer :snippets="immichArchSnippets" />
 
 ---
 

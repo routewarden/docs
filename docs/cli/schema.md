@@ -240,6 +240,116 @@ const nginxReloadSnippets = computed(() => ({
     { filename: 'Terminal', lang: 'bash', code: nginx_reload.cleanCode, html: nginx_reload.html, hasDiff: false },
   ],
 }))
+
+// ─── 7. Production Workflow Architecture Snippets ───────────────────────────
+const workflow_mermaid_raw = `flowchart TD
+    subgraph Spec ["Central Policy Definition"]
+        RW["<b>routewarden.json</b><br/>• Built with schema autocomplete ($schema)<br/>• Version-controlled in Git"]
+    end
+
+    subgraph CI ["CI/CD Policy Gate"]
+        LINT["<b>rwarden validate &amp; test</b><br/>Schema verification &amp; rule linting"]
+    end
+
+    subgraph Gateways ["Target Production Gateways"]
+        NGX["<b>NGINX / OpenResty</b><br/>Dynamic JSON Loader"]
+        TRF["<b>Traefik</b><br/>File Provider / Dynamic YAML"]
+        CAD["<b>Caddy</b><br/>REST API / JSON Module"]
+    end
+
+    Spec -->|git push / PR| CI
+    CI -->|Deploy JSON| NGX
+    CI -->|Dynamic YAML| TRF
+    CI -->|Caddy JSON| CAD`
+
+const workflow_graph_svg = `<div class="rw-graph-container">
+  <svg viewBox="0 0 960 440" fill="none" xmlns="http://www.w3.org/2000/svg" class="rw-graph-svg">
+    <defs>
+      <linearGradient id="grad-spec" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#6366f1" stop-opacity="0.12"/>
+        <stop offset="100%" stop-color="#6366f1" stop-opacity="0.02"/>
+      </linearGradient>
+      <linearGradient id="grad-ci" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#10b981" stop-opacity="0.12"/>
+        <stop offset="100%" stop-color="#10b981" stop-opacity="0.02"/>
+      </linearGradient>
+      <marker id="arrow-indigo" viewBox="-2 -2 16 14" refX="10" refY="5" markerWidth="10" markerHeight="10" orient="auto" overflow="visible">
+        <path d="M 0 1 L 11 5 L 0 9 z" fill="#6366f1"/>
+      </marker>
+      <marker id="arrow-emerald" viewBox="-2 -2 16 14" refX="10" refY="5" markerWidth="10" markerHeight="10" orient="auto" overflow="visible">
+        <path d="M 0 1 L 11 5 L 0 9 z" fill="#10b981"/>
+      </marker>
+    </defs>
+
+    <!-- 1. Central Policy Box -->
+    <rect x="230" y="16" width="500" height="92" rx="12" class="rw-g-box" fill="url(#grad-spec)"/>
+    <text x="246" y="38" class="rw-g-header" fill="#6366f1">CENTRAL POLICY DEFINITION</text>
+    <rect x="244" y="46" width="472" height="50" rx="8" class="rw-g-node"/>
+    <circle cx="268" cy="71" r="8" fill="#6366f1"/>
+    <text x="286" y="66" class="rw-g-card-title">routewarden.json</text>
+    <text x="286" y="84" class="rw-g-desc">Built with schema autocomplete ($schema) • Centralized security posture in Git</text>
+
+    <!-- Arrow 1: routewarden.json -> CI Gate -->
+    <line x1="480" y1="108" x2="480" y2="152" stroke="#6366f1" stroke-width="2.5" marker-end="url(#arrow-indigo)"/>
+    <rect x="425" y="118" width="110" height="22" rx="6" class="rw-g-pill"/>
+    <text x="480" y="133" text-anchor="middle" class="rw-g-pill-txt" fill="#6366f1">git push / PR</text>
+
+    <!-- 2. CI/CD Gate -->
+    <rect x="300" y="156" width="360" height="74" rx="10" class="rw-g-box" fill="url(#grad-ci)"/>
+    <rect x="312" y="166" width="336" height="54" rx="8" class="rw-g-node"/>
+    <circle cx="334" cy="193" r="7" fill="#10b981"/>
+    <text x="352" y="188" class="rw-g-card-title">rwarden validate &amp; test</text>
+    <text x="352" y="206" class="rw-g-desc">Automated schema validation &amp; pattern regex audit</text>
+
+    <!-- Connectors: CI Gate -> Target Gateways -->
+    <path d="M 480 230 C 480 270, 180 262, 180 308" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#arrow-emerald)"/>
+    <path d="M 480 230 L 480 308" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#arrow-emerald)"/>
+    <path d="M 480 230 C 480 270, 780 262, 780 308" stroke="#10b981" stroke-width="2" fill="none" marker-end="url(#arrow-emerald)"/>
+
+    <rect x="125" y="266" width="110" height="22" rx="6" class="rw-g-pill"/>
+    <text x="180" y="281" text-anchor="middle" class="rw-g-pill-txt" fill="#10b981">Deploy JSON</text>
+
+    <rect x="425" y="266" width="110" height="22" rx="6" class="rw-g-pill"/>
+    <text x="480" y="281" text-anchor="middle" class="rw-g-pill-txt" fill="#10b981">Dynamic YAML</text>
+
+    <rect x="725" y="266" width="110" height="22" rx="6" class="rw-g-pill"/>
+    <text x="780" y="281" text-anchor="middle" class="rw-g-pill-txt" fill="#10b981">Caddy JSON</text>
+
+    <!-- 3. Target Gateways -->
+    <!-- Gateway A: NGINX / Lua -->
+    <rect x="45" y="316" width="270" height="104" rx="10" class="rw-g-node"/>
+    <circle cx="72" cy="345" r="8" fill="#10b981"/>
+    <text x="90" y="342" class="rw-g-card-title">NGINX / OpenResty</text>
+    <rect x="90" y="352" width="125" height="18" rx="4" fill="#10b981" fill-opacity="0.12"/>
+    <text x="152" y="365" text-anchor="middle" class="rw-g-pill-txt" fill="#10b981">Dynamic JSON Loader</text>
+    <text x="65" y="388" class="rw-g-desc">• Mounts routewarden.json dynamically</text>
+    <text x="65" y="404" class="rw-g-desc">• Zero-downtime hot reload (nginx -s reload)</text>
+
+    <!-- Gateway B: Traefik -->
+    <rect x="345" y="316" width="270" height="104" rx="10" class="rw-g-node"/>
+    <circle cx="372" cy="345" r="8" fill="#00a8cc"/>
+    <text x="390" y="342" class="rw-g-card-title">Traefik</text>
+    <rect x="390" y="352" width="135" height="18" rx="4" fill="#00a8cc" fill-opacity="0.12"/>
+    <text x="457" y="365" text-anchor="middle" class="rw-g-pill-txt" fill="#00a8cc">Dynamic File Provider</text>
+    <text x="365" y="388" class="rw-g-desc">• Watches dynamic configuration file</text>
+    <text x="365" y="404" class="rw-g-desc">• Instant rule updates without container restart</text>
+
+    <!-- Gateway C: Caddy -->
+    <rect x="645" y="316" width="270" height="104" rx="10" class="rw-g-node"/>
+    <circle cx="672" cy="345" r="8" fill="#14b8a6"/>
+    <text x="690" y="342" class="rw-g-card-title">Caddy</text>
+    <rect x="690" y="352" width="130" height="18" rx="4" fill="#14b8a6" fill-opacity="0.12"/>
+    <text x="755" y="365" text-anchor="middle" class="rw-g-pill-txt" fill="#14b8a6">Native route_warden</text>
+    <text x="665" y="388" class="rw-g-desc">• Native HTTP handler module pipeline</text>
+    <text x="665" y="404" class="rw-g-desc">• Updated via Caddy REST API or JSON reload</text>
+  </svg>
+</div>`
+
+const workflowSnippets = computed(() => ({
+  cli: [
+    { filename: 'Workflow Graph', lang: 'mermaid', code: workflow_mermaid_raw, html: workflow_graph_svg, hasDiff: false },
+  ],
+}))
 </script>
 
 # JSON Schema & Production CI/CD
@@ -305,20 +415,7 @@ When configuring Caddy via the REST API or JSON files, map the `route_warden` ha
 
 ### Workflow Architecture
 
-```text
-┌──────────────────────────────────────────────────────────┐
-│                   routewarden.json                       │
-│  - Built with schema autocomplete ($schema)              │
-│  - Tested & validated via rwarden in CI/CD               │
-└────────────────────────────┬─────────────────────────────┘
-                             │
-       ┌─────────────────────┼─────────────────────┐
-       ▼                     ▼                     ▼
-┌──────────────┐      ┌──────────────┐      ┌──────────────┐
-│ NGINX / Lua  │      │   Traefik    │      │    Caddy     │
-│ JSON Loader  │      │ File Provider│      │   REST API   │
-└──────────────┘      └──────────────┘      └──────────────┘
-```
+<CodeViewer :snippets="workflowSnippets" />
 
 ---
 

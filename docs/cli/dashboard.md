@@ -36,13 +36,8 @@ const mermaid_raw = `flowchart LR
     A -->|loki.write| L
     L -->|LogQL| G`
 
-const arch_mermaid = buildSnippet({
-  lang: 'mermaid',
-  code: mermaid_raw,
-})
-
 const arch_graph_svg = `<div class="rw-graph-container">
-  <svg viewBox="0 0 1280 272" fill="none" xmlns="http://www.w3.org/2000/svg" class="rw-graph-svg">
+  <svg viewBox="0 0 1280 380" fill="none" xmlns="http://www.w3.org/2000/svg" class="rw-graph-svg">
     <defs>
       <linearGradient id="grad-gateways" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="#6366f1" stop-opacity="0.08"/>
@@ -73,114 +68,113 @@ const arch_graph_svg = `<div class="rw-graph-container">
     </defs>
 
     <!-- 1. GATEWAYS -->
-    <rect x="12" y="12" width="200" height="248" rx="10" class="rw-g-box" fill="url(#grad-gateways)"/>
-    <text x="24" y="32" class="rw-g-header">ROUTEWARDEN GATEWAYS</text>
+    <rect x="12" y="14" width="200" height="352" rx="10" class="rw-g-box" fill="url(#grad-gateways)"/>
+    <text x="24" y="38" class="rw-g-header">ROUTEWARDEN GATEWAYS</text>
 
-    <rect x="22" y="44" width="180" height="44" rx="6" class="rw-g-node"/>
-    <circle cx="38" cy="66" r="5" fill="#00a8cc"/>
-    <text x="52" y="62" class="rw-g-title">Traefik</text>
-    <text x="52" y="77" class="rw-g-desc">HTTP/S Reverse Proxy</text>
+    <rect x="22" y="52" width="180" height="60" rx="8" class="rw-g-node"/>
+    <circle cx="40" cy="82" r="6" fill="#00a8cc"/>
+    <text x="56" y="76" class="rw-g-title">Traefik</text>
+    <text x="56" y="94" class="rw-g-desc">HTTP/S Reverse Proxy</text>
 
-    <rect x="22" y="94" width="180" height="44" rx="6" class="rw-g-node"/>
-    <circle cx="38" cy="116" r="5" fill="#14b8a6"/>
-    <text x="52" y="112" class="rw-g-title">Caddy</text>
-    <text x="52" y="127" class="rw-g-desc">Auto-HTTPS Gateway</text>
+    <rect x="22" y="128" width="180" height="60" rx="8" class="rw-g-node"/>
+    <circle cx="40" cy="158" r="6" fill="#14b8a6"/>
+    <text x="56" y="152" class="rw-g-title">Caddy</text>
+    <text x="56" y="170" class="rw-g-desc">Auto-HTTPS Gateway</text>
 
-    <rect x="22" y="144" width="180" height="44" rx="6" class="rw-g-node"/>
-    <circle cx="38" cy="166" r="5" fill="#10b981"/>
-    <text x="52" y="162" class="rw-g-title">NGINX</text>
-    <text x="52" y="177" class="rw-g-desc">OpenResty Lua Edge</text>
+    <rect x="22" y="204" width="180" height="60" rx="8" class="rw-g-node"/>
+    <circle cx="40" cy="234" r="6" fill="#10b981"/>
+    <text x="56" y="228" class="rw-g-title">NGINX</text>
+    <text x="56" y="246" class="rw-g-desc">OpenResty Lua Edge</text>
 
-    <rect x="22" y="194" width="180" height="44" rx="6" class="rw-g-node"/>
-    <circle cx="38" cy="216" r="5" fill="#6366f1"/>
-    <text x="52" y="212" class="rw-g-title">TCP Warden</text>
-    <text x="52" y="227" class="rw-g-desc">Layer 4 TCP &amp; UDP Shield</text>
+    <rect x="22" y="280" width="180" height="60" rx="8" class="rw-g-node"/>
+    <circle cx="40" cy="310" r="6" fill="#6366f1"/>
+    <text x="56" y="304" class="rw-g-title">TCP Warden</text>
+    <text x="56" y="322" class="rw-g-desc">Layer 4 TCP &amp; UDP Shield</text>
 
     <!-- Connector 1: fan-in -> Alloy -->
-    <circle cx="212" cy="66"  r="3.5" fill="#6366f1"/>
-    <circle cx="212" cy="116" r="3.5" fill="#6366f1"/>
-    <circle cx="212" cy="166" r="3.5" fill="#6366f1"/>
-    <circle cx="212" cy="216" r="3.5" fill="#6366f1"/>
-    <path d="M 212 66  C 245 66,  245 142, 265 142" stroke="#6366f1" stroke-width="2" fill="none" opacity="0.75"/>
-    <path d="M 212 116 C 242 116, 245 142, 265 142" stroke="#6366f1" stroke-width="2" fill="none" opacity="0.75"/>
-    <path d="M 212 166 C 242 166, 245 142, 265 142" stroke="#6366f1" stroke-width="2" fill="none" opacity="0.75"/>
-    <path d="M 212 216 C 245 216, 245 142, 265 142" stroke="#6366f1" stroke-width="2" fill="none" opacity="0.75"/>
-    <line x1="265" y1="142" x2="328" y2="142" stroke="#6366f1" stroke-width="3" marker-end="url(#arrow-indigo)"/>
-    <rect x="237" y="116" width="70" height="22" rx="6" class="rw-g-pill"/>
-    <text x="272" y="131" text-anchor="middle" class="rw-g-pill-txt" fill="#6366f1">JSON logs</text>
+    <circle cx="212" cy="82"  r="3.5" fill="#6366f1"/>
+    <circle cx="212" cy="158" r="3.5" fill="#6366f1"/>
+    <circle cx="212" cy="234" r="3.5" fill="#6366f1"/>
+    <circle cx="212" cy="310" r="3.5" fill="#6366f1"/>
+    <path d="M 212 82  C 250 82,  245 190, 265 190" stroke="#6366f1" stroke-width="2" fill="none" opacity="0.75"/>
+    <path d="M 212 158 C 245 158, 248 190, 265 190" stroke="#6366f1" stroke-width="2" fill="none" opacity="0.75"/>
+    <path d="M 212 234 C 245 234, 248 190, 265 190" stroke="#6366f1" stroke-width="2" fill="none" opacity="0.75"/>
+    <path d="M 212 310 C 250 310, 245 190, 265 190" stroke="#6366f1" stroke-width="2" fill="none" opacity="0.75"/>
+    <line x1="265" y1="190" x2="328" y2="190" stroke="#6366f1" stroke-width="3" marker-end="url(#arrow-indigo)"/>
+    <rect x="237" y="164" width="70" height="22" rx="6" class="rw-g-pill"/>
+    <text x="272" y="179" text-anchor="middle" class="rw-g-pill-txt" fill="#6366f1">JSON logs</text>
 
     <!-- 2. ALLOY -->
-    <rect x="332" y="12" width="185" height="248" rx="10" class="rw-g-box" fill="url(#grad-alloy)"/>
-    <text x="344" y="32" class="rw-g-header" fill="#d97706">LOG COLLECTOR</text>
+    <rect x="332" y="14" width="185" height="352" rx="10" class="rw-g-box" fill="url(#grad-alloy)"/>
+    <text x="344" y="38" class="rw-g-header" fill="#d97706">LOG COLLECTOR</text>
 
-    <rect x="342" y="44" width="165" height="198" rx="8" class="rw-g-card"/>
-    <rect x="342" y="44" width="165" height="36" rx="8" fill="#f59e0b" fill-opacity="0.12"/>
-    <circle cx="360" cy="62" r="6" fill="#f59e0b"/>
-    <text x="372" y="67" class="rw-g-card-title">Grafana Alloy</text>
+    <rect x="342" y="52" width="165" height="300" rx="8" class="rw-g-card"/>
+    <rect x="342" y="52" width="165" height="44" rx="8" fill="#f59e0b" fill-opacity="0.12"/>
+    <circle cx="362" cy="74" r="7" fill="#f59e0b"/>
+    <text x="378" y="79" class="rw-g-card-title">Grafana Alloy</text>
 
-    <text x="354" y="102" class="rw-g-tag" fill="#d97706">OpenTelemetry Shipper</text>
-    <text x="354" y="124" class="rw-g-item">• Docker socket discovery</text>
-    <text x="354" y="143" class="rw-g-item">• loki.process JSON parse</text>
-    <text x="354" y="162" class="rw-g-item">• Structured label index</text>
-    <text x="354" y="181" class="rw-g-item">• UDP Syslog (1514/udp)</text>
+    <text x="354" y="122" class="rw-g-tag" fill="#d97706">OpenTelemetry Shipper</text>
+    <text x="354" y="152" class="rw-g-item">• Docker socket discovery</text>
+    <text x="354" y="180" class="rw-g-item">• loki.process JSON parse</text>
+    <text x="354" y="208" class="rw-g-item">• Structured label index</text>
+    <text x="354" y="236" class="rw-g-item">• UDP Syslog (1514/udp)</text>
 
-    <rect x="354" y="200" width="141" height="24" rx="4" class="rw-g-port-box"/>
-    <text x="424" y="216" text-anchor="middle" class="rw-g-port-txt">HTTP :12345 · UDP :1514</text>
+    <rect x="354" y="286" width="141" height="28" rx="6" class="rw-g-port-box"/>
+    <text x="424" y="304" text-anchor="middle" class="rw-g-port-txt">HTTP :12345 · UDP :1514</text>
 
     <!-- Connector 2: Alloy -> Loki -->
-    <circle cx="517" cy="142" r="3.5" fill="#f59e0b"/>
-    <line x1="517" y1="142" x2="633" y2="142" stroke="#f59e0b" stroke-width="3" marker-end="url(#arrow-amber)"/>
-    <rect x="542" y="116" width="70" height="22" rx="6" class="rw-g-pill"/>
-    <text x="577" y="131" text-anchor="middle" class="rw-g-pill-txt" fill="#d97706">loki.write</text>
+    <circle cx="517" cy="190" r="3.5" fill="#f59e0b"/>
+    <line x1="517" y1="190" x2="633" y2="190" stroke="#f59e0b" stroke-width="3" marker-end="url(#arrow-amber)"/>
+    <rect x="542" y="164" width="70" height="22" rx="6" class="rw-g-pill"/>
+    <text x="577" y="179" text-anchor="middle" class="rw-g-pill-txt" fill="#d97706">loki.write</text>
 
     <!-- 3. LOKI -->
-    <rect x="637" y="12" width="185" height="248" rx="10" class="rw-g-box" fill="url(#grad-loki)"/>
-    <text x="649" y="32" class="rw-g-header" fill="#ea580c">LOG STORAGE</text>
+    <rect x="637" y="14" width="185" height="352" rx="10" class="rw-g-box" fill="url(#grad-loki)"/>
+    <text x="649" y="38" class="rw-g-header" fill="#ea580c">LOG STORAGE</text>
 
-    <rect x="647" y="44" width="165" height="198" rx="8" class="rw-g-card"/>
-    <rect x="647" y="44" width="165" height="36" rx="8" fill="#f97316" fill-opacity="0.12"/>
-    <circle cx="665" cy="62" r="6" fill="#f97316"/>
-    <text x="677" y="67" class="rw-g-card-title">Grafana Loki</text>
+    <rect x="647" y="52" width="165" height="300" rx="8" class="rw-g-card"/>
+    <rect x="647" y="52" width="165" height="44" rx="8" fill="#f97316" fill-opacity="0.12"/>
+    <circle cx="667" cy="74" r="7" fill="#f97316"/>
+    <text x="683" y="79" class="rw-g-card-title">Grafana Loki</text>
 
-    <text x="659" y="102" class="rw-g-tag" fill="#ea580c">High-Perf Chunk Storage</text>
-    <text x="659" y="124" class="rw-g-item">• TSDB index &amp; retention</text>
-    <text x="659" y="143" class="rw-g-item">• Fast stream metadata</text>
-    <text x="659" y="162" class="rw-g-item">• LogQL query execution</text>
-    <text x="659" y="181" class="rw-g-item">• Zero-config container</text>
+    <text x="659" y="122" class="rw-g-tag" fill="#ea580c">High-Perf Chunk Storage</text>
+    <text x="659" y="152" class="rw-g-item">• TSDB index &amp; retention</text>
+    <text x="659" y="180" class="rw-g-item">• Fast stream metadata</text>
+    <text x="659" y="208" class="rw-g-item">• LogQL query execution</text>
+    <text x="659" y="236" class="rw-g-item">• Zero-config container</text>
 
-    <rect x="659" y="200" width="141" height="24" rx="4" class="rw-g-port-box"/>
-    <text x="729" y="216" text-anchor="middle" class="rw-g-port-txt">HTTP API :3100</text>
+    <rect x="659" y="286" width="141" height="28" rx="6" class="rw-g-port-box"/>
+    <text x="729" y="304" text-anchor="middle" class="rw-g-port-txt">HTTP API :3100</text>
 
     <!-- Connector 3: Loki -> Grafana -->
-    <circle cx="822" cy="142" r="3.5" fill="#f97316"/>
-    <line x1="822" y1="142" x2="938" y2="142" stroke="#f97316" stroke-width="3" marker-end="url(#arrow-orange)"/>
-    <rect x="847" y="116" width="70" height="22" rx="6" class="rw-g-pill"/>
-    <text x="882" y="131" text-anchor="middle" class="rw-g-pill-txt" fill="#ea580c">LogQL</text>
+    <circle cx="822" cy="190" r="3.5" fill="#f97316"/>
+    <line x1="822" y1="190" x2="938" y2="190" stroke="#f97316" stroke-width="3" marker-end="url(#arrow-orange)"/>
+    <rect x="847" y="164" width="70" height="22" rx="6" class="rw-g-pill"/>
+    <text x="882" y="179" text-anchor="middle" class="rw-g-pill-txt" fill="#ea580c">LogQL</text>
 
     <!-- 4. GRAFANA -->
-    <rect x="942" y="12" width="210" height="248" rx="10" class="rw-g-box" fill="url(#grad-grafana)"/>
-    <text x="954" y="32" class="rw-g-header" fill="#db2777">OBSERVABILITY &amp; SIEM</text>
+    <rect x="942" y="14" width="210" height="352" rx="10" class="rw-g-box" fill="url(#grad-grafana)"/>
+    <text x="954" y="38" class="rw-g-header" fill="#db2777">OBSERVABILITY &amp; SIEM</text>
 
-    <rect x="952" y="44" width="190" height="198" rx="8" class="rw-g-card"/>
-    <rect x="952" y="44" width="190" height="36" rx="8" fill="#ec4899" fill-opacity="0.12"/>
-    <circle cx="970" cy="62" r="6" fill="#ec4899"/>
-    <text x="982" y="67" class="rw-g-card-title">Grafana</text>
+    <rect x="952" y="52" width="190" height="300" rx="8" class="rw-g-card"/>
+    <rect x="952" y="52" width="190" height="44" rx="8" fill="#ec4899" fill-opacity="0.12"/>
+    <circle cx="972" cy="74" r="7" fill="#ec4899"/>
+    <text x="988" y="79" class="rw-g-card-title">Grafana</text>
 
-    <text x="964" y="102" class="rw-g-tag" fill="#db2777">Security SIEM UI</text>
-    <text x="964" y="124" class="rw-g-item">• Live Threat Matrix</text>
-    <text x="964" y="143" class="rw-g-item">• GeoIP World Map</text>
-    <text x="964" y="162" class="rw-g-item">• HTTP &amp; UDP metrics</text>
-    <text x="964" y="181" class="rw-g-item">• Pre-built dashboard</text>
+    <text x="964" y="122" class="rw-g-tag" fill="#db2777">Security SIEM UI</text>
+    <text x="964" y="152" class="rw-g-item">• Live Threat Matrix</text>
+    <text x="964" y="180" class="rw-g-item">• GeoIP World Map</text>
+    <text x="964" y="208" class="rw-g-item">• HTTP &amp; UDP metrics</text>
+    <text x="964" y="236" class="rw-g-item">• Pre-built dashboard</text>
 
-    <rect x="964" y="200" width="158" height="24" rx="4" class="rw-g-port-box"/>
-    <text x="1043" y="216" text-anchor="middle" class="rw-g-port-txt">Web UI :3000</text>
+    <rect x="964" y="286" width="158" height="28" rx="6" class="rw-g-port-box"/>
+    <text x="1043" y="304" text-anchor="middle" class="rw-g-port-txt">Web UI :3000</text>
   </svg>
 </div>`
 
 const archSnippets = computed(() => ({
   cli: [
     { filename: 'Architecture Graph', lang: 'mermaid', code: mermaid_raw, html: arch_graph_svg, hasDiff: false },
-    { filename: 'Mermaid Source', lang: 'mermaid', code: arch_mermaid.cleanCode, html: arch_mermaid.html, hasDiff: false },
   ],
 }))
 

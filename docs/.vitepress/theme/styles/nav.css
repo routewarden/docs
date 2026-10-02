@@ -1,32 +1,105 @@
 /* ============================================================
-   Navigation & Search Bar Layout
+   Navigation & Topbar Redesign (Modern Minimalist)
    ============================================================ */
 
 .VPNav {
-  backdrop-filter: blur(16px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
-  border-bottom: 1px solid var(--vp-c-divider) !important;
+  /* Do NOT apply backdrop-filter, filter, or transform to .VPNav!
+     Those properties create a new containing block for position: fixed elements,
+     which traps the mobile nav drawer (.VPNavScreen) inside .VPNav with 0px height. */
+  background-color: transparent !important;
 }
 
 .VPNavBar {
-  border-bottom: none !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border-bottom: 1px solid var(--vp-c-divider) !important;
+  background-color: var(--vp-nav-bg-color) !important;
+  transition: border-color 0.25s, background-color 0.25s;
+}
+
+/* Ensure mobile nav screen drawer has proper background, scroll, and stacking */
+.VPNavScreen {
+  pointer-events: auto !important;
+}
+
+.VPNavBar .container {
+  max-width: 1440px !important;
+  margin: 0 auto !important;
+  padding: 0 24px !important;
+}
+
+/* Content flex container expansion */
+.VPNavBar .content {
+  min-width: 0 !important;
+  flex-grow: 1 !important;
+}
+
+.VPNavBar .content-body {
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
 }
 
 /* Brand Title & Logo Alignment */
 .VPNavBarTitle .title {
   font-weight: 700 !important;
-  letter-spacing: -0.01em !important;
-  font-size: 16px !important;
+  letter-spacing: -0.015em !important;
+  font-size: 15.5px !important;
 }
 
-/* Prominent Desktop Search Bar - Takes Entire Remaining Space */
+/* Menu Links & Dropdown Buttons (Desktop only >= 768px) */
 @media (min-width: 768px) {
-  .VPNavBarSearch {
-    flex: 1 1 auto !important;
-    max-width: none !important;
-    margin: 0 24px !important;
+  .VPNavBarMenu {
     display: flex !important;
     align-items: center !important;
+    flex-shrink: 0 !important;
+    gap: 2px !important;
+  }
+
+  .VPNavBarMenuLink,
+  .VPNavBarMenuGroup > button,
+  .VPNavBarMenuGroup > .button {
+    padding: 0 10px !important;
+    font-size: 13.5px !important;
+    font-weight: 500 !important;
+    color: var(--vp-c-text-1) !important;
+    transition: color 0.2s ease !important;
+  }
+
+  .VPNavBarMenuLink:hover,
+  .VPNavBarMenuGroup > button:hover,
+  .VPNavBarMenuGroup > .button:hover {
+    color: var(--vp-c-brand-1) !important;
+  }
+}
+
+/* ============================================================
+   Modern Search Bar - Fills Remaining Empty Space
+   ============================================================ */
+@media (min-width: 768px) {
+  .VPNavBarSearch {
+    display: flex !important;
+    align-items: center !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 120px !important;
+    margin: 0 20px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .VPNavBarSearch #local-search,
+  .VPNavBarSearch #docsearch,
+  .VPNavBarSearch > div {
+    display: flex !important;
+    align-items: center !important;
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
   }
 
   .VPNavBarSearch .DocSearch-Button,
@@ -34,40 +107,49 @@
   .VPNavBarSearch .VPNavBarSearch-button,
   .VPNavBarSearch button {
     width: 100% !important;
-    min-width: 200px !important;
-    height: 40px !important;
+    max-width: 100% !important;
+    flex: 1 1 auto !important;
+    height: 38px !important;
     padding: 0 16px !important;
-    border-radius: 20px !important;
-    background: rgba(255, 255, 255, 0.7) !important;
-    border: 1px solid rgba(226, 232, 240, 0.9) !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.8) !important;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    border-radius: 19px !important;
+    background: rgba(243, 244, 246, 0.75) !important;
+    border: 1px solid rgba(229, 231, 235, 0.9) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
+    box-sizing: border-box !important;
+  }
+
+  .VPNavBarSearch .DocSearch-Button-Container {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex: 1 1 auto !important;
   }
 
   .dark .VPNavBarSearch .DocSearch-Button,
   .dark .VPNavBarSearch .search-btn,
   .dark .VPNavBarSearch .VPNavBarSearch-button,
   .dark .VPNavBarSearch button {
-    background: rgba(15, 23, 42, 0.65) !important;
+    background: rgba(30, 41, 59, 0.5) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
   }
 
-  .VPNavBarSearch button:hover {
+  .VPNavBarSearch button:hover,
+  .VPNavBarSearch:focus-within button {
     border-color: var(--vp-c-brand-1) !important;
     background: #ffffff !important;
-    box-shadow: 0 0 0 4px var(--vp-c-brand-soft), 0 4px 12px rgba(37, 99, 235, 0.08) !important;
-    transform: translateY(-1px) !important;
+    box-shadow: 0 0 0 3px var(--vp-c-brand-soft), 0 2px 8px rgba(99, 102, 241, 0.08) !important;
   }
 
-  .dark .VPNavBarSearch button:hover {
+  .dark .VPNavBarSearch button:hover,
+  .dark .VPNavBarSearch:focus-within button {
     border-color: var(--vp-c-brand-1) !important;
-    background: rgba(19, 29, 51, 0.95) !important;
-    box-shadow: 0 0 0 4px var(--vp-c-brand-soft), 0 4px 14px rgba(0, 0, 0, 0.4) !important;
-    transform: translateY(-1px) !important;
+    background: rgba(30, 41, 59, 0.9) !important;
+    box-shadow: 0 0 0 3px var(--vp-c-brand-soft), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
   }
 
   .VPNavBarSearch .search-btn-placeholder,
@@ -82,40 +164,35 @@
   .VPNavBarSearch .search-btn-keys {
     display: inline-flex !important;
     align-items: center !important;
-    gap: 3px !important;
-    padding: 2px 8px !important;
-    height: 22px !important;
-    border-radius: 6px !important;
+    gap: 2px !important;
+    padding: 1px 6px !important;
+    height: 18px !important;
+    border-radius: 4px !important;
     border: 1px solid var(--vp-c-divider) !important;
     background: var(--vp-c-bg) !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
     font-family: var(--vp-font-family-mono) !important;
-    color: var(--vp-c-text-2) !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    color: var(--vp-c-text-3) !important;
   }
 
   .dark .VPNavBarSearch .DocSearch-Button-Keys,
   .dark .VPNavBarSearch .search-btn-keys {
-    background: rgba(30, 41, 59, 0.8) !important;
+    background: rgba(15, 23, 42, 0.8) !important;
     border-color: rgba(255, 255, 255, 0.1) !important;
-    color: var(--vp-c-text-2) !important;
   }
 
-  /* Reset inner default key borders and padding to prevent double containers */
   .VPNavBarSearch .DocSearch-Button-Key {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     border: none !important;
-    border-radius: 0 !important;
     background: transparent !important;
     padding: 0 !important;
     margin: 0 !important;
     width: auto !important;
     height: auto !important;
     line-height: 1 !important;
-    min-width: 0 !important;
     box-shadow: none !important;
     color: inherit !important;
     font-size: inherit !important;
@@ -126,67 +203,100 @@
   }
 
   .VPNavBarSearch .DocSearch-Button-Key:first-child:after {
-    font-size: 11px !important;
+    font-size: 10px !important;
     font-family: inherit !important;
-    font-weight: 700 !important;
+    font-weight: 600 !important;
     color: inherit !important;
-    letter-spacing: normal !important;
   }
 }
 
-/* Responsive Topbar Menu Items Progressive Disclosure */
-/* Between 768px and 959px: Keep search prominent, hide dense multi-column menus, show essential Gateways & Releases */
-@media (min-width: 768px) and (max-width: 959px) {
-  .VPNavBarMenu > :nth-child(2), /* Core Engine */
-  .VPNavBarMenu > :nth-child(3)  /* Solutions */ {
-    display: none !important;
+/* Tablet & Medium Screen Refinements (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .VPNavBar .container {
+    padding: 0 16px !important;
   }
+
   .VPNavBarSearch {
     margin: 0 12px !important;
+    min-width: 100px !important;
   }
-}
 
-/* Between 960px and 1240px: Show Gateways, Core Engine, Tools, Releases; collapse Solutions to keep search generous */
-@media (min-width: 960px) and (max-width: 1240px) {
-  .VPNavBarMenu > :nth-child(3) /* Solutions */ {
-    display: none !important;
-  }
-  .VPNavBarSearch {
-    margin: 0 16px !important;
-  }
-}
-
-/* At 1241px and above: Full suite of nav items is visible with roomy search bar */
-@media (min-width: 1241px) {
-  .VPNavBarSearch {
-    margin: 0 24px !important;
+  .VPNavBarMenuLink,
+  .VPNavBarMenuGroup > button,
+  .VPNavBarMenuGroup > .button {
+    padding: 0 7px !important;
+    font-size: 13px !important;
   }
 }
 
 /* Mobile optimizations (< 768px) */
 @media (max-width: 767px) {
+  .VPNavBar .wrapper {
+    padding: 0 12px !important;
+  }
+
+  .VPNavBar .container {
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .VPNavBar .title {
+    flex-shrink: 1 !important;
+    min-width: 0 !important;
+  }
+
   .VPNavBarTitle {
-    margin-right: 0.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    margin-right: 8px !important;
   }
 
   .VPNavBarTitle .title {
-    font-size: 15px !important;
+    font-size: 14.5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .VPNavBar .content {
+    flex-shrink: 0 !important;
+    min-width: 0 !important;
+  }
+
+  .VPNavBar .content-body {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    min-width: 0 !important;
+  }
+
+  /* Explicitly hide desktop menu in navbar on mobile */
+  .VPNavBarMenu {
+    display: none !important;
   }
 
   .VPNavBarSearch {
-    margin-right: 0.5rem !important;
+    margin: 0 !important;
+    flex: 0 0 auto !important;
   }
 
-  /* Compact icon button for search on mobile */
   .VPNavBarSearch .DocSearch-Button,
   .VPNavBarSearch .search-btn {
-    min-width: 36px !important;
-    width: 36px !important;
-    height: 36px !important;
+    min-width: 32px !important;
+    width: 32px !important;
+    height: 32px !important;
     padding: 0 !important;
     justify-content: center !important;
     border-radius: 8px !important;
     background-color: transparent !important;
+    border: 1px solid var(--vp-c-divider) !important;
   }
 
   .VPNavBarSearch .DocSearch-Button-Placeholder,
@@ -194,9 +304,15 @@
     display: none !important;
   }
 
-  /* Remove the mobile hamburger button completely */
   .VPNavBarHamburger {
-    display: none !important;
+    display: flex !important;
+    width: 36px !important;
+    height: 36px !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
   }
 
   /* Prevent table overflow on small screens */

@@ -157,8 +157,67 @@ test('documentation structure and integrity', async (t) => {
     assert.ok(content.includes('<CodeViewer :snippets="archSnippets" />'), 'dashboard.md must render CodeViewer with archSnippets')
     assert.ok(content.includes("lang: 'mermaid'"), 'dashboard.md must declare mermaid language for architecture definition')
     assert.ok(content.includes('Architecture Graph') || content.includes('Architecture Flow'), 'dashboard.md must provide visual architecture tab')
-    assert.ok(content.includes('Mermaid Source'), 'dashboard.md must provide Mermaid Source tab')
     assert.ok(content.includes('flowchart LR'), 'dashboard.md must include flowchart LR definition')
+  })
+
+  await t.test('cli schema workflow architecture uses CodeViewer with Mermaid support', () => {
+    const schemaDoc = path.join(docsDir, 'cli', 'schema.md')
+    const content = fs.readFileSync(schemaDoc, 'utf8')
+
+    assert.ok(content.includes('<CodeViewer :snippets="workflowSnippets" />'), 'schema.md must render CodeViewer with workflowSnippets')
+    assert.ok(content.includes("lang: 'mermaid'"), 'schema.md must declare mermaid language for workflow definition')
+    assert.ok(content.includes('Workflow Graph'), 'schema.md must provide visual workflow graph tab')
+    assert.ok(content.includes('flowchart TD'), 'schema.md must include flowchart TD definition')
+  })
+
+  await t.test('core architecture flow uses CodeViewer with Mermaid support', () => {
+    const archDoc = path.join(docsDir, 'core', 'architecture.md')
+    const content = fs.readFileSync(archDoc, 'utf8')
+
+    assert.ok(content.includes('<CodeViewer :snippets="archFlowSnippets" />'), 'architecture.md must render CodeViewer with archFlowSnippets')
+    assert.ok(content.includes("lang: 'mermaid'"), 'architecture.md must declare mermaid language for architectural pipeline')
+    assert.ok(content.includes('Inspection Pipeline'), 'architecture.md must provide visual inspection pipeline tab')
+    assert.ok(content.includes('flowchart TD'), 'architecture.md must include flowchart TD definition')
+  })
+
+  await t.test('pattern checker evaluation flow uses CodeViewer with Mermaid support', () => {
+    const patternDoc = path.join(docsDir, 'tools', 'pattern-checker.md')
+    const content = fs.readFileSync(patternDoc, 'utf8')
+
+    assert.ok(content.includes('<CodeViewer :snippets="evalFlowSnippets" />'), 'pattern-checker.md must render CodeViewer with evalFlowSnippets')
+    assert.ok(content.includes("lang: 'mermaid'"), 'pattern-checker.md must declare mermaid language for evaluation flow')
+    assert.ok(content.includes('Evaluation Flow'), 'pattern-checker.md must provide visual evaluation flow tab')
+    assert.ok(content.includes('flowchart TD'), 'pattern-checker.md must include flowchart TD definition')
+  })
+
+  await t.test('immich case study architecture diagram uses CodeViewer with Mermaid support', () => {
+    const immichDoc = path.join(docsDir, 'examples', 'case-study-immich.md')
+    const content = fs.readFileSync(immichDoc, 'utf8')
+
+    assert.ok(content.includes('<CodeViewer :snippets="immichArchSnippets" />'), 'case-study-immich.md must render CodeViewer with immichArchSnippets')
+    assert.ok(content.includes("lang: 'mermaid'"), 'case-study-immich.md must declare mermaid language for dual-router architecture')
+    assert.ok(content.includes('Dual-Router Architecture'), 'case-study-immich.md must provide visual dual-router architecture tab')
+    assert.ok(content.includes('flowchart TD'), 'case-study-immich.md must include flowchart TD definition')
+  })
+
+  await t.test('tcp faq collaborative diagram uses CodeViewer with Mermaid support', () => {
+    const faqDoc = path.join(docsDir, 'tcp', 'faq.md')
+    const content = fs.readFileSync(faqDoc, 'utf8')
+
+    assert.ok(content.includes('<CodeViewer :snippets="collabSnippets"'), 'tcp/faq.md must render CodeViewer with collabSnippets')
+    assert.ok(content.includes("lang: 'mermaid'"), 'tcp/faq.md must declare mermaid language for collaborative loop')
+    assert.ok(content.includes('Collaborative Loop'), 'tcp/faq.md must provide visual collaborative loop tab')
+    assert.ok(content.includes('flowchart TD'), 'tcp/faq.md must include flowchart TD definition')
+  })
+
+  await t.test('tcp crowdsec architecture diagram uses CodeViewer with Mermaid support', () => {
+    const csDoc = path.join(docsDir, 'tcp', 'crowdsec.md')
+    const content = fs.readFileSync(csDoc, 'utf8')
+
+    assert.ok(content.includes('<CodeViewer :snippets="archSnippets" />'), 'tcp/crowdsec.md must render CodeViewer with archSnippets')
+    assert.ok(content.includes("lang: 'mermaid'"), 'tcp/crowdsec.md must declare mermaid language for crowdsec loop')
+    assert.ok(content.includes('Collaborative Loop'), 'tcp/crowdsec.md must provide visual collaborative loop tab')
+    assert.ok(content.includes('flowchart TD'), 'tcp/crowdsec.md must include flowchart TD definition')
   })
 
   await t.test('cli installation document matches version.json release version', () => {
